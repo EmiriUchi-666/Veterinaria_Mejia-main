@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head th:replace="~{fragments/head :: head('Control de Caja')}"></head>
+<style>
+  .caja-abierta{border-left:5px solid #16a34a;}
+  .caja-cerrada{border-left:5px solid #94a3b8;}
+  .monto-xl{font-size:2.4rem;font-weight:800;}
+  .mov-ing{border-left:3px solid #16a34a;background:#f0fdf4;}
+  .mov-egr{border-left:3px solid #dc2626;background:#fef2f2;}
+  .mov-item{padding:.5rem .75rem;border-radius:0 8px 8px 0;margin-bottom:.4rem;font-size:.88rem;}
+</style>
+<body>
+<div th:replace="~{fragments/sidebar :: menuLateral}"></div>
+<div class="main-content p-4">
+
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="fw-bold mb-0"><i class="bi bi-cash-register me-2 text-success"></i>Control de Caja</h2>
+      <p class="text-muted mb-0">Apertura, cierre y movimientos del día</p>
+    </div>
+    <a th:unless="${hayCaja}" href="/caja/abrir" class="btn btn-success rounded-pill px-4">
+      <i class="bi bi-unlock me-1"></i>Abrir Caja
+    </a>
+    <a th:if="${hayCaja}" href="/caja/cerrar" class="btn btn-outline-danger rounded-pill px-4">
+      <i class="bi bi-lock me-1"></i>Cerrar Caja
+    </a>
+  </div>
+
+  <div th:if="${successMsg}" class="alert alert-success alert-dismissible fade show rounded-3 mb-3">
+    <i class="bi bi-check-circle me-2"></i><span th:text="${successMsg}"></span>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+  <div th:if="${errorMsg}" class="alert alert-danger alert-dismissible fade show rounded-3 mb-3">
+    <i class="bi bi-exclamation-triangle me-2"></i><span th:text="${errorMsg}"></span>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+
+  <!-- Sin caja -->
+  <div th:unless="${hayCaja}" class="card border-0 shadow-sm p-5 text-center mb-4" style="border-radius:16px;">
+    <i class="bi bi-cash-coin text-muted" style="font-size:4rem;opacity:.3;"></i>
+    <h5 class="text-muted mt-3">No hay caja abierta</h5>
+    <p class="text-muted">Haz clic en <strong>Abrir Caja</strong> para iniciar las operaciones del día.</p>
+    <a href="/caja/abrir" class="btn btn-success rounded-pill mx-auto px-5" style="max-width:200px;">
+      <i class="bi bi-unlock me-1"></i>Abrir Caja
+    </a>
+  </div>
+
+  <!-- Caja abierta -->
+  <div th:if="${hayCaja}">
+    <div class="row g-3 mb-4">
+      <!-- Resumen montos -->
+      <div class="col-12 col-lg-7">
+        <div class="card caja-abierta border-0 shadow-sm p-4" style="border-radius:16px;">
+          <div class="d-flex justify-content-between mb-3">
+            <div>
+              <span class="badge bg-success fs-6 mb-2">🟢 CAJA ABIERTA</span>
+              <p class="mb-0 text-muted">Cajero: <strong th:text="${cajaAbierta?.usuario?.nombreUsuario}"></strong></p>
+              <p class="mb-0 text-muted small">Apertura: <span th:text="${#temporals.format(cajaAbierta?.fechaApertura,'dd/MM/yyyy HH:mm')}"></span></p>
+            </div>
+          </div>
+          <div class="row g-3 text-center">
+            <div class="col-6 col-md-3">
+              <div class="p-3 rounded-3" style="background:#eff6ff;">
+                <div class="text-muted small">INICIAL</div>
+                <div class="fw-bold text-primary" th:text="'S/ ' + ${#numbers.formatDecimal(cajaAbierta?.montoInicial,1,2)}"></div>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="p-3 rounded-3" style="background:#f0fdf4;">
+                <div class="text-muted small">INGRESOS</div>
+                <div class="fw-bold text-success" th:text="'+ S/ ' + ${#numbers.formatDecimal(cajaAbierta?.totalIngresos,1,2)}"></div>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="p-3 rounded-3" style="background:#fef2f2;">
+                <div class="text-muted small">EGRESOS</div>
+                <div class="fw-bold text-danger" th:text="'- S/ ' + ${#numbers.formatDecimal(cajaAbierta?.totalEgresos,1,2)}"></div>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="p-3 rounded-3" style="background:#fafafa;border:2px solid #e2e8f0;">
+                <div class="text-muted small fw-bold">SALDO</div>
+                <div class="fw-bold fs-5 text-dark"
+                     th:text="'S/ ' + ${#numbers.formatDecimal(cajaAbierta?.montoInicial + cajaAbierta?.totalIngresos - cajaAbierta?.totalEgresos,1,2)}"></div>
+              </div>
+            </div>
+          </div>
+          <!-- Registrar movimiento -->
+          <div class="row g-3 mt-3">
+            <div class="col-12 col-md-6">
+              <form action="/caja/ingreso" method="post" class="p-3 rounded-3" style="background:#f0fdf4;">
+                <div class="fw-bold text-success mb-2"><i class="bi bi-plus-circle me-1"></i>Registrar Ingreso</div>
+                <div class="row g-2">
+                  <div class="col-5">
+                    <input type="number" name="monto" step="0.01" min="0.01" class="form-control form-control-sm" placeholder="S/ 0.00" required>
+                  </div>
+                  <div class="col-5">
+                    <input type="text" name="concepto" class="form-control form-control-sm" placeholder="Concepto">
+                  </div>
+                  <div class="col-2">
+                    <button type="submit" class="btn btn-success btn-sm w-100"><i class="bi bi-plus"></i></button>
+                  </div>
+                </div>
+              </form>
+            </div>
+            <div class="col-12 col-md-6">
+              <form action="/caja/egreso" method="post" class="p-3 rounded-3" style="background:#fef2f2;">
+                <div class="fw-bold text-danger mb-2"><i class="bi bi-dash-circle me-1"></i>Registrar Egreso</div>
+                <div class="row g-2">
+                  <div class="col-5">
+                    <input type="number" name="monto" step="0.01" min="0.01" class="form-control form-control-sm" placeholder="S/ 0.00" required>
+                  </div>
+                  <div class="col-5">
+                    <input type="text" name="concepto" class="form-control form-control-sm" placeholder="Concepto">
+                  </div>
+                  <div class="col-2">
+                    <button type="submit" class="btn btn-danger btn-sm w-100"><i class="bi bi-minus"></i></button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Log movimientos del día -->
+      <div class="col-12 col-lg-5">
+        <div class="card border-0 shadow-sm p-4 h-100" style="border-radius:16px;">
+          <h6 class="fw-bold mb-3"><i class="bi bi-journal-text me-2"></i>Movimientos del Día</h6>
+          <div style="max-height:320px;overflow-y:auto;">
+            <div th:if="${movimientos == null || #lists.isEmpty(movimientos)}" class="text-center text-muted py-4">
+              <i class="bi bi-inbox" style="font-size:2rem;opacity:.3;"></i>
+              <p class="mt-2 mb-0 small">Sin movimientos registrados aún.</p>
+            </div>
+            <div th:each="m : ${movimientos}"
+                 th:classappend="${m.tipo?.name() == 'INGRESO' ? 'mov-ing' : 'mov-egr'}"
+                 class="mov-item">
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <span class="fw-semibold"
+                        th:classappend="${m.tipo?.name() == 'INGRESO' ? 'text-success' : 'text-danger'}"
+                        th:text="${m.tipo?.name() == 'INGRESO' ? '+' : '-'} + ' S/ ' + ${#numbers.formatDecimal(m.monto,1,2)}"></span>
+                  <span class="text-muted ms-2" th:text="${m.concepto}"></span>
+                </div>
+                <small class="text-muted" th:text="${#temporals.format(m.fechaHora,'HH:mm')}"></small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Historial -->
+  <div class="card border-0 shadow-sm" style="border-radius:16px;">
+    <div class="card-header bg-white border-0 pt-4 px-4">
+      <h6 class="fw-bold mb-0"><i class="bi bi-clock-history me-2"></i>Historial de Cajas</h6>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr><th>Apertura</th><th>Cajero</th><th class="text-end">Inicial</th>
+              <th class="text-end">Ingresos</th><th class="text-end">Egresos</th>
+              <th class="text-end">Final</th><th class="text-center">Estado</th></tr>
+        </thead>
+        <tbody>
+          <tr th:each="c : ${historial}">
+            <td th:text="${#temporals.format(c.fechaApertura,'dd/MM/yy HH:mm')}"></td>
+            <td th:text="${c.usuario?.nombreUsuario}"></td>
+            <td class="text-end" th:text="'S/ ' + ${#numbers.formatDecimal(c.montoInicial,1,2)}"></td>
+            <td class="text-end text-success" th:text="'S/ ' + ${#numbers.formatDecimal(c.totalIngresos,1,2)}"></td>
+            <td class="text-end text-danger" th:text="'S/ ' + ${#numbers.formatDecimal(c.totalEgresos,1,2)}"></td>
+            <td class="text-end fw-bold" th:text="${c.montoFinal != null ? 'S/ ' + #numbers.formatDecimal(c.montoFinal,1,2) : '—'}"></td>
+            <td class="text-center">
+              <span th:if="${c.estado?.name() == 'Abierta'}" class="badge bg-success rounded-pill">Abierta</span>
+              <span th:if="${c.estado?.name() == 'Cerrada'}" class="badge bg-secondary rounded-pill">Cerrada</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

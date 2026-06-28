@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Cerrar Caja | VetMejía</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+  <style>
+    body{background:#f0f9ff;font-family:'Segoe UI',sans-serif;}
+    .main-content{margin-left:260px;padding:2rem;}
+    .form-card{border:none;border-radius:16px;box-shadow:0 4px 12px rgba(0,0,0,.06);max-width:560px;margin:auto;}
+    .resumen-item{display:flex;justify-content:space-between;padding:.6rem 0;border-bottom:1px solid #f1f5f9;}
+    .resumen-item:last-child{border-bottom:none;}
+    .dif-positiva{color:#16a34a;font-weight:700;}
+    .dif-negativa{color:#dc2626;font-weight:700;}
+  </style>
+</head>
+<body>
+<div th:replace="~{fragments/sidebar :: menuLateral}"></div>
+<div class="main-content">
+  <div class="d-flex align-items-center gap-3 mb-4">
+    <a href="/caja/estado" class="btn btn-outline-secondary rounded-pill btn-sm"><i class="bi bi-arrow-left"></i> Volver</a>
+    <h2 class="fw-bold mb-0"><i class="bi bi-lock me-2 text-danger"></i>Cierre de Caja</h2>
+  </div>
+
+  <div class="card form-card p-4 p-md-5">
+    <!-- Resumen de la caja actual -->
+    <div class="mb-4">
+      <h5 class="fw-bold mb-3">Resumen de operaciones</h5>
+      <div class="resumen-item">
+        <span class="text-muted">Cajero</span>
+        <strong th:text="${caja?.usuario?.nombreUsuario}"></strong>
+      </div>
+      <div class="resumen-item">
+        <span class="text-muted">Apertura</span>
+        <span th:text="${#temporals.format(caja?.fechaApertura,'dd/MM/yyyy HH:mm')}"></span>
+      </div>
+      <div class="resumen-item">
+        <span class="text-muted">Monto inicial</span>
+        <span class="fw-semibold" th:text="'S/ ' + ${#numbers.formatDecimal(caja?.montoInicial,1,2)}"></span>
+      </div>
+      <div class="resumen-item">
+        <span class="text-muted">Total ingresos</span>
+        <span class="text-success fw-semibold" th:text="'+ S/ ' + ${#numbers.formatDecimal(caja?.totalIngresos,1,2)}"></span>
+      </div>
+      <div class="resumen-item">
+        <span class="text-muted">Total egresos</span>
+        <span class="text-danger fw-semibold" th:text="'- S/ ' + ${#numbers.formatDecimal(caja?.totalEgresos,1,2)}"></span>
+      </div>
+      <div class="resumen-item bg-light rounded-3 px-3 mt-2">
+        <span class="fw-bold">Saldo esperado</span>
+        <span class="fw-bold fs-5" th:text="'S/ ' + ${#numbers.formatDecimal(caja?.montoInicial + caja?.totalIngresos - caja?.totalEgresos,1,2)}"></span>
+      </div>
+    </div>
+
+    <form th:action="@{/caja/cerrar}" method="post" id="formCierre">
+      <div class="mb-3">
+        <label class="form-label fw-semibold">Monto contado al cierre (S/)</label>
+        <div class="input-group input-group-lg">
+          <span class="input-group-text fw-bold">S/</span>
+          <input type="number" name="montoFinal" id="montoFinal" min="0" step="0.01"
+                 class="form-control" placeholder="0.00" required oninput="calcDiferencia()">
+        </div>
+      </div>
+
+      <!-- Diferencia en tiempo real -->
+      <div class="alert mb-3 rounded-3" id="alertDif" style="display:none;">
+        <i class="bi bi-calculator me-2"></i>
+        Diferencia: <strong id="difDisplay"></strong>
+      </div>
+
+      <div class="mb-4">
+        <label class="form-label fw-semibold">Observaciones del cierre <span class="text-muted fw-normal">(opcional)</span></label>
+        <textarea name="observaciones" class="form-control" rows="2"
+                  placeholder="Ej: Sin novedades. Todo cuadra."></textarea>
+      </div>
+
+      <div class="d-flex gap-3">
+        <a href="/caja/estado" class="btn btn-outline-secondary flex-fill rounded-pill">Cancelar</a>
+        <button type="submit" class="btn btn-danger flex-fill rounded-pill fw-bold py-2">
+          <i class="bi bi-lock me-2"></i>Cerrar Caja
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script th:inline="javascript">
+  const saldoEsperado = /*[[${caja?.montoInicial + caja?.totalIngresos - caja?.totalEgresos}]]*/ 0;
+  function calcDiferencia() {
+    const final = parseFloat(document.getElementById('montoFinal').value) || 0;
+    const dif = final - saldoEsperado;
+    const el = document.getElementById('alertDif');
+    const disp = document.getElementById('difDisplay');
+    el.style.display = 'block';
+    if (Math.abs(dif) < 0.01) {
+      el.className = 'alert alert-success rounded-3 mb-3';
+      disp.textContent = '✓ La caja cuadra perfectamente';
+    } else if (dif > 0) {
+      el.className = 'alert alert-warning rounded-3 mb-3';
+      disp.textContent = '+S/ ' + dif.toFixed(2) + ' (sobrante)';
+    } else {
+      el.className = 'alert alert-danger rounded-3 mb-3';
+      disp.textContent = '-S/ ' + Math.abs(dif).toFixed(2) + ' (faltante)';
+    }
+  }
+</script>
+</body>
+</html>

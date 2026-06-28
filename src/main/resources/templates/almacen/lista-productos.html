@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+
+<head th:replace="~{fragments/head :: head('Inventario Avanzado')}"></head>
+
+<body>
+
+    <div th:replace="~{fragments/sidebar :: menuLateral}"></div>
+
+    <div class="main-content">
+        
+        <header th:replace="~{fragments/navbar :: topbar}"></header>
+
+        <main class="content">
+            
+            <div th:if="${successMsg}" class="alert alert-success alert-dismissible fade show mb-4 border-0 shadow-sm" role="alert">
+                <i class="bi bi-check-circle-fill me-2"></i><span th:text="${successMsg}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            <div th:if="${errorMsg}" class="alert alert-danger alert-dismissible fade show mb-4 border-0 shadow-sm" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i><span th:text="${errorMsg}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+                <div>
+                    <h2 class="mb-1"><i class="bi bi-box text-primary me-2"></i>Control de Inventario Avanzado</h2>
+                    <p class="text-muted mb-0">Filtrado obligatorio por líneas de catálogo para revisión de stock.</p>
+                </div>
+                <div>
+                    <a href="/almacen/productos/nuevo" class="btn btn-primary fw-600 shadow-sm">
+                        <i class="bi bi-plus-lg me-1"></i>Nuevo Producto
+                    </a>
+                </div>
+            </div>
+
+            <div class="card card-custom mb-4">
+                <div class="card-body p-4">
+                    <form th:action="@{/almacen/productos}" method="GET" class="row g-3 align-items-end" onsubmit="return validarFiltros()">
+                        
+                        <div class="col-md-5">
+                            <label class="form-label fw-600 text-secondary">
+                                <i class="bi bi-folder me-1"></i>Seleccionar Categoría:
+                            </label>
+                            <select name="categoriaId" class="form-select">
+                                <option value="">-- Elija una Categoría --</option>
+                                <option th:each="cat : ${categorias}" 
+                                        th:value="${cat.id}" 
+                                        th:text="${cat.nombre}"
+                                        th:selected="${cat.id == categoriaSeleccionadaId}"></option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-5">
+                            <label class="form-label fw-600 text-secondary">
+                                <i class="bi bi-paw me-1"></i>Seleccionar Especie Destino:
+                            </label>
+                            <select name="especieId" class="form-select">
+                                <option value="">-- Elija una Especie --</option>
+                                <option th:each="esp : ${especies}" 
+                                        th:value="${esp.id}" 
+                                        th:text="${esp.nombreEspecie}"
+                                        th:selected="${esp.id == especieSeleccionadaId}"></option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-primary w-100 fw-600 shadow-sm py-2">
+                                <i class="bi bi-search me-1"></i>Consultar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card card-custom">
+                <div class="card-body p-0">
+                    
+                    <div th:if="${categoriaSeleccionadaId == null && especieSeleccionadaId == null}" class="text-center py-5 text-muted">
+                        <i class="bi bi-info-circle d-block mb-3 text-secondary" style="font-size: 3rem;"></i>
+                        <h5 class="fw-bold">Esperando Filtros</h5>
+                        <p class="mb-0">Seleccione una Categoría y una Especie en el panel superior para cargar los productos.</p>
+                    </div>
+
+                    <div th:if="${(categoriaSeleccionadaId != null || especieSeleccionadaId != null) && (productos == null || productos.empty)}" class="text-center py-5 text-danger">
+                        <i class="bi bi-exclamation-triangle d-block mb-3 text-danger opacity-75" style="font-size: 3rem;"></i>
+                        <h5 class="fw-bold">Sin Resultados</h5>
+                        <p class="mb-0">No existen productos registrados en el sistema para esta combinación exacta.</p>
+                    </div>
+
+                    <div class="table-responsive" th:if="${(categoriaSeleccionadaId != null || especieSeleccionadaId != null) && productos != null && !productos.empty}">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light" style="border-bottom: 2px solid #e2e8f0;">
+                                <tr>
+                                    <th class="ps-4 py-3 text-secondary fw-600" style="width: 80px;">ID</th>
+                                    <th class="py-3 text-secondary fw-600">Descripción del Producto</th>
+                                    <th class="py-3 text-secondary fw-600">Precio Público</th>
+                                    <th class="py-3 text-secondary fw-600">Stock Actual</th>
+                                    <th class="py-3 text-secondary fw-600">Límite Mín.</th>
+                                    <th class="text-end pe-4 py-3 text-secondary fw-600" style="width: 250px;">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="p : ${productos}" 
+                                    th:classappend="${p.stockCerrado <= p.stockMinimo} ? 'table-warning text-warning-emphasis' : ''">
+                                    
+                                    <td class="ps-4 fw-bold text-dark">
+                                        #<span th:text="${p.id}">1</span>
+                                    </td>
+                                    
+                                    <td class="fw-600 text-dark" th:text="${p.nombre}">Producto X</td>
+                                    
+                                    <td class="text-secondary fw-500">
+                                        S/. <span th:text="${#numbers.formatDecimal(p.precioVentaActual, 1, 'COMMA', 2, 'POINT')}">0.00</span>
+                                    </td>
+                                    
+                                    <td>
+                                        <!-- Si permite fraccionamiento (Doble Stock) -->
+                                        <div th:if="${p.permiteFraccionamiento != null and p.permiteFraccionamiento}">
+                                            <div class="fw-bold text-primary mb-1"><i class="bi bi-box-seam me-1"></i><span th:text="${p.stockCerrado != null ? p.stockCerrado : 0} + ' Enteros'"></span></div>
+                                            <div class="small text-muted"><i class="bi bi-basket me-1"></i><span th:text="${p.stockAbierto != null ? p.stockAbierto : 0} + ' Sueltos'"></span></div>
+                                        </div>
+                                        <!-- Si NO permite fraccionamiento (Stock Normal) -->
+                                        <div th:unless="${p.permiteFraccionamiento != null and p.permiteFraccionamiento}">
+                                            <strong th:text="${p.stockCerrado != null ? p.stockCerrado : 0} + ' ' + ${p.tipoUnidad}"></strong>
+                                        </div>
+                                        <span th:if="${p.stockCerrado <= p.stockMinimo}" class="badge bg-danger mt-1 d-inline-block" style="font-size: 11px;">
+                                            <i class="bi bi-exclamation-circle-fill"></i> ¡Crítico!
+                                        </span>
+                                    </td>
+                                    
+                                    <td class="text-muted" th:text="${p.stockMinimo} + ' unid.'">12.00</td>
+                                    
+                                    <td class="text-end pe-4">
+                                        <span th:if="${p.estado}" class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 me-2 px-2 py-1.5">
+                                            <i class="bi bi-eye-fill me-1"></i>Activo
+                                        </span>
+                                        <span th:unless="${p.estado}" class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 me-2 px-2 py-1.5">
+                                            <i class="bi bi-eye-slash-fill me-1"></i>Bloqueado
+                                        </span>
+                                        
+                                        <a th:href="@{/almacen/productos/cambiar-estado/{id}(id=${p.id}, catId=${categoriaSeleccionadaId}, espId=${especieSeleccionadaId})}" 
+                                           class="btn btn-sm btn-outline-secondary font-monospace" style="font-size: 12px;"
+                                           onclick="return confirm('¿Seguro que deseas cambiar el estado de este producto?');"
+                                           title="Alternar Estado">
+                                            <i class="bi bi-arrow-repeat"></i>
+                                        </a>
+
+                                        <button type="button" class="btn btn-sm btn-outline-danger font-monospace ms-1" style="font-size: 12px;"
+                                                data-bs-toggle="modal" data-bs-target="#modalDesechar"
+                                                th:attr="data-id=${p.id}, data-nombre=${p.nombre}, data-unidad=${p.tipoUnidad}"
+                                                title="Desechar / Registrar Merma">
+                                            <i class="bi bi-trash3"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+            </div>
+            
+        </main>
+    </div>
+
+    <div class="modal fade" id="modalDesechar" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-danger bg-opacity-10 border-bottom-0">
+                    <h5 class="modal-title fw-bold text-danger">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>Registrar Pérdida o Desecho
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                
+                <form th:action="@{/almacen/productos/desechar}" method="POST">
+                    <div class="modal-body p-4">
+                        <input type="hidden" name="idProducto" id="inputProdIdModal">
+                        
+                        <p class="text-muted mb-4">Vas a registrar una pérdida de inventario para el producto: <br>
+                            <strong id="nombreProdModal" class="text-dark fs-5"></strong>
+                        </p>
+                        
+                        <label class="form-label fw-600">Cantidad a desechar (<span id="unidadProdModal"></span>):</label>
+                        <input type="number" name="cantidad" class="form-control form-control-lg" step="0.01" min="0.01" required autofocus>
+                        <div class="form-text text-danger mt-2"><i class="bi bi-info-circle me-1"></i>Esto restará el stock inmediatamente y se registrará como pérdida financiera.</div>
+                    </div>
+                    
+                    <div class="modal-footer border-top-0 bg-light">
+                        <button type="button" class="btn btn-secondary fw-600" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-danger fw-bold">Confirmar Desecho</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const modalDesechar = document.getElementById('modalDesechar');
+            if (modalDesechar) {
+                modalDesechar.addEventListener('show.bs.modal', event => {
+                    const button = event.relatedTarget; // Botón rojo que se clicó
+                    
+                    // Extraer los datos del producto
+                    const id = button.getAttribute('data-id');
+                    const nombre = button.getAttribute('data-nombre');
+                    const unidad = button.getAttribute('data-unidad');
+                    
+                    // Inyectar datos en el formulario del modal
+                    modalDesechar.querySelector('#inputProdIdModal').value = id;
+                    modalDesechar.querySelector('#nombreProdModal').textContent = nombre;
+                    modalDesechar.querySelector('#unidadProdModal').textContent = unidad;
+                });
+            }
+        });
+
+        function validarFiltros() {
+            const cat = document.querySelector('select[name="categoriaId"]').value;
+            const esp = document.querySelector('select[name="especieId"]').value;
+            
+            if (!cat && !esp) {
+                alert("Por favor, seleccione al menos una Categoría o una Especie para realizar la búsqueda.");
+                return false;
+            }
+            return true;
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head th:replace="~{fragments/head :: head('Registrar Medicamento Controlado')}"></head>
+<body>
+<div th:replace="~{fragments/sidebar :: menuLateral}"></div>
+<div class="main-content p-4">
+  <div class="d-flex align-items-center gap-3 mb-4">
+    <a href="/medicamentos-controlados" class="btn btn-outline-secondary rounded-circle" style="width:40px;height:40px;display:flex;align-items:center;justify-content:center;"><i class="bi bi-arrow-left"></i></a>
+    <div>
+      <h2 class="fw-bold mb-0"><i class="bi bi-capsule me-2 text-danger"></i>Registrar Medicamento DIGEMID</h2>
+      <p class="text-muted mb-0">Clasifica el producto según la normativa DIGEMID/SENASA</p>
+    </div>
+  </div>
+  <div th:if="${errorMsg}" class="alert alert-danger rounded-3 mb-4"><i class="bi bi-exclamation-triangle me-2"></i><span th:text="${errorMsg}"></span></div>
+
+  <div class="row justify-content-center">
+    <div class="col-12 col-lg-7">
+      <div class="card border-0 shadow-sm p-4 p-md-5" style="border-radius:18px;">
+        <form action="/medicamentos-controlados/guardar" method="post">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Producto del catálogo <span class="text-danger">*</span></label>
+            <select name="productoId" class="form-select" required>
+              <option value="">-- Seleccionar producto --</option>
+              <option th:each="p : ${productos}" th:value="${p.id}" th:text="${p.nombre}"></option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Categoría DIGEMID <span class="text-danger">*</span></label>
+            <select name="categoria" class="form-select" required id="catSelect" onchange="actualizarDescripcion()">
+              <option value="">-- Seleccionar --</option>
+              <option th:each="c : ${categorias}" th:value="${c.name()}" th:text="${c.descripcion}"></option>
+            </select>
+            <div id="catInfo" class="form-text mt-2"></div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Principio Activo</label>
+            <input type="text" name="principioActivo" class="form-control" placeholder="Ej: Amoxicilina, Ivermectina">
+          </div>
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Registro Sanitario DIGEMID</label>
+              <input type="text" name="registroSanitario" class="form-control" placeholder="Ej: E.NAC.N° 1234">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Laboratorio Fabricante</label>
+              <input type="text" name="laboratorio" class="form-control" placeholder="Ej: Bayer Animal Health">
+            </div>
+          </div>
+          <div class="mb-4">
+            <label class="form-label fw-semibold">Observaciones</label>
+            <textarea name="observaciones" class="form-control" rows="2" placeholder="Notas adicionales DIGEMID..."></textarea>
+          </div>
+          <div class="d-flex gap-3 justify-content-end">
+            <a href="/medicamentos-controlados" class="btn btn-outline-secondary rounded-pill px-4">Cancelar</a>
+            <button type="submit" class="btn btn-danger rounded-pill px-5 fw-bold">
+              <i class="bi bi-save me-2"></i>Registrar Medicamento
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+function actualizarDescripcion() {
+  const v = document.getElementById('catSelect').value;
+  const info = document.getElementById('catInfo');
+  if (v === 'LIBRE') info.innerHTML = '<span class="text-success">✅ Venta libre sin receta. Sin restricciones.</span>';
+  else if (v === 'RECETA') info.innerHTML = '<span class="text-warning">⚠️ Requiere receta veterinaria firmada para despacho.</span>';
+  else if (v === 'CONTROLADO') info.innerHTML = '<span class="text-danger">🚨 Medicamento controlado DIGEMID. Registro especial + receta obligatoria.</span>';
+  else info.textContent = '';
+}
+</script>
+</body>
+</html>

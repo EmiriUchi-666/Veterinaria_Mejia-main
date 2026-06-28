@@ -1,0 +1,51 @@
+<div th:if="${resultado!=null}"
+     class="card mt-4 shadow">
+
+    <div class="card-header bg-success text-white">
+
+        Resultado del análisis
+
+    </div>
+
+    <div class="card-body">
+
+        <h3>
+
+            Diagnóstico
+
+        </h3>
+
+        <p th:text="${resultado.diagnostico}"></p>
+
+        <h3>
+
+            Recomendación
+
+        </h3>
+
+        <p th:text="${resultado.recomendacion}"></p>
+
+        <h3>
+
+            Prioridad
+
+        </h3>
+
+        <span
+           th:text="${resultado.prioridad}"
+           class="badge bg-danger">
+        </span>
+
+        <div class="progress mt-3">
+
+            <div
+               class="progress-bar bg-danger"
+               role="progressbar"
+               th:style="'width:' + (${resultado.prioridad} * 10) + '%'">
+            </div>
+
+        </div>
+
+    </div>
+
+</div>

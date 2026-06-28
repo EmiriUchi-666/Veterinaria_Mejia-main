@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iniciar Sesión | Veterinaria Mejía</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --bg-gradient: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-gradient);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .login-card {
+            background: #ffffff;
+            border: none;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 450px;
+            overflow: hidden;
+            transition: transform 0.3s ease;
+        }
+
+        .login-header {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            padding: 40px 30px;
+            text-align: center;
+            color: #ffffff;
+        }
+
+        .login-header i {
+            font-size: 3rem;
+            color: #ffffff;
+            margin-bottom: 10px;
+            display: inline-block;
+        }
+
+        .login-header h4 {
+            font-weight: 700;
+            margin: 0;
+            letter-spacing: -0.5px;
+        }
+
+        .login-body {
+            padding: 40px 35px;
+        }
+
+        .form-control {
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            padding: 12px 16px;
+            font-size: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+        }
+
+        .input-group-text {
+            background-color: #f8fafc;
+            border-color: #e2e8f0;
+            color: #64748b;
+            border-radius: 8px 0 0 8px;
+        }
+
+        .form-control-with-icon {
+            border-radius: 0 8px 8px 0;
+        }
+
+        .btn-login {
+            background: var(--primary-color);
+            color: #ffffff;
+            font-weight: 600;
+            padding: 12px;
+            border-radius: 8px;
+            border: none;
+            width: 100%;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2);
+        }
+
+        .btn-login:hover {
+            background: #1d4ed8;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 12px rgba(37, 99, 235, 0.3);
+            color: white;
+        }
+
+        /* Estilos unificados para las alertas de Thymeleaf */
+        .alert-custom {
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-card">
+        <div class="login-header">
+            <i class="bi bi-shield-lock"></i>
+            <h4>SISTEMA VETMEJÍA</h4>
+            <p class="mb-0 text-white-50 small mt-1">Panel de Control Operativo y Comercial</p>
+        </div>
+
+        <div class="login-body">
+            
+            <div th:if="${errorMsg}" class="alert alert-danger alert-custom mb-4" role="alert">
+                <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+                <span th:text="${errorMsg}">Error al iniciar sesión.</span>
+            </div>
+
+            <div th:if="${successMsg}" class="alert alert-success alert-custom mb-4" role="alert">
+                <i class="bi bi-check-circle-fill fs-5"></i>
+                <span th:text="${successMsg}">Operación exitosa.</span>
+            </div>
+
+            <form action="/login" method="POST" class="needs-validation" novalidate>
+                
+                <div class="mb-3">
+                    <label class="form-label fw-500 text-secondary">Nombre de Usuario</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-person"></i></span>
+                        <input type="text" name="usuario" class="form-control form-control-with-icon" 
+                               placeholder="Ingrese su usuario" required autocomplete="username">
+                        <div class="invalid-feedback">El nombre de usuario es obligatorio.</div>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label fw-500 text-secondary">Contraseña</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-key"></i></span>
+                        <input type="password" name="pass" class="form-control form-control-with-icon" 
+                               placeholder="Ingrese su contraseña" required autocomplete="current-password">
+                        <div class="invalid-feedback">La contraseña es obligatoria.</div>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-login mb-3">
+                    <i class="bi bi-box-arrow-in-right me-2"></i>Ingresar al Sistema
+                </button>
+                
+                <div class="text-center mt-2">
+                    <a href="/recuperar-password" class="text-decoration-none small" style="color: var(--primary-color); font-weight: 500;">
+                        ¿Olvidaste tu contraseña?
+                    </a>
+                </div>
+                
+            </form>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            'use strict'
+            var forms = document.querySelectorAll('.needs-validation')
+            Array.prototype.slice.call(forms).forEach(function (form) {
+                form.addEventListener('submit', function (event) {
+                    if (!form.checkValidity()) {
+                        event.preventDefault()
+                        event.stopPropagation()
+                    }
+                    form.classList.add('was-validated')
+                }, false)
+            })
+        })()
+    </script>
+
+</body>
+</html>

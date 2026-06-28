@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head th:replace="~{fragments/head :: head('Medicamentos Controlados')}"></head>
+<body>
+<div th:replace="~{fragments/sidebar :: menuLateral}"></div>
+<div class="main-content p-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="fw-bold mb-0"><i class="bi bi-capsule me-2 text-danger"></i>Medicamentos Controlados</h2>
+      <p class="text-muted mb-0">Registro DIGEMID — Libre / Receta / Controlado</p>
+    </div>
+    <a href="/medicamentos-controlados/nuevo" class="btn btn-danger rounded-pill px-4">
+      <i class="bi bi-plus-circle me-1"></i>Registrar Medicamento
+    </a>
+  </div>
+  <div th:if="${successMsg}" class="alert alert-success alert-dismissible fade show rounded-3">
+    <i class="bi bi-check-circle me-2"></i><span th:text="${successMsg}"></span>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+  <div th:if="${errorMsg}" class="alert alert-danger alert-dismissible fade show rounded-3">
+    <i class="bi bi-exclamation-triangle me-2"></i><span th:text="${errorMsg}"></span>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+  <div class="card border-0 shadow-sm" style="border-radius:16px;">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr><th>Producto</th><th>Principio Activo</th><th>Categoría DIGEMID</th>
+              <th>Reg. Sanitario</th><th>Laboratorio</th><th class="text-center">Receta</th><th class="text-center">Acción</th></tr>
+        </thead>
+        <tbody>
+          <tr th:if="${#lists.isEmpty(medicamentos)}">
+            <td colspan="7" class="text-center text-muted py-5">
+              <i class="bi bi-capsule" style="font-size:3rem;opacity:.3;"></i>
+              <p class="mt-2">No hay medicamentos registrados. <a href="/medicamentos-controlados/nuevo">Registrar primero</a></p>
+            </td>
+          </tr>
+          <tr th:each="m : ${medicamentos}">
+            <td class="fw-semibold" th:text="${m.producto?.nombre}"></td>
+            <td th:text="${m.principioActivo}"></td>
+            <td>
+              <span class="badge rounded-pill"
+                th:classappend="${m.categoria?.name() == 'LIBRE' ? 'bg-success' :
+                                 m.categoria?.name() == 'RECETA' ? 'bg-warning text-dark' : 'bg-danger'}"
+                th:text="${m.categoria?.descripcion}"></span>
+            </td>
+            <td class="text-muted" th:text="${m.registroSanitario}"></td>
+            <td class="text-muted" th:text="${m.laboratorioFabricante}"></td>
+            <td class="text-center">
+              <i th:if="${m.requiereReceta}" class="bi bi-check-circle text-success fs-5"></i>
+              <i th:unless="${m.requiereReceta}" class="bi bi-x-circle text-muted fs-5"></i>
+            </td>
+            <td class="text-center">
+              <a th:href="@{/medicamentos-controlados/eliminar/{id}(id=${m.id})}"
+                 class="btn btn-sm btn-outline-danger rounded-pill"
+                 onclick="return confirm('¿Eliminar este registro?')">
+                <i class="bi bi-trash"></i>
+              </a>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

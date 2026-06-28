@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+
+<!-- 1. INYECTAMOS EL HEAD MAESTRO -->
+<head th:replace="~{fragments/head :: head('Historial de Ingresos')}"></head>
+
+<body>
+
+    <!-- 2. INYECTAMOS EL MENÚ LATERAL -->
+    <div th:replace="~{fragments/sidebar :: menuLateral}"></div>
+
+    <div class="main-content">
+        
+        <!-- 3. INYECTAMOS LA BARRA SUPERIOR -->
+        <header th:replace="~{fragments/navbar :: topbar}"></header>
+
+        <main class="content">
+            
+            <!-- ALERTAS DINÁMICAS -->
+            <div th:if="${successMsg}" class="alert alert-success alert-dismissible fade show mb-4 border-0 shadow-sm" role="alert">
+                <i class="bi bi-check-circle-fill me-2"></i><span th:text="${successMsg}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            <div th:if="${errorMsg}" class="alert alert-danger alert-dismissible fade show mb-4 border-0 shadow-sm" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i><span th:text="${errorMsg}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+
+            <!-- ENCABEZADO DE PÁGINA -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2><i class="bi bi-clock-history text-primary me-2"></i>Historial de Abastecimiento</h2>
+                    <p class="text-muted mb-0">Registro histórico de todas las compras y entradas de mercadería al almacén.</p>
+                </div>
+                <div>
+                    <a href="/almacen/ingresos/nuevo" class="btn btn-primary fw-600 shadow-sm">
+                        <i class="bi bi-plus-lg me-1"></i>Registrar Nuevo Ingreso
+                    </a>
+                </div>
+            </div>
+
+            <!-- TARJETA CON LA TABLA -->
+            <div class="card card-custom">
+                <div class="card-body p-0">
+                    
+                    <!-- Selector de tamaño de página -->
+                    <div class="d-flex justify-content-end p-3 border-bottom">
+                        <form th:action="@{/almacen/ingresos}" method="GET" class="d-flex align-items-center gap-2">
+                            <label for="size" class="form-label text-muted small mb-0">Registros por página:</label>
+                            <select name="size" id="size" class="form-select form-select-sm" style="width: 80px;" onchange="this.form.submit()">
+                                <option value="10" th:selected="${ingresosPage.size == 10}">10</option>
+                                <option value="25" th:selected="${ingresosPage.size == 25}">25</option>
+                                <option value="50" th:selected="${ingresosPage.size == 50}">50</option>
+                            </select>
+                        </form>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light" style="border-bottom: 2px solid #e2e8f0;">
+                                <tr>
+                                    <th class="ps-4 py-3 text-secondary fw-600">ID Lote</th>
+                                    <th class="py-3 text-secondary fw-600">Fecha y Hora</th>
+                                    <th class="py-3 text-secondary fw-600">Proveedor</th>
+                                    <th class="py-3 text-secondary fw-600">Producto Ingresado</th>
+                                    <th class="py-3 text-secondary fw-600">Costo Unit.</th>
+                                    <th class="py-3 text-secondary fw-600">Cantidad</th>
+                                    <th class="py-3 text-secondary fw-600 text-end pe-4">Total Invertido</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Mensaje si la lista está vacía -->
+                                <tr th:if="${ingresos == null or ingresos.empty}">
+                                    <td colspan="7" class="text-center py-5 text-muted">
+                                        <i class="bi bi-inbox fs-1 d-block mb-2 text-black-50"></i>
+                                        No hay registros de ingresos de mercadería aún.
+                                    </td>
+                                </tr>
+
+                                <!-- Iteración de los ingresos -->
+                                <tr th:each="ingreso : ${ingresos}">
+                                    
+                                    <!-- ID -->
+                                    <td class="ps-4 fw-bold text-dark">
+                                        #<span th:text="${ingreso.id}">1</span>
+                                    </td>
+                                    
+                                    <!-- Fecha -->
+                                    <td>
+                                        <div class="d-flex align-items-center text-secondary">
+                                            <i class="bi bi-calendar-event me-2"></i>
+                                            <!-- Formateo de fecha con Thymeleaf -->
+                                            <span th:text="${#dates.format(ingreso.fechaIngreso, 'dd/MM/yyyy HH:mm')}">01/01/2026</span>
+                                        </div>
+                                    </td>
+                                    
+                                    <!-- Proveedor -->
+                                    <td class="fw-500">
+                                        <i class="bi bi-truck text-primary me-1"></i>
+                                        <span th:text="${ingreso.proveedor != null ? ingreso.proveedor.razonSocial : 'Proveedor Desconocido'}">Distribuidora X</span>
+                                    </td>
+                                    
+                                    <!-- Producto (Tomamos el primero de la lista de detalles) -->
+                                    <td>
+                                        <span class="badge bg-light text-dark border" 
+                                              th:if="${ingreso.detallesIngreso != null and !ingreso.detallesIngreso.empty}"
+                                              th:text="${ingreso.detallesIngreso[0].producto.nombre}">
+                                            Nombre Producto
+                                        </span>
+                                    </td>
+                                    
+                                    <!-- Costo Unitario -->
+                                    <td class="text-secondary">
+                                        S/. <span th:if="${ingreso.detallesIngreso != null and !ingreso.detallesIngreso.empty}"
+                                                  th:text="${#numbers.formatDecimal(ingreso.detallesIngreso[0].precioCompra, 1, 'COMMA', 2, 'POINT')}">
+                                            0.00
+                                        </span>
+                                    </td>
+                                    
+                                    <!-- Cantidad -->
+                                    <td>
+                                        <span class="badge bg-info text-dark" 
+                                              th:if="${ingreso.detallesIngreso != null and !ingreso.detallesIngreso.empty}">
+                                              <span th:text="${ingreso.detallesIngreso[0].cantidad}">0</span> sacos/unid.
+                                        </span>
+                                    </td>
+                                    
+                                    <!-- Total Invertido (Multiplicación de precio x cantidad) -->
+                                    <td class="text-end pe-4 fw-bold text-success">
+                                        S/. <span th:if="${ingreso.detallesIngreso != null and !ingreso.detallesIngreso.empty}"
+                                                  th:text="${#numbers.formatDecimal(ingreso.detallesIngreso[0].precioCompra * ingreso.detallesIngreso[0].cantidad, 1, 'COMMA', 2, 'POINT')}">
+                                            0.00
+                                        </span>
+                                    </td>
+                                    
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Controles de Paginación -->
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mt-3 p-3 bg-light border-top" th:if="${ingresosPage != null and ingresosPage.totalPages > 1}">
+                        <span class="text-muted small mb-3 mb-md-0">
+                            Mostrando página <strong th:text="${ingresosPage.number + 1}"></strong> de <strong th:text="${ingresosPage.totalPages}"></strong>
+                            (<span th:text="${ingresosPage.totalElements}"></span> registros en total)
+                        </span>
+                        <nav aria-label="Navegación de historial">
+                            <ul class="pagination pagination-sm mb-0">
+                                <li class="page-item" th:classappend="${ingresosPage.first} ? 'disabled'">
+                                    <a class="page-link" th:href="@{/almacen/ingresos(page=${ingresosPage.number - 1}, size=${ingresosPage.size})}">Anterior</a>
+                                </li>
+                                
+                                <!-- Mostrará solo 5 páginas alrededor de la actual para no saturar la vista -->
+                                <li class="page-item" th:each="i : ${#numbers.sequence(0, ingresosPage.totalPages - 1)}"
+                                    th:if="${i >= (ingresosPage.number - 2) and i <= (ingresosPage.number + 2)}"
+                                    th:classappend="${i == ingresosPage.number} ? 'active'">
+                                    <a class="page-link" th:href="@{/almacen/ingresos(page=${i}, size=${ingresosPage.size})}" th:text="${i + 1}">1</a>
+                                </li>
+                                
+                                <li class="page-item" th:classappend="${ingresosPage.last} ? 'disabled'">
+                                    <a class="page-link" th:href="@{/almacen/ingresos(page=${ingresosPage.number + 1}, size=${ingresosPage.size})}">Siguiente</a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+                    
+                </div>
+            </div>
+            
+        </main>
+    </div>
+
+    <!-- SCRIPTS CORE -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>

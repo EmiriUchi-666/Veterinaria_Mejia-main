@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Detalle Tratamiento | VetMejía</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+  <style>
+    body{background:#f0f9ff;font-family:'Segoe UI',sans-serif;}
+    .main-content{margin-left:260px;padding:2rem;}
+    .detail-card{border:none;border-radius:16px;box-shadow:0 4px 12px rgba(0,0,0,.06);}
+    .med-row{background:#f8fafc;border-radius:10px;padding:.75rem 1rem;margin-bottom:.5rem;}
+  </style>
+</head>
+<body>
+<div th:replace="~{fragments/sidebar :: menuLateral}"></div>
+<div class="main-content">
+  <div class="d-flex align-items-center gap-3 mb-4">
+    <a th:href="@{/tratamientos/paciente/{id}(id=${tratamiento?.historiaClinica?.paciente?.id})}"
+       class="btn btn-outline-secondary rounded-pill btn-sm"><i class="bi bi-arrow-left"></i> Volver</a>
+    <h2 class="fw-bold mb-0"><i class="bi bi-prescription2 me-2 text-primary"></i>Detalle del Tratamiento</h2>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-12 col-lg-4">
+      <div class="card detail-card p-4">
+        <h6 class="text-muted fw-semibold mb-3">INFORMACIÓN GENERAL</h6>
+        <div class="mb-2">
+          <small class="text-muted d-block">Paciente</small>
+          <strong th:text="${tratamiento?.historiaClinica?.paciente?.nombre}"></strong>
+        </div>
+        <div class="mb-2">
+          <small class="text-muted d-block">Estado</small>
+          <span class="badge rounded-pill fs-6"
+                th:classappend="${tratamiento?.estado?.name() == 'Activo' ? 'bg-success' : (tratamiento?.estado?.name() == 'Completado' ? 'bg-primary' : 'bg-danger')}"
+                th:text="${tratamiento?.estado}"></span>
+        </div>
+        <div class="mb-2">
+          <small class="text-muted d-block">Fecha Inicio</small>
+          <span th:text="${tratamiento?.fechaInicio}"></span>
+        </div>
+        <div th:if="${tratamiento?.fechaFin != null}" class="mb-2">
+          <small class="text-muted d-block">Fecha Fin</small>
+          <span th:text="${tratamiento?.fechaFin}"></span>
+        </div>
+        <hr>
+        <div class="mb-2">
+          <small class="text-muted d-block">Diagnóstico</small>
+          <p class="mb-0" th:text="${tratamiento?.diagnostico}"></p>
+        </div>
+        <div th:if="${tratamiento?.observaciones != null}" class="mt-2">
+          <small class="text-muted d-block">Observaciones</small>
+          <p class="mb-0 text-muted" th:text="${tratamiento?.observaciones}"></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-lg-8">
+      <div class="card detail-card p-4">
+        <h6 class="text-muted fw-semibold mb-3">
+          <i class="bi bi-capsule me-2 text-primary"></i>MEDICAMENTOS APLICADOS
+          <span class="badge bg-primary rounded-pill ms-2" th:text="${#lists.size(detalles)}"></span>
+        </h6>
+
+        <div th:if="${#lists.isEmpty(detalles)}" class="text-center text-muted py-4">
+          No se registraron medicamentos en este tratamiento.
+        </div>
+
+        <div th:each="d : ${detalles}" class="med-row">
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <strong th:text="${d.producto?.nombre}"></strong>
+              <div class="text-muted small mt-1">
+                <i class="bi bi-boxes me-1"></i>Cantidad: <strong th:text="${d.cantidadUsada} + ' ' + ${d.producto?.tipoUnidad}"></strong>
+                <span th:if="${d.lote != null and !#strings.isEmpty(d.lote)}">
+                  &nbsp;|&nbsp;<i class="bi bi-tag me-1"></i>Lote: <span th:text="${d.lote}"></span>
+                </span>
+              </div>
+              <div th:if="${d.observaciones != null}" class="text-muted small" th:text="${d.observaciones}"></div>
+            </div>
+            <small class="text-muted" th:text="${#temporals.format(d.fechaAplicacion,'dd/MM HH:mm')}"></small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+
+<head th:replace="~{fragments/head :: head('Tarifario de Servicios')}"></head>
+
+<body>
+
+    <div th:replace="~{fragments/sidebar :: menuLateral}"></div>
+
+    <div class="main-content">
+        
+        <header th:replace="~{fragments/navbar :: topbar}"></header>
+
+        <main class="content">
+            
+            <style>
+                .table-servicios th {
+                    text-transform: uppercase;
+                    font-size: 0.75rem;
+                    letter-spacing: 0.5px;
+                    padding: 16px;
+                }
+                .table-servicios td {
+                    padding: 16px;
+                }
+                .badge-ambito {
+                    font-size: 0.75rem;
+                    padding: 6px 12px;
+                    border-radius: 6px;
+                    font-weight: 500;
+                }
+                /* Clase para opacar los servicios desactivados */
+                .row-inactiva {
+                    background-color: #f8f9fa !important;
+                    opacity: 0.6;
+                }
+            </style>
+
+            <!-- Alertas de éxito o error -->
+            <div th:if="${successMsg}" class="alert alert-success alert-dismissible fade show mb-4 border-0 shadow-sm" role="alert">
+                <i class="bi bi-check-circle-fill me-2"></i><span th:text="${successMsg}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            <div th:if="${errorMsg}" class="alert alert-danger alert-dismissible fade show mb-4 border-0 shadow-sm" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i><span th:text="${errorMsg}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+
+            <!-- Encabezado de la página -->
+            <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 mb-4">
+                <div>
+                    <h2 class="mb-1"><i class="bi bi-journal-medical text-primary me-2"></i>Tarifario de Servicios</h2>
+                    <p class="text-muted mb-0">Control de prestaciones médicas, estéticas e intangibles de la clínica.</p>
+                </div>
+                <div>
+                    <a th:href="@{/mantenimiento/servicios/nuevo}" class="btn btn-primary px-4 py-2 fw-600 shadow-sm rounded-3">
+                        <i class="bi bi-plus-lg me-2"></i> Nuevo Servicio
+                    </a>
+                </div>
+            </div>
+
+            <!-- Tabla de Servicios -->
+            <div class="card card-custom overflow-hidden">
+                <div class="card-body p-0">
+                    
+                    <!-- Mensaje si no hay registros -->
+                    <div th:if="${servicios == null or #lists.isEmpty(servicios)}" class="text-center py-5">
+                        <div class="text-muted mb-3">
+                            <i class="bi bi-clipboard-x text-light-emphasis" style="font-size: 4rem;"></i>
+                        </div>
+                        <h5 class="fw-bold text-secondary">No hay servicios configurados</h5>
+                        <p class="text-muted small mx-auto mb-4" style="max-width: 400px;">
+                            Aún no se han dado de alta prestaciones o ámbitos operativos en el sistema. Presione el botón superior para empezar.
+                        </p>
+                    </div>
+
+                    <!-- Estructura de la tabla -->
+                    <div th:if="${servicios != null and !#lists.isEmpty(servicios)}" class="table-responsive">
+                        <table class="table table-hover table-servicios align-middle mb-0">
+                            <thead class="table-light" style="border-bottom: 2px solid #e2e8f0;">
+                                <tr>
+                                    <th style="width: 80px;" class="text-center text-secondary fw-600">ID</th>
+                                    <th class="text-secondary fw-600">Descripción de la Prestación</th>
+                                    <th style="width: 180px;" class="text-secondary fw-600">Ámbito Operativo</th>
+                                    <th style="width: 120px;" class="text-center text-secondary fw-600">Estado</th>
+                                    <th style="width: 140px;" class="text-end text-secondary fw-600">Precio Base</th>
+                                    <th style="width: 160px;" class="text-center pe-4 text-secondary fw-600">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Añadimos 'row-inactiva' si el estado es false -->
+                                <tr th:each="srv : ${servicios}" th:classappend="${!srv.estado} ? 'row-inactiva' : ''">
+                                    
+                                    <td class="text-center fw-bold text-muted">
+                                        #<span th:text="${srv.id}">1</span>
+                                    </td>
+                                    
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="bg-primary bg-opacity-10 p-2 rounded-3 text-primary me-3">
+                                                <i class="bi bi-activity"></i>
+                                            </div>
+                                            <span class="fw-600 text-dark" th:text="${srv.nombreServicio}">Consulta Clínica</span>
+                                        </div>
+                                    </td>
+                                    
+                                    <td>
+                                        <span th:if="${#strings.containsIgnoreCase(srv.nombreServicio,'campo')}" 
+                                              class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 badge-ambito">
+                                            <i class="bi bi-tree me-1"></i> Salida a Campo
+                                        </span>
+                                        <span th:if="${#strings.containsIgnoreCase(srv.nombreServicio,'domicilio')}" 
+                                              class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 badge-ambito">
+                                            <i class="bi bi-house-heart me-1"></i> Domicilio
+                                        </span>
+                                        <span th:unless="${#strings.containsIgnoreCase(srv.nombreServicio,'campo') || #strings.containsIgnoreCase(srv.nombreServicio,'domicilio')}" 
+                                              class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 badge-ambito">
+                                            <i class="bi bi-hospital me-1"></i> Local / Clínica
+                                        </span>
+                                    </td>
+
+                                    <td class="text-center">
+                                        <span th:if="${srv.estado}" class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2 py-1">
+                                            <i class="bi bi-check-circle me-1"></i> Activo
+                                        </span>
+                                        <span th:unless="${srv.estado}" class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 px-2 py-1">
+                                            <i class="bi bi-x-circle me-1"></i> Inactivo
+                                        </span>
+                                    </td>
+                                    
+                                    <td class="text-end">
+                                        <span th:class="${srv.estado ? 'text-success fw-bold' : 'text-muted fw-bold'}" style="font-size: 1.05rem;" 
+                                              th:text="'S/. ' + ${#numbers.formatDecimal(srv.precioServicio, 1, 'COMMA', 2, 'POINT')}">S/. 0.00</span>
+                                    </td>
+
+                                    <!-- COLUMNA DE ACCIONES COMPLETAS -->
+                                    <td class="text-center pe-4">
+                                        <div class="d-flex justify-content-center gap-2">
+                                            
+                                            <!-- Botón Editar -->
+                                            <a th:href="@{/mantenimiento/servicios/editar/{id}(id=${srv.id})}" 
+                                               class="btn btn-sm btn-outline-primary shadow-sm" 
+                                               title="Editar Servicio">
+                                                <i class="bi bi-pencil-square"></i>
+                                            </a>
+                                            
+                                            <!-- Botón Ocultar (Si está activo) -->
+                                            <a th:if="${srv.estado}" th:href="@{/mantenimiento/servicios/estado/{id}(id=${srv.id})}" 
+                                               class="btn btn-sm btn-outline-warning shadow-sm" 
+                                               title="Desactivar y ocultar de ventas"
+                                               onclick="return confirm('¿Seguro que desea ocultar este servicio? Ya no aparecerá disponible al momento de registrar nuevas ventas.');">
+                                                <i class="bi bi-eye-slash-fill"></i>
+                                            </a>
+
+                                            <!-- Botón Restaurar (Si está inactivo) -->
+                                            <a th:unless="${srv.estado}" th:href="@{/mantenimiento/servicios/estado/{id}(id=${srv.id})}" 
+                                               class="btn btn-sm btn-outline-success shadow-sm" 
+                                               title="Restaurar y habilitar para ventas"
+                                               onclick="return confirm('¿Desea volver a habilitar este servicio para que esté disponible en las ventas?');">
+                                                <i class="bi bi-eye-fill"></i>
+                                            </a>
+
+                                            <!-- Botón Eliminar por completo -->
+                                            <a th:href="@{/mantenimiento/servicios/eliminar/{id}(id=${srv.id})}" 
+                                               class="btn btn-sm btn-outline-danger shadow-sm" 
+                                               title="Eliminar del sistema"
+                                               onclick="return confirm('¿Está totalmente seguro de que desea eliminar este servicio? Si este servicio ya figura en boletas o facturas anteriores, el sistema no le permitirá borrarlo por seguridad contable.');">
+                                                <i class="bi bi-trash3"></i>
+                                            </a>
+
+                                        </div>
+                                    </td>
+
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

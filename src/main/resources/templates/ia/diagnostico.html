@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Diagnóstico IA | VetMejía</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+  <style>
+    body{background:#f0f9ff;font-family:'Segoe UI',sans-serif;}
+    .main-content{margin-left:260px;padding:2rem;}
+    .form-card{border:none;border-radius:16px;box-shadow:0 4px 12px rgba(0,0,0,.06);}
+    .result-bar{height:22px;border-radius:8px;}
+  </style>
+</head>
+<body>
+<div th:replace="~{fragments/sidebar :: menuLateral}"></div>
+<div class="main-content">
+  <div class="d-flex align-items-center gap-3 mb-4">
+    <div>
+      <h2 class="fw-bold mb-0"><i class="bi bi-cpu me-2 text-primary"></i>Diagnóstico Heurístico IA</h2>
+      <p class="text-muted mb-0">Motor IF-THEN para análisis clínico rápido</p>
+    </div>
+    <a href="/ia/dashboard" class="btn btn-outline-primary rounded-pill ms-auto">
+      <i class="bi bi-speedometer2 me-1"></i>Dashboard IA
+    </a>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-12 col-lg-5">
+      <div class="card form-card p-4">
+        <h5 class="fw-bold mb-4"><i class="bi bi-clipboard2-pulse me-2 text-primary"></i>Ingresar Síntomas</h5>
+        <form th:action="@{/ia/analizar}" method="post" th:object="${diagnostico}">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Temperatura (°C)</label>
+            <input type="number" step="0.1" min="35" max="43" th:field="*{temperatura}"
+                   class="form-control" placeholder="Ej: 39.5" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Síntomas observados</label>
+            <textarea th:field="*{sintomas}" class="form-control" rows="3"
+                      placeholder="Ej: diarrea, vómito, tos, cojera..."></textarea>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Peso (kg)</label>
+            <input type="number" step="0.1" th:field="*{peso}" class="form-control" placeholder="Ej: 12.5">
+          </div>
+          <div class="mb-4">
+            <label class="form-label fw-semibold">Especie</label>
+            <select th:field="*{especie}" class="form-select">
+              <option value="">-- Seleccionar --</option>
+              <option value="Canino">Canino</option>
+              <option value="Felino">Felino</option>
+              <option value="Ave">Ave</option>
+              <option value="Roedor">Roedor</option>
+              <option value="Reptil">Reptil</option>
+            </select>
+          </div>
+          <button type="submit" class="btn btn-primary w-100 py-2 rounded-pill fw-semibold">
+            <i class="bi bi-search-heart me-2"></i>Analizar con IA
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="col-12 col-lg-7">
+      <!-- Sin resultado -->
+      <div th:if="${resultado == null}" class="card form-card p-5 text-center h-100 d-flex justify-content-center align-items-center">
+        <i class="bi bi-robot text-muted" style="font-size:5rem;opacity:.3;"></i>
+        <h5 class="text-muted mt-3">Ingresa los síntomas para obtener el diagnóstico</h5>
+        <p class="text-muted">El motor heurístico analizará la temperatura y los síntomas para sugerir un posible diagnóstico y nivel de prioridad.</p>
+      </div>
+
+      <!-- Con resultado -->
+      <div th:if="${resultado != null}" class="card form-card p-4">
+        <h5 class="fw-bold mb-4"><i class="bi bi-activity me-2 text-success"></i>Resultado del Análisis</h5>
+
+        <div class="alert rounded-3 mb-4"
+             th:classappend="${resultado.prioridad >= 8 ? 'alert-danger' : (resultado.prioridad >= 5 ? 'alert-warning' : 'alert-info')}">
+          <div class="d-flex align-items-center gap-3">
+            <i class="bi bi-shield-exclamation fs-2"></i>
+            <div>
+              <div class="fw-bold fs-5" th:text="${resultado.diagnostico}"></div>
+              <div class="mt-1" th:text="${resultado.recomendacion}"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-4">
+          <div class="d-flex justify-content-between mb-1">
+            <span class="fw-semibold">Nivel de Prioridad</span>
+            <span class="badge rounded-pill"
+                  th:classappend="${resultado.prioridad >= 8 ? 'bg-danger' : (resultado.prioridad >= 5 ? 'bg-warning text-dark' : 'bg-info text-dark')}"
+                  th:text="${resultado.prioridad} + '/10'"></span>
+          </div>
+          <div class="progress" style="height:22px;border-radius:8px;">
+            <div class="progress-bar"
+                 th:classappend="${resultado.prioridad >= 8 ? 'bg-danger' : (resultado.prioridad >= 5 ? 'bg-warning' : 'bg-info')}"
+                 role="progressbar"
+                 th:style="'width:' + (${resultado.prioridad} * 10) + '%'">
+            </div>
+          </div>
+        </div>
+
+        <div class="row g-3 text-center">
+          <div class="col-4">
+            <div class="p-3 rounded-3 bg-light">
+              <div class="text-muted" style="font-size:.78rem;">DIAGNÓSTICO</div>
+              <div class="fw-bold mt-1" style="font-size:.9rem;" th:text="${resultado.diagnostico}"></div>
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="p-3 rounded-3 bg-light">
+              <div class="text-muted" style="font-size:.78rem;">PRIORIDAD</div>
+              <div class="fw-bold mt-1 fs-4" th:text="${resultado.prioridad}"></div>
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="p-3 rounded-3 bg-light">
+              <div class="text-muted" style="font-size:.78rem;">RECOMENDACIÓN</div>
+              <div class="fw-bold mt-1" style="font-size:.9rem;" th:text="${resultado.recomendacion}"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-4 d-flex gap-2">
+          <a href="/ia" class="btn btn-outline-primary rounded-pill">
+            <i class="bi bi-arrow-repeat me-1"></i>Nuevo análisis
+          </a>
+          <a href="/ia/dashboard" class="btn btn-outline-secondary rounded-pill">
+            <i class="bi bi-speedometer2 me-1"></i>Ver Dashboard
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

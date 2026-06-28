@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+
+<!-- 1. INYECTAMOS EL HEAD MAESTRO -->
+<head th:replace="~{fragments/head :: head('Registrar Servicio')}"></head>
+
+<body>
+
+    <!-- 2. INYECTAMOS EL MENÚ LATERAL -->
+    <div th:replace="~{fragments/sidebar :: menuLateral}"></div>
+
+    <div class="main-content">
+        
+        <!-- 3. INYECTAMOS LA BARRA SUPERIOR -->
+        <header th:replace="~{fragments/navbar :: topbar}"></header>
+
+        <main class="content">
+            
+            <!-- ALERTAS DINÁMICAS (Éxito o Error) -->
+            <div th:if="${successMsg}" class="alert alert-success alert-dismissible fade show mb-4 border-0 shadow-sm" role="alert">
+                <i class="bi bi-check-circle-fill me-2"></i><span th:text="${successMsg}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            <div th:if="${errorMsg}" class="alert alert-danger alert-dismissible fade show mb-4 border-0 shadow-sm" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i><span th:text="${errorMsg}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+
+            <!-- ENCABEZADO DE PÁGINA -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2><i class="bi bi-heart-pulse text-primary me-2"></i>Nuevo Servicio Clínico</h2>
+                    <p class="text-muted mb-0">Registra una nueva prestación médica o estética para el tarifario de la veterinaria.</p>
+                </div>
+                <div>
+                    <!-- Botón para regresar al listado de servicios -->
+                    <a href="/mantenimiento/servicios" class="btn btn-outline-secondary fw-600 shadow-sm">
+                        <i class="bi bi-arrow-left me-1"></i>Volver al Tarifario
+                    </a>
+                </div>
+            </div>
+
+            <!-- TARJETA DEL FORMULARIO -->
+            <div class="card card-custom mb-4">
+                <div class="card-body p-4">
+                    <h5 class="card-title text-secondary mb-4 border-bottom pb-2">Detalles de la Prestación</h5>
+                    
+                    <form th:action="@{/mantenimiento/servicios/guardar}" th:object="${servicio}" method="POST" class="needs-validation" novalidate>
+                        
+                        <div class="row g-4">
+                            
+                            <!-- Nombre del Servicio -->
+                            <div class="col-md-8">
+                                <label class="form-label fw-600 text-dark">Nombre / Descripción del Servicio:</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="bi bi-journal-medical text-secondary"></i></span>
+                                    <!-- Si tu modelo Java tiene otro nombre, ajusta "nombreServicio" por tu variable -->
+                                    <input type="text" th:field="*{nombreServicio}" class="form-control" 
+                                           placeholder="Ej: Consulta General, Corte y Baño, Vacunación Quíntuple..." required />
+                                    <div class="invalid-feedback">Debe ingresar el nombre descriptivo del servicio.</div>
+                                </div>
+                                <!-- Validación desde el backend -->
+                                <div class="text-danger small mt-1" th:if="${#fields.hasErrors('nombreServicio')}" th:errors="*{nombreServicio}"></div>
+                            </div>
+                            
+                            <!-- Precio del Servicio -->
+                            <div class="col-md-4">
+                                <label class="form-label fw-600 text-dark">Precio Base (S/.):</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light">S/.</span>
+                                    <input type="number" step="0.01" th:field="*{precioServicio}" class="form-control" 
+                                           placeholder="0.00" required />
+                                    <div class="invalid-feedback">Debe establecer un precio válido.</div>
+                                </div>
+                                <!-- Validación desde el backend -->
+                                <div class="text-danger small mt-1" th:if="${#fields.hasErrors('precioServicio')}" th:errors="*{precioServicio}"></div>
+                            </div>
+                            
+                            <!-- Botón de Envío -->
+                            <div class="col-12 text-end mt-4">
+                                <hr class="mt-0 mb-4 border-light">
+                                <button type="submit" class="btn btn-primary fw-600 px-4 py-2 shadow-sm">
+                                    <i class="bi bi-save me-2"></i>Dar de Alta Servicio
+                                </button>
+                            </div>
+
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+        </main>
+    </div>
+
+    <!-- SCRIPTS CORE -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- SCRIPT DE VALIDACIÓN BOOTSTRAP -->
+    <script>
+        (function () {
+            'use strict'
+            var forms = document.querySelectorAll('.needs-validation')
+            Array.prototype.slice.call(forms).forEach(function (form) {
+                form.addEventListener('submit', function (event) {
+                    if (!form.checkValidity()) {
+                        event.preventDefault()
+                        event.stopPropagation()
+                    }
+                    form.classList.add('was-validated')
+                }, false)
+            })
+        })()
+    </script>
+</body>
+</html>

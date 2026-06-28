@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+
+<head th:replace="~{fragments/head :: head('Historial de Ventas')}"></head>
+
+<body>
+
+    <div th:replace="~{fragments/sidebar :: menuLateral}"></div>
+
+    <div class="main-content">
+        
+        <header th:replace="~{fragments/navbar :: topbar}"></header>
+
+        <main class="content">
+            
+            <div th:if="${successMsg}" class="alert alert-success alert-dismissible fade show mb-4 border-0 shadow-sm" role="alert">
+                <i class="bi bi-check-circle-fill me-2"></i><span th:text="${successMsg}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            <div th:if="${errorMsg}" class="alert alert-danger alert-dismissible fade show mb-4 border-0 shadow-sm" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i><span th:text="${errorMsg}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+                <div>
+                    <h2 class="mb-1"><i class="bi bi-receipt text-primary me-2"></i>Últimas 10 Ventas</h2>
+                    <p class="text-muted mb-0">Registro de las 10 transacciones más recientes emitidas en caja.</p>
+                </div>
+                <div>
+                    <a href="/ventas/nuevo" class="btn btn-primary fw-600 shadow-sm">
+                        <i class="bi bi-calculator me-1"></i>Abrir Punto de Venta
+                    </a>
+                </div>
+            </div>
+
+            <div class="card card-custom">
+                <div class="card-body p-0">
+                    
+                    <div class="table-responsive">
+                        <!-- Agregamos text-nowrap para forzar el scroll horizontal en caso de pantallas pequeñas -->
+                        <table class="table table-hover align-middle mb-0 text-nowrap">
+                            <thead class="table-light" style="border-bottom: 2px solid #e2e8f0;">
+                                <tr>
+                                    <th class="ps-4 py-3 text-secondary fw-600">Comprobante</th>
+                                    <th class="py-3 text-secondary fw-600">Fecha y Hora</th>
+                                    <th class="py-3 text-secondary fw-600">Cliente / DNI</th>
+                                    <th class="py-3 text-secondary fw-600">Cajero / Usuario</th>
+                                    <th class="py-3 text-secondary fw-600">Artículos Vendidos</th>
+                                    <th class="py-3 text-secondary fw-600 text-center">Método Pago</th>
+                                    <th class="py-3 text-secondary fw-600 text-end">Total Cobrado</th>
+                                    <th class="py-3 text-secondary fw-600 text-center pe-4">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:if="${ventas == null or #lists.isEmpty(ventas)}">
+                                    <td colspan="7" class="text-center py-5 text-muted">
+                                        <i class="bi bi-cart-x fs-1 d-block mb-2 text-black-50"></i>
+                                        Aún no se han registrado ventas en el sistema.
+                                    </td>
+                                </tr>
+
+                                <tr th:each="v : ${ventas}">
+                                    
+                                    <td class="ps-4 fw-bold text-dark font-monospace" style="font-size: 13px;">
+                                        <i class="bi bi-ticket-detailed text-secondary me-1"></i>
+                                        <span th:text="${v.serie} + '-' + ${#numbers.formatInteger(v.correlativo, 6)}" th:classappend="${!v.estado} ? 'text-decoration-line-through text-danger' : ''">B001-000001</span>
+                                        <span th:if="${!v.estado}" class="badge bg-danger ms-1" style="font-size: 10px;">ANULADO</span>
+                                    </td>
+                                    
+                                    <td>
+                                        <div class="d-flex align-items-center text-secondary" style="font-size: 14px;">
+                                            <i class="bi bi-calendar-check me-2"></i>
+                                            <span th:text="${#temporals.format(v.fechaEmision, 'dd/MM/yyyy HH:mm')}">01/01/2026</span>
+                                        </div>
+                                    </td>
+                                    
+                                    <td class="fw-500 text-dark">
+                                        <span th:if="${v.cliente != null}">
+                                            <i class="bi bi-person-fill text-primary me-1"></i> 
+                                            <span th:text="${v.cliente.nombre}">Juan Pérez</span>
+                                        <br><small class="text-muted" th:text="'DNI: ' + ${v.cliente.dni}"></small>
+                                        </span>
+                                        <span th:unless="${v.cliente != null}" class="text-muted">
+                                            <i class="bi bi-people text-secondary me-1"></i> Público General
+                                        </span>
+                                    </td>
+                                    
+                                    <td>
+                                        <span class="badge bg-light text-dark border" th:text="${v.usuario.nombreUsuario}">admin</span>
+                                    </td>
+                                    
+                                    <td class="text-center">
+                                        <span th:if="${#strings.equalsIgnoreCase(v.tipoPago, 'Efectivo')}" class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25">
+                                            <i class="bi bi-cash me-1"></i>Efectivo
+                                        </span>
+                                        <span th:if="${#strings.equalsIgnoreCase(v.tipoPago, 'Tarjeta')}" class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25">
+                                            <i class="bi bi-credit-card me-1"></i>Tarjeta
+                                        </span>
+                                        <span th:if="${#strings.equalsIgnoreCase(v.tipoPago, 'Yape') or #strings.equalsIgnoreCase(v.tipoPago, 'Plin')}" class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25">
+                                            <i class="bi bi-phone me-1"></i>Billetera Digital
+                                        </span>
+                                    </td>
+                                    
+                                    <td class="text-end fw-bold text-success" style="font-size: 15px;">
+                                        S/. <span th:text="${#numbers.formatDecimal(v.totalVenta, 1, 'COMMA', 2, 'POINT')}">0.00</span>
+                                    </td>
+                                    
+                                    <td class="text-center pe-4">
+                                        <button type="button" class="btn btn-sm btn-outline-info me-1" 
+                                                title="Ver Detalles" data-bs-toggle="modal" 
+                                                th:data-bs-target="'#modalDetalles' + ${v.id}">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                        <a th:href="@{/ventas/imprimir/{id}(id=${v.id})}" 
+                                           class="btn btn-sm btn-outline-secondary me-1" title="Reimprimir Ticket" target="_blank" th:if="${v.estado}">
+                                            <i class="bi bi-printer"></i>
+                                        </a>
+                                        <a th:href="@{/ventas/anular/{id}(id=${v.id})}" 
+                                           class="btn btn-sm btn-outline-danger" title="Anular Venta" 
+                                           th:if="${v.estado}"
+                                           th:onclick="'return confirm(\'¿Seguro que deseas ANULAR esta venta? El stock de los productos será devuelto automáticamente al inventario.\');'">
+                                            <i class="bi bi-x-circle"></i>
+                                        </a>
+                                    </td>
+                                    
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Modales de Detalles de Venta (Se generan dinámicamente por cada transacción) -->
+                    <th:block th:each="v : ${ventas}">
+                        <div class="modal fade" th:id="'modalDetalles' + ${v.id}" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered modal-lg">
+                                <div class="modal-content border-0 shadow">
+                                    <div class="modal-header bg-light border-bottom-0">
+                                        <h5 class="modal-title fw-bold text-dark">
+                                            <i class="bi bi-list-ul text-primary me-2"></i>Detalles de Venta
+                                        </h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body p-4">
+                                        <div class="row mb-3">
+                                            <div class="col-sm-6">
+                                                <p class="mb-1 text-muted small">Comprobante:</p>
+                                                <h6 class="fw-bold font-monospace" th:text="${v.serie} + '-' + ${#numbers.formatInteger(v.correlativo, 6)}"></h6>
+                                            </div>
+                                            <div class="col-sm-6 text-sm-end">
+                                                <p class="mb-1 text-muted small">Fecha y Hora:</p>
+                                                <h6 class="fw-bold" th:text="${#temporals.format(v.fechaEmision, 'dd/MM/yyyy HH:mm')}"></h6>
+                                            </div>
+                                        </div>
+                                        <div class="table-responsive">
+                                            <table class="table table-sm table-bordered align-middle mb-0">
+                                                <thead class="table-light">
+                                                    <tr>
+                                                        <th>Descripción del Producto / Servicio</th>
+                                                        <th class="text-center" style="width: 80px;">Cant.</th>
+                                                        <th class="text-end" style="width: 120px;">Precio Unit.</th>
+                                                        <th class="text-end" style="width: 120px;">Subtotal</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr th:each="detalle : ${v.detallesVentas}">
+                                                        <td>
+                                                            <span th:if="${detalle.producto != null}" th:text="${detalle.producto.nombre}"></span>
+                                                            <span th:if="${detalle.servicio != null}" th:text="${detalle.servicio.nombreServicio}"></span>
+                                                        </td>
+                                                        <td class="text-center" th:text="${detalle.cantidad}"></td>
+                                                        <td class="text-end" th:text="'S/ ' + ${#numbers.formatDecimal(detalle.precioUnitario, 1, 'COMMA', 2, 'POINT')}"></td>
+                                                        <td class="text-end fw-bold text-dark" th:text="'S/ ' + ${#numbers.formatDecimal(detalle.subtotal, 1, 'COMMA', 2, 'POINT')}"></td>
+                                                    </tr>
+                                                </tbody>
+                                                <tfoot class="table-light">
+                                                    <tr>
+                                                        <td colspan="3" class="text-end fw-bold py-2">Total Cobrado:</td>
+                                                        <td class="text-end fw-bold text-success py-2" th:text="'S/ ' + ${#numbers.formatDecimal(v.totalVenta, 1, 'COMMA', 2, 'POINT')}"></td>
+                                                    </tr>
+                                                </tfoot>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer border-top-0 bg-light">
+                                        <button type="button" class="btn btn-secondary fw-600 px-4" data-bs-dismiss="modal">Cerrar</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </th:block>
+                    
+                </div>
+            </div>
+            
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>

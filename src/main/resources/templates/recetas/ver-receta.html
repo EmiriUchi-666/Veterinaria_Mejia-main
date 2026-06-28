@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head th:replace="~{fragments/head :: head('Ver Receta')}"></head>
+<style>
+  .receta-header{background:linear-gradient(135deg,#1e3a5f,#2563eb);color:#fff;border-radius:16px 16px 0 0;padding:2rem;}
+  @media print{.no-print{display:none!important;}.main-content{margin-left:0!important;}}
+</style>
+<body>
+<div th:replace="~{fragments/sidebar :: menuLateral}" class="no-print"></div>
+<div class="main-content p-4">
+  <div class="d-flex align-items-center gap-3 mb-4 no-print">
+    <a href="/recetas" class="btn btn-outline-secondary rounded-circle" style="width:40px;height:40px;display:flex;align-items:center;justify-content:center;"><i class="bi bi-arrow-left"></i></a>
+    <div class="ms-auto d-flex gap-2">
+      <button onclick="window.print()" class="btn btn-outline-primary rounded-pill"><i class="bi bi-printer me-1"></i>Imprimir</button>
+    </div>
+  </div>
+
+  <div class="card border-0 shadow-sm" style="border-radius:16px;max-width:800px;margin:auto;">
+    <div class="receta-header">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <h3 class="fw-bold mb-1">RECETA VETERINARIA DIGITAL</h3>
+          <p class="mb-0 opacity-75">Ley 28733 — Ejercicio de la Medicina Veterinaria</p>
+        </div>
+        <div class="text-end">
+          <div class="badge bg-white text-primary fs-6" th:text="${receta.numeroReceta}"></div>
+          <div class="mt-1 small opacity-75" th:text="'Emitida: ' + ${#temporals.format(receta.fechaEmision,'dd/MM/yyyy')}"></div>
+          <div class="small opacity-75" th:text="'Vence: ' + ${#temporals.format(receta.fechaVencimiento,'dd/MM/yyyy')}"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="p-4">
+      <div class="row g-3 mb-4">
+        <div class="col-md-6">
+          <h6 class="text-muted fw-semibold border-bottom pb-1">PACIENTE</h6>
+          <p class="mb-1 fw-bold" th:text="${receta.paciente?.nombre}"></p>
+          <p class="mb-1 text-muted" th:text="${receta.paciente?.especie?.nombreEspecie} + ' — ' + ${receta.paciente?.raza}"></p>
+          <p class="mb-0 text-muted small">Dueño: <span th:text="${receta.paciente?.dueno?.nombre ?: 'No registrado'}"></span></p>
+        </div>
+        <div class="col-md-6">
+          <h6 class="text-muted fw-semibold border-bottom pb-1">VETERINARIO RESPONSABLE</h6>
+          <p class="mb-1 fw-bold" th:text="${receta.veterinario?.nombreUsuario}"></p>
+          <p class="mb-1 text-muted" th:if="${receta.cmpVeterinario != null}" th:text="'CMP N° ' + ${receta.cmpVeterinario}"></p>
+        </div>
+      </div>
+
+      <div class="mb-4 p-3 rounded-3" style="background:#f8fafc;">
+        <h6 class="text-muted fw-semibold mb-2">DIAGNÓSTICO</h6>
+        <p class="mb-0" th:text="${receta.diagnostico}"></p>
+      </div>
+
+      <h6 class="text-muted fw-semibold mb-3">MEDICAMENTOS PRESCRITOS</h6>
+      <div th:each="l, idx : ${lineas}" class="border rounded-3 p-3 mb-2">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <strong th:text="${l.producto?.nombre ?: l.medicamento}"></strong>
+            <div class="text-muted small mt-1">
+              <span th:text="${l.cantidad} + ' ' + ${l.unidadDosis}"></span>
+              <span th:if="${l.frecuencia != null}"> · <span th:text="${l.frecuencia}"></span></span>
+              <span th:if="${l.duracionDias != null}"> · <span th:text="${l.duracionDias} + ' días'"></span></span>
+              <span th:if="${l.viaAdministracion != null}"> · Vía: <span th:text="${l.viaAdministracion}"></span></span>
+            </div>
+            <div th:if="${l.indicaciones != null}" class="text-muted small fst-italic" th:text="${l.indicaciones}"></div>
+          </div>
+          <span class="badge bg-secondary rounded-pill" th:text="${idx.count}"></span>
+        </div>
+      </div>
+
+      <div th:if="${receta.indicaciones != null}" class="mt-3 p-3 rounded-3" style="background:#fff9c4;">
+        <h6 class="fw-semibold mb-1">Indicaciones Generales</h6>
+        <p class="mb-0 small" th:text="${receta.indicaciones}"></p>
+      </div>
+
+      <div class="mt-4 pt-3 border-top d-flex justify-content-between align-items-end">
+        <div class="text-muted small">
+          <p class="mb-0">Esta receta tiene validez de 30 días desde su emisión.</p>
+          <p class="mb-0">Verificable en sistema VetMejía — N° <span th:text="${receta.numeroReceta}"></span></p>
+        </div>
+        <div class="text-center" style="border-top:1px solid #000;width:200px;padding-top:.5rem;">
+          <div class="small fw-bold" th:text="${receta.veterinario?.nombreUsuario}"></div>
+          <div class="text-muted small" th:text="'CMP ' + ${receta.cmpVeterinario ?: 'S/N'}"></div>
+          <div class="text-muted small">Firma y Sello</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

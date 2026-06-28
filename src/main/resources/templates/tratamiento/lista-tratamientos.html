@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Tratamientos | VetMejía</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+  <style>
+    body{background:#f0f9ff;font-family:'Segoe UI',sans-serif;}
+    .main-content{margin-left:260px;padding:2rem;}
+    .list-card{border:none;border-radius:16px;box-shadow:0 4px 12px rgba(0,0,0,.06);}
+    .estado-activo{background:#dcfce7;color:#166534;}
+    .estado-completado{background:#dbeafe;color:#1e40af;}
+    .estado-suspendido{background:#fee2e2;color:#991b1b;}
+    .tratamiento-item{border-left:4px solid #3b82f6;border-radius:0 12px 12px 0;
+                      background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.04);
+                      padding:1rem 1.25rem;margin-bottom:.75rem;transition:all .2s;}
+    .tratamiento-item:hover{box-shadow:0 4px 12px rgba(0,0,0,.1);}
+    .tratamiento-item.estado-Completado{border-color:#10b981;}
+    .tratamiento-item.estado-Suspendido{border-color:#ef4444;}
+  </style>
+</head>
+<body>
+<div th:replace="~{fragments/sidebar :: menuLateral}"></div>
+<div class="main-content">
+
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="fw-bold mb-0"><i class="bi bi-prescription2 me-2 text-primary"></i>Tratamientos</h2>
+      <p class="text-muted mb-0">
+        Paciente: <strong th:text="${paciente?.nombre}"></strong>
+        &nbsp;|&nbsp; <span th:text="${paciente?.especie?.nombre}"></span>
+        &nbsp;—&nbsp; Historia: <span th:text="${paciente?.numeroHistoria}"></span>
+      </p>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="/pacientes" class="btn btn-outline-secondary rounded-pill btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>Pacientes
+      </a>
+    </div>
+  </div>
+
+  <div th:if="${successMsg}" class="alert alert-success alert-dismissible fade show rounded-3">
+    <i class="bi bi-check-circle me-2"></i><span th:text="${successMsg}"></span>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+  <div th:if="${errorMsg}" class="alert alert-danger alert-dismissible fade show rounded-3">
+    <i class="bi bi-exclamation-triangle me-2"></i><span th:text="${errorMsg}"></span>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+
+  <!-- Sin tratamientos -->
+  <div th:if="${#lists.isEmpty(tratamientos)}" class="text-center py-5">
+    <i class="bi bi-prescription2 text-muted" style="font-size:4rem;opacity:.3;"></i>
+    <h5 class="text-muted mt-3">Sin tratamientos registrados</h5>
+    <p class="text-muted">Este paciente no tiene tratamientos activos aún.</p>
+  </div>
+
+  <!-- Lista de tratamientos -->
+  <div th:each="t : ${tratamientos}"
+       th:classappend="${'tratamiento-item estado-' + t.estado?.name()}"
+       class="tratamiento-item">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+      <div>
+        <div class="d-flex align-items-center gap-2 mb-1">
+          <span class="badge rounded-pill"
+                th:classappend="${t.estado?.name() == 'Activo' ? 'estado-activo' : (t.estado?.name() == 'Completado' ? 'estado-completado' : 'estado-suspendido')}"
+                th:text="${t.estado}"></span>
+          <strong th:text="${t.diagnostico != null ? (#strings.abbreviate(t.diagnostico, 80)) : 'Sin diagnóstico'}"></strong>
+        </div>
+        <div class="text-muted small">
+          <i class="bi bi-calendar3 me-1"></i>Inicio: <span th:text="${t.fechaInicio}"></span>
+          <span th:if="${t.fechaFin != null}"> &nbsp;|&nbsp; Fin: <span th:text="${t.fechaFin}"></span></span>
+        </div>
+        <div th:if="${t.observaciones != null}" class="text-muted small mt-1"
+             th:text="${#strings.abbreviate(t.observaciones, 100)}"></div>
+      </div>
+      <div class="d-flex gap-2 flex-wrap">
+        <a th:href="@{/tratamientos/detalle/{id}(id=${t.id})}"
+           class="btn btn-sm btn-outline-primary rounded-pill">
+          <i class="bi bi-eye me-1"></i>Ver detalles
+        </a>
+        <a th:if="${t.estado?.name() == 'Activo'}"
+           th:href="@{/tratamientos/estado/{id}/{estado}(id=${t.id},estado='Completado',pacienteId=${paciente?.id})}"
+           class="btn btn-sm btn-outline-success rounded-pill"
+           onclick="return confirm('¿Marcar como completado?')">
+          <i class="bi bi-check2 me-1"></i>Completar
+        </a>
+        <a th:if="${t.estado?.name() == 'Activo'}"
+           th:href="@{/tratamientos/estado/{id}/{estado}(id=${t.id},estado='Suspendido',pacienteId=${paciente?.id})}"
+           class="btn btn-sm btn-outline-danger rounded-pill"
+           onclick="return confirm('¿Suspender este tratamiento?')">
+          <i class="bi bi-x-circle me-1"></i>Suspender
+        </a>
+      </div>
+    </div>
+  </div>
+
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

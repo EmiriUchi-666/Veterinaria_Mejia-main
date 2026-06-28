@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head th:replace="~{fragments/head :: head('Registrar Paciente')}"></head>
+<body>
+<div th:replace="~{fragments/sidebar :: menuLateral}"></div>
+<div class="main-content">
+  <header th:replace="~{fragments/navbar :: topbar}"></header>
+  <main class="content p-4">
+
+    <div class="d-flex align-items-center mb-4">
+      <a href="/pacientes" class="btn btn-outline-secondary me-3 shadow-sm rounded-circle d-flex align-items-center justify-content-center" style="width:40px;height:40px;">
+        <i class="bi bi-arrow-left"></i>
+      </a>
+      <div>
+        <h2 class="mb-1 fw-bold text-dark"><i class="bi bi-paw-fill text-primary me-2"></i>
+          <span th:text="${paciente.id != null ? 'Editar Paciente' : 'Registrar Nueva Mascota'}"></span>
+        </h2>
+        <p class="text-muted mb-0">Complete la ficha clínica de la mascota.</p>
+      </div>
+    </div>
+
+    <div th:if="${errorMsg}" class="alert alert-danger alert-dismissible fade show rounded-3 mb-4">
+      <i class="bi bi-exclamation-triangle me-2"></i><span th:text="${errorMsg}"></span>
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <div class="card border-0 shadow-sm" style="border-radius:15px;">
+      <div class="card-body p-4 p-md-5">
+        <!-- USO DE @RequestParam, NO @ModelAttribute nested — evita errores de binding -->
+        <form action="/pacientes/guardar" method="POST" enctype="multipart/form-data">
+          <input type="hidden" name="id" th:value="${paciente.id}">
+
+          <!-- SECCIÓN 1: Dueño -->
+          <h5 class="fw-bold text-dark mb-3 border-bottom pb-2">
+            <i class="bi bi-1-circle-fill text-primary me-2"></i>Dueño / Tutor de la Mascota
+          </h5>
+          <div class="row g-3 mb-4">
+            <div class="col-md-8">
+              <label class="form-label fw-bold">Dueño / Tutor <span class="text-danger">*</span></label>
+              <select name="duenoId" class="form-select" required>
+                <option value="">-- Seleccionar dueño --</option>
+                <option th:each="d : ${duenos}" th:value="${d.id}"
+                        th:text="${d.nombre} + (${d.dni != null ? ' — ' + d.dni : ''}) + (${d.telefono != null ? ' · ' + d.telefono : ''})"
+                        th:selected="${paciente.dueno != null && paciente.dueno.id == d.id}">
+                </option>
+              </select>
+              <div class="form-text">¿No está registrado? <a href="/duenos/nuevo" target="_blank">Registrar nuevo dueño</a></div>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-bold">Cliente para Facturación <span class="text-muted fw-normal">(opcional)</span></label>
+              <select name="clienteId" class="form-select">
+                <option value="">-- Sin cliente asignado --</option>
+                <option th:each="c : ${clientes}" th:value="${c.id}"
+                        th:text="${c.nombre} + (${c.dni != null ? ' — ' + c.dni : ''})"
+                        th:selected="${paciente.cliente != null && paciente.cliente.id == c.id}">
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <!-- SECCIÓN 2: Identificación -->
+          <h5 class="fw-bold text-dark mb-3 border-bottom pb-2 mt-4">
+            <i class="bi bi-2-circle-fill text-primary me-2"></i>Identificación de la Mascota
+          </h5>
+          <div class="row g-3 mb-4">
+            <div class="col-md-6">
+              <label class="form-label fw-bold">Nombre de la Mascota <span class="text-danger">*</span></label>
+              <input type="text" name="nombre" class="form-control"
+                     th:value="${paciente.nombre}" placeholder="Ej: Firulais, Luna..." required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold">Especie <span class="text-danger">*</span></label>
+              <select name="especieId" class="form-select">
+                <option value="">-- Seleccionar especie --</option>
+                <option th:each="e : ${especies}" th:value="${e.id}"
+                        th:text="${e.nombreEspecie}"
+                        th:selected="${paciente.especie != null && paciente.especie.id == e.id}">
+                </option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold">Raza</label>
+              <input type="text" name="raza" class="form-control" th:value="${paciente.raza}" placeholder="Ej: Labrador, Siamés">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold">Color del Pelaje</label>
+              <input type="text" name="colorPelaje" class="form-control" th:value="${paciente.colorPelaje}" placeholder="Ej: Dorado, Negro">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-bold">Sexo <span class="text-danger">*</span></label>
+              <select name="sexo" class="form-select" required>
+                <option value="Macho" th:selected="${paciente.sexo == null || paciente.sexo.name() == 'Macho'}">Macho</option>
+                <option value="Hembra" th:selected="${paciente.sexo != null && paciente.sexo.name() == 'Hembra'}">Hembra</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-bold">Fecha de Nacimiento</label>
+              <input type="date" name="fechaNacimiento" class="form-control"
+                     th:value="${paciente.fechaNacimiento}">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-bold">Peso (kg)</label>
+              <input type="number" name="pesoHistorico" step="0.01" min="0" max="999.99" class="form-control"
+                     th:value="${paciente.pesoHistorico}" placeholder="Ej: 12.50">
+            </div>
+          </div>
+
+          <!-- SECCIÓN 3: Médica -->
+          <h5 class="fw-bold text-dark mb-3 border-bottom pb-2 mt-4">
+            <i class="bi bi-3-circle-fill text-primary me-2"></i>Información Médica
+          </h5>
+          <div class="row g-3 mb-4">
+            <div class="col-md-4">
+              <label class="form-label fw-bold">Microchip</label>
+              <input type="text" name="microchip" class="form-control" th:value="${paciente.microchip}" placeholder="Código único">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-bold">Tipo de Sangre</label>
+              <input type="text" name="sangre" class="form-control" th:value="${paciente.sangre}" placeholder="Ej: DEA 1.1">
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+              <div class="form-check form-switch mb-1">
+                <input class="form-check-input" type="checkbox" name="esterilizado" id="esterilizadoCheck"
+                       th:checked="${paciente.esterilizado}">
+                <label class="form-check-label fw-bold" for="esterilizadoCheck">Esterilizado/a</label>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold">Alergias conocidas</label>
+              <textarea name="alergias" class="form-control" rows="2" th:text="${paciente.alergias}"
+                        placeholder="Ej: Alergia a penicilina, alimentos con trigo..."></textarea>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold">Observaciones</label>
+              <textarea name="observaciones" class="form-control" rows="2" th:text="${paciente.observaciones}"
+                        placeholder="Notas adicionales..."></textarea>
+            </div>
+          </div>
+
+          <!-- SECCIÓN 4: Foto -->
+          <h5 class="fw-bold text-dark mb-3 border-bottom pb-2 mt-4">
+            <i class="bi bi-4-circle-fill text-primary me-2"></i>Foto <span class="fw-normal text-muted fs-6">(opcional, máx. 5MB)</span>
+          </h5>
+          <div class="row g-3 mb-4">
+            <div class="col-md-6">
+              <input type="file" name="foto" class="form-control" accept=".jpg,.jpeg,.png,.webp">
+              <div class="form-text">Formatos: JPG, PNG, WEBP. El registro se guarda aunque no se suba foto.</div>
+            </div>
+            <div class="col-md-6" th:if="${paciente.rutaFoto != null}">
+              <label class="form-label">Foto actual:</label>
+              <img th:src="${paciente.rutaFoto}" alt="Foto mascota" class="img-thumbnail" style="max-height:120px;">
+            </div>
+          </div>
+
+          <div class="d-flex gap-3 justify-content-end">
+            <a href="/pacientes" class="btn btn-outline-secondary rounded-pill px-4">Cancelar</a>
+            <button type="submit" class="btn btn-primary rounded-pill px-5 fw-bold">
+              <i class="bi bi-save me-2"></i>
+              <span th:text="${paciente.id != null ? 'Actualizar Paciente' : 'Registrar Mascota'}"></span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </main>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

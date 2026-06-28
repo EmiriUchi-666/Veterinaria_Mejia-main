@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<body>
+
+    <header th:fragment="topbar" class="bg-white shadow-sm d-flex align-items-center justify-content-between" 
+            style="height: var(--header-height); padding: 0 2rem; position: sticky; top: 0; z-index: 999;">
+        
+        <div class="d-flex align-items-center">
+            <h5 class="mb-0 fw-bold text-secondary d-none d-md-block">Sistema Integral VetMejía</h5>
+        </div>
+
+        <div class="header-right d-flex align-items-center" th:if="${#authentication != null and #authentication.name != 'anonymousUser'}">
+            
+            <!-- Contador de Sesión -->
+            <div class="d-flex align-items-center me-3 px-3 py-1 rounded bg-light border" title="Tiempo restante de sesión">
+                <i class="bi bi-clock-history text-secondary me-2"></i>
+                <span class="fw-bold text-secondary font-monospace" id="sessionTimer" style="font-size: 14px;">30:00</span>
+            </div>
+
+            <div class="dropdown">
+                <div class="d-flex align-items-center gap-2 p-1 pe-3 rounded-pill" 
+                     style="background: #f8fafc; border: 1px solid #e2e8f0; cursor: pointer; transition: all 0.2s;" 
+                     data-bs-toggle="dropdown" aria-expanded="false" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='#f8fafc'">
+                    
+                    <div class="bg-primary text-white d-flex align-items-center justify-content-center rounded-circle text-uppercase" 
+                         style="width: 35px; height: 35px; font-weight: 600;" 
+                         th:text="${#strings.substring(#authentication.name, 0, 1)}">U</div>
+                    
+                    <div class="text-start d-none d-sm-block">
+                        <div class="fw-bold small lh-1 text-dark" th:text="${#authentication.name}">Usuario</div>
+                        <small class="text-muted" style="font-size: 11px;" 
+                               th:text="${#authorization.expression('hasAuthority(''ROLE_Administrador'')') ? 'Administrador' : 'Empleado'}">
+                            Rol
+                        </small>
+                    </div>
+                    
+                    <i class="bi bi-chevron-down text-muted small ms-1"></i>
+                </div>
+                
+                <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2 rounded-3">
+                    <li><h6 class="dropdown-header">Opciones de Cuenta</h6></li>
+                    <li>
+                        <a class="dropdown-item text-danger d-flex align-items-center gap-2 py-2" href="/logout">
+                            <i class="bi bi-box-arrow-right"></i> Cerrar Sesión
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            
+        </div>
+    </header>
+
+</body>
+</html>

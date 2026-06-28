@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head th:replace="~{fragments/head :: head('Registrar Dueño')}"></head>
+<body>
+<div th:replace="~{fragments/sidebar :: menuLateral}"></div>
+<div class="main-content p-4">
+  <div class="d-flex align-items-center gap-3 mb-4">
+    <a href="/duenos" class="btn btn-outline-secondary rounded-circle" style="width:40px;height:40px;display:flex;align-items:center;justify-content:center;">
+      <i class="bi bi-arrow-left"></i>
+    </a>
+    <div>
+      <h2 class="fw-bold mb-0">
+        <i class="bi bi-person-badge me-2 text-primary"></i>
+        <span th:text="${dueno.id != null ? 'Editar Dueño' : 'Registrar Nuevo Dueño'}"></span>
+      </h2>
+      <p class="text-muted mb-0">Complete los datos del responsable de la mascota</p>
+    </div>
+  </div>
+
+  <div th:if="${errorMsg}" class="alert alert-danger rounded-3 mb-4">
+    <i class="bi bi-exclamation-triangle me-2"></i><span th:text="${errorMsg}"></span>
+  </div>
+
+  <div class="row justify-content-center">
+    <div class="col-12 col-lg-8">
+      <div class="card border-0 shadow-sm p-4 p-md-5" style="border-radius:18px;">
+        <form th:action="@{/duenos/guardar}" th:object="${dueno}" method="POST">
+          <input type="hidden" th:field="*{id}">
+
+          <div class="row g-3 mb-4">
+            <div class="col-12">
+              <h6 class="fw-bold text-muted border-bottom pb-2">
+                <i class="bi bi-person-circle me-1 text-primary"></i>Datos Personales
+              </h6>
+            </div>
+            <div class="col-md-8">
+              <label class="form-label fw-semibold">Nombre Completo <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" th:field="*{nombre}" placeholder="Ej: Juan Carlos Pérez López" required autofocus>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Tipo de Documento</label>
+              <select class="form-select" th:field="*{tipoDocumento}">
+                <option value="DNI">DNI</option>
+                <option value="CE">Carnet de Extranjería</option>
+                <option value="Pasaporte">Pasaporte</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Número de Documento</label>
+              <input type="text" class="form-control" th:field="*{dni}" placeholder="Ej: 71234567" maxlength="15">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Teléfono / Celular</label>
+              <input type="tel" class="form-control" th:field="*{telefono}" placeholder="Ej: 987654321">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Correo Electrónico</label>
+              <input type="email" class="form-control" th:field="*{email}" placeholder="correo@ejemplo.com">
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-semibold">Dirección / Domicilio</label>
+              <input type="text" class="form-control" th:field="*{direccion}" placeholder="Av. Los Álamos 123, Chiclayo">
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-semibold">Observaciones</label>
+              <textarea class="form-control" th:field="*{observaciones}" rows="2"
+                        placeholder="Notas adicionales sobre el dueño..."></textarea>
+            </div>
+          </div>
+
+          <div class="d-flex gap-3 justify-content-end">
+            <a href="/duenos" class="btn btn-outline-secondary rounded-pill px-4">Cancelar</a>
+            <button type="submit" class="btn btn-primary rounded-pill px-5 fw-bold">
+              <i class="bi bi-save me-2"></i>
+              <span th:text="${dueno.id != null ? 'Actualizar' : 'Registrar Dueño'}"></span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

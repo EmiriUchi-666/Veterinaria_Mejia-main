@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard IA | VetMejía</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        body { background: linear-gradient(135deg,#f0f9ff 0%,#e0f2fe 100%); font-family:'Segoe UI',sans-serif; }
+        .main-content { margin-left: 260px; padding: 2rem; }
+        .stat-card { border: none; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,.06); transition: transform .2s; }
+        .stat-card:hover { transform: translateY(-4px); }
+        .stat-icon { width: 56px; height: 56px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; }
+        .chart-card { border: none; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,.06); }
+        .badge-riesgo-alto  { background: #dc3545; }
+        .badge-riesgo-medio { background: #fd7e14; }
+        .badge-riesgo-bajo  { background: #198754; }
+        .table th { font-size:.82rem; text-transform:uppercase; letter-spacing:.05em; color:#64748b; }
+        .alert-card { border-left: 4px solid; border-radius: 12px; }
+        .alert-card.stock  { border-color:#7c3aed; }
+        .alert-card.vacuna { border-color:#0284c7; }
+        .section-title { font-size: 1rem; font-weight: 700; color: #1e293b; margin-bottom: 1rem; display:flex; align-items:center; gap:.5rem; }
+    </style>
+</head>
+<body>
+<div th:replace="~{fragments/sidebar :: menuLateral}"></div>
+
+<div class="main-content">
+
+    <!-- Encabezado -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-dark mb-0"><i class="bi bi-cpu me-2 text-primary"></i>Dashboard de Inteligencia Artificial</h2>
+            <p class="text-muted mb-0">Diagnósticos, alertas predictivas y análisis de riesgo clínico</p>
+        </div>
+        <a href="/ia" class="btn btn-primary rounded-pill px-4">
+            <i class="bi bi-plus-circle me-1"></i> Nuevo Diagnóstico
+        </a>
+    </div>
+
+    <!-- Alertas flash -->
+    <div th:if="${successMsg}" class="alert alert-success alert-dismissible fade show rounded-3" role="alert">
+        <i class="bi bi-check-circle me-2"></i><span th:text="${successMsg}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <div th:if="${errorMsg}" class="alert alert-danger alert-dismissible fade show rounded-3" role="alert">
+        <i class="bi bi-exclamation-triangle me-2"></i><span th:text="${errorMsg}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <!-- ── TARJETAS KPI ─────────────────────────────────────────────────── -->
+    <div class="row g-3 mb-4">
+        <!-- Diagnósticos Totales -->
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card stat-card p-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="text-muted mb-1" style="font-size:.83rem;">Diagnósticos IA</p>
+                        <h3 class="fw-bold mb-0" th:text="${totalDiagnosticos}">0</h3>
+                        <small class="text-success"><i class="bi bi-arrow-up-short"></i> Total registros clínicos</small>
+                    </div>
+                    <div class="stat-icon" style="background:#dbeafe;color:#1d4ed8;"><i class="bi bi-clipboard2-pulse"></i></div>
+                </div>
+            </div>
+        </div>
+        <!-- Casos Críticos -->
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card stat-card p-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="text-muted mb-1" style="font-size:.83rem;">Casos Críticos</p>
+                        <h3 class="fw-bold mb-0 text-danger" th:text="${casosCriticos}">0</h3>
+                        <small class="text-danger"><i class="bi bi-exclamation-triangle"></i> Riesgo alto (≥7/10)</small>
+                    </div>
+                    <div class="stat-icon" style="background:#fee2e2;color:#b91c1c;"><i class="bi bi-heart-pulse"></i></div>
+                </div>
+            </div>
+        </div>
+        <!-- Vacunas Pendientes -->
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card stat-card p-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="text-muted mb-1" style="font-size:.83rem;">Vacunas Pendientes</p>
+                        <h3 class="fw-bold mb-0 text-warning" th:text="${vacunasPendientes}">0</h3>
+                        <small class="text-warning"><i class="bi bi-calendar-event"></i> Próximos 30 días</small>
+                    </div>
+                    <div class="stat-icon" style="background:#fef3c7;color:#b45309;"><i class="bi bi-shield-plus"></i></div>
+                </div>
+            </div>
+        </div>
+        <!-- Stock Bajo -->
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card stat-card p-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="text-muted mb-1" style="font-size:.83rem;">Productos Stock Bajo</p>
+                        <h3 class="fw-bold mb-0 text-purple" th:text="${productosStockBajo}" style="color:#7c3aed;">0</h3>
+                        <small style="color:#7c3aed;"><i class="bi bi-box-seam"></i> Bajo stock mínimo</small>
+                    </div>
+                    <div class="stat-icon" style="background:#ede9fe;color:#7c3aed;"><i class="bi bi-exclamation-diamond"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── GRÁFICOS ─────────────────────────────────────────────────────── -->
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-lg-5">
+            <div class="card chart-card p-4 h-100">
+                <div class="section-title"><i class="bi bi-pie-chart text-primary"></i>Diagnósticos por Categoría</div>
+                <div style="max-height:280px; display:flex; justify-content:center;">
+                    <canvas id="chartDona" style="max-width:280px;"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-lg-7">
+            <div class="card chart-card p-4 h-100">
+                <div class="section-title"><i class="bi bi-bar-chart text-success"></i>Citas por Nivel de Prioridad</div>
+                <canvas id="chartPrioridad" style="max-height:280px;"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── ALERTAS ─────────────────────────────────────────────────────── -->
+    <div class="row g-3">
+        <!-- Productos con stock bajo -->
+        <div class="col-12 col-xl-6">
+            <div class="card alert-card stock p-4">
+                <div class="section-title"><i class="bi bi-exclamation-diamond-fill" style="color:#7c3aed;"></i>Productos con Stock Bajo</div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Producto</th>
+                                <th class="text-center">Stock Actual</th>
+                                <th class="text-center">Mínimo</th>
+                                <th class="text-center">Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:if="${#lists.isEmpty(productosStockBajoLista)}">
+                                <td colspan="4" class="text-center text-muted py-3">
+                                    <i class="bi bi-check-circle text-success me-2"></i>Todos los productos tienen stock suficiente
+                                </td>
+                            </tr>
+                            <tr th:each="prod : ${productosStockBajoLista}">
+                                <td>
+                                    <span class="fw-semibold" th:text="${prod.nombre}"></span>
+                                    <br><small class="text-muted" th:text="${prod.categoria?.nombre}"></small>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-danger rounded-pill" th:text="${prod.stockTotal}"></span>
+                                </td>
+                                <td class="text-center text-muted" th:text="${prod.stockMinimo}"></td>
+                                <td class="text-center">
+                                    <span class="badge bg-warning text-dark">⚠ Crítico</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Vacunas próximas a vencer -->
+        <div class="col-12 col-xl-6">
+            <div class="card alert-card vacuna p-4">
+                <div class="section-title"><i class="bi bi-shield-plus" style="color:#0284c7;"></i>Próximos Refuerzos de Vacunas</div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Paciente</th>
+                                <th>Vacuna</th>
+                                <th class="text-center">Fecha Refuerzo</th>
+                                <th class="text-center">Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:if="${#lists.isEmpty(vacunasPendientesLista)}">
+                                <td colspan="4" class="text-center text-muted py-3">
+                                    <i class="bi bi-check-circle text-success me-2"></i>No hay vacunas pendientes en los próximos 30 días
+                                </td>
+                            </tr>
+                            <tr th:each="vac : ${vacunasPendientesLista}">
+                                <td>
+                                    <span class="fw-semibold" th:text="${vac.paciente?.nombre}"></span>
+                                    <br><small class="text-muted" th:text="${vac.paciente?.especie?.nombre}"></small>
+                                </td>
+                                <td th:text="${vac.nombreVacuna}"></td>
+                                <td class="text-center">
+                                    <span class="badge bg-info text-dark"
+                                          th:text="${#temporals.format(vac.fechaProximoRefuerzo,'dd/MM/yyyy')}"></span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-warning text-dark">Próxima</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div><!-- fin main-content -->
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script th:inline="javascript">
+    // Datos desde Thymeleaf
+    const diagLabels = /*[[${diagnosticosLabels}]]*/ [];
+    const diagDatos  = /*[[${diagnosticosDatos}]]*/ [];
+    const prioLabels = /*[[${prioridadLabels}]]*/ [];
+    const prioDatos  = /*[[${prioridadDatos}]]*/ [];
+
+    // Gráfico Dona — Diagnósticos por categoría
+    new Chart(document.getElementById('chartDona'), {
+        type: 'doughnut',
+        data: {
+            labels: diagLabels,
+            datasets: [{
+                data: diagDatos,
+                backgroundColor: ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#6b7280'],
+                borderWidth: 2, borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom', labels: { font: { size: 12 } } } }
+        }
+    });
+
+    // Gráfico Barras — Citas por prioridad
+    new Chart(document.getElementById('chartPrioridad'), {
+        type: 'bar',
+        data: {
+            labels: prioLabels,
+            datasets: [{
+                label: 'Cantidad de casos',
+                data: prioDatos,
+                backgroundColor: ['#ef4444','#f97316','#3b82f6','#10b981'],
+                borderRadius: 8, borderSkipped: false
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
+                x: { grid: { display: false } }
+            }
+        }
+    });
+</script>
+</body>
+</html>

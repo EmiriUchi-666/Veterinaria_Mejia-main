@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Abrir Caja | VetMejía</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+  <style>
+    body{background:#f0f9ff;font-family:'Segoe UI',sans-serif;}
+    .main-content{margin-left:260px;padding:2rem;}
+    .form-card{border:none;border-radius:16px;box-shadow:0 4px 12px rgba(0,0,0,.06);max-width:520px;margin:auto;}
+    .btn-monto{border-radius:10px;font-weight:600;font-size:1.1rem;padding:.7rem 1.2rem;}
+  </style>
+</head>
+<body>
+<div th:replace="~{fragments/sidebar :: menuLateral}"></div>
+<div class="main-content">
+  <div class="d-flex align-items-center gap-3 mb-4">
+    <a href="/caja/estado" class="btn btn-outline-secondary rounded-pill btn-sm">
+      <i class="bi bi-arrow-left"></i> Volver
+    </a>
+    <h2 class="fw-bold mb-0"><i class="bi bi-unlock me-2 text-success"></i>Abrir Caja</h2>
+  </div>
+
+  <div th:if="${errorMsg}" class="alert alert-danger rounded-3 mb-4 mx-auto" style="max-width:520px;">
+    <i class="bi bi-exclamation-triangle me-2"></i><span th:text="${errorMsg}"></span>
+  </div>
+
+  <div class="card form-card p-4 p-md-5">
+    <div class="text-center mb-4">
+      <div style="width:80px;height:80px;background:#dcfce7;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:auto;">
+        <i class="bi bi-cash-coin text-success" style="font-size:2.2rem;"></i>
+      </div>
+      <h4 class="fw-bold mt-3 mb-1">Apertura de Caja</h4>
+      <p class="text-muted">Ingresa el monto de apertura (efectivo disponible al inicio)</p>
+    </div>
+
+    <form th:action="@{/caja/abrir}" method="post">
+      <div class="mb-3">
+        <label class="form-label fw-semibold">Monto de Apertura (S/)</label>
+        <div class="input-group input-group-lg">
+          <span class="input-group-text fw-bold">S/</span>
+          <input type="number" name="montoInicial" id="montoInput" min="0" step="0.50"
+                 class="form-control" placeholder="0.00" required value="0.00">
+        </div>
+      </div>
+
+      <!-- Montos rápidos -->
+      <div class="mb-4">
+        <p class="text-muted small mb-2">Montos frecuentes:</p>
+        <div class="d-flex gap-2 flex-wrap">
+          <button type="button" class="btn btn-outline-secondary btn-monto" onclick="setMonto(50)">S/ 50</button>
+          <button type="button" class="btn btn-outline-secondary btn-monto" onclick="setMonto(100)">S/ 100</button>
+          <button type="button" class="btn btn-outline-secondary btn-monto" onclick="setMonto(200)">S/ 200</button>
+          <button type="button" class="btn btn-outline-secondary btn-monto" onclick="setMonto(500)">S/ 500</button>
+        </div>
+      </div>
+
+      <div class="alert alert-info rounded-3 small mb-4">
+        <i class="bi bi-info-circle me-2"></i>
+        Esta apertura quedará registrada con tu usuario. Solo puede haber <strong>una caja abierta</strong> a la vez.
+      </div>
+
+      <button type="submit" class="btn btn-success w-100 py-3 rounded-pill fw-bold fs-5">
+        <i class="bi bi-unlock me-2"></i>Abrir Caja Ahora
+      </button>
+    </form>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>function setMonto(v){ document.getElementById('montoInput').value = v.toFixed(2); }</script>
+</body>
+</html>

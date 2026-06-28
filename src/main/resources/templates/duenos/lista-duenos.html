@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head th:replace="~{fragments/head :: head('Dueños')}"></head>
+<body>
+<div th:replace="~{fragments/sidebar :: menuLateral}"></div>
+<div class="main-content p-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="fw-bold mb-0"><i class="bi bi-person-badge me-2 text-primary"></i>Dueños / Tutores</h2>
+      <p class="text-muted mb-0">Responsables registrados de las mascotas</p>
+    </div>
+    <a href="/duenos/nuevo" class="btn btn-primary rounded-pill px-4">
+      <i class="bi bi-plus-circle me-1"></i>Nuevo Dueño
+    </a>
+  </div>
+
+  <div th:if="${successMsg}" class="alert alert-success alert-dismissible fade show rounded-3">
+    <i class="bi bi-check-circle me-2"></i><span th:text="${successMsg}"></span>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+  <div th:if="${errorMsg}" class="alert alert-danger alert-dismissible fade show rounded-3">
+    <i class="bi bi-exclamation-triangle me-2"></i><span th:text="${errorMsg}"></span>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+
+  <!-- Búsqueda -->
+  <form method="get" action="/duenos" class="mb-3">
+    <div class="input-group" style="max-width:420px;">
+      <input type="text" name="q" th:value="${q}" class="form-control rounded-start-pill"
+             placeholder="Buscar por nombre, DNI o teléfono...">
+      <button class="btn btn-primary rounded-end-pill" type="submit"><i class="bi bi-search"></i></button>
+    </div>
+  </form>
+
+  <div class="card border-0 shadow-sm" style="border-radius:16px;">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Nombre</th><th>Doc.</th><th>Número</th><th>Teléfono</th>
+            <th>Email</th><th>Dirección</th><th>Mascotas</th><th class="text-center">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:if="${#lists.isEmpty(duenos)}">
+            <td colspan="8" class="text-center text-muted py-5">
+              <i class="bi bi-person-x" style="font-size:3rem;opacity:.3;"></i>
+              <p class="mt-2">No hay dueños registrados. <a href="/duenos/nuevo">Registrar el primero</a></p>
+            </td>
+          </tr>
+          <tr th:each="d : ${duenos}">
+            <td>
+              <div class="fw-semibold" th:text="${d.nombre}"></div>
+              <small class="text-muted" th:if="${d.observaciones != null}"
+                     th:text="${#strings.abbreviate(d.observaciones,40)}"></small>
+            </td>
+            <td><span class="badge bg-light text-dark" th:text="${d.tipoDocumento}"></span></td>
+            <td th:text="${d.dni}"></td>
+            <td th:text="${d.telefono}"></td>
+            <td><small th:text="${d.email}"></small></td>
+            <td><small class="text-muted" th:text="${d.direccion}"></small></td>
+            <td class="text-center">
+              <span class="badge bg-primary rounded-pill"
+                    th:text="${d.mascotas != null ? #lists.size(d.mascotas) : 0} + ' 🐾'"></span>
+            </td>
+            <td class="text-center">
+              <a th:href="@{/duenos/editar/{id}(id=${d.id})}"
+                 class="btn btn-sm btn-outline-primary rounded-pill me-1">
+                <i class="bi bi-pencil"></i>
+              </a>
+              <a th:href="@{/duenos/eliminar/{id}(id=${d.id})}"
+                 class="btn btn-sm btn-outline-danger rounded-pill"
+                 onclick="return confirm('¿Dar de baja a este dueño?')">
+                <i class="bi bi-trash"></i>
+              </a>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

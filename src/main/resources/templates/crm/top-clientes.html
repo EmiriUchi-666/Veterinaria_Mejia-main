@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Top Clientes | VetMejía</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+  <style>
+    body{background:#f0f9ff;font-family:'Segoe UI',sans-serif;}
+    .main-content{margin-left:260px;padding:2rem;}
+    .top-card{border:none;border-radius:16px;box-shadow:0 4px 12px rgba(0,0,0,.06);}
+    .rank-1{background:linear-gradient(135deg,#fef9c3,#fde68a);border-top:4px solid #f59e0b;}
+    .rank-2{background:linear-gradient(135deg,#f3f4f6,#e5e7eb);border-top:4px solid #9ca3af;}
+    .rank-3{background:linear-gradient(135deg,#fef3c7,#fde68a);border-top:4px solid #d97706;}
+    .rank-medal{font-size:2.5rem;}
+    .bar-container{height:10px;background:#e2e8f0;border-radius:5px;overflow:hidden;}
+    .bar-fill{height:100%;border-radius:5px;background:linear-gradient(90deg,#3b82f6,#6366f1);}
+    .table th{font-size:.8rem;text-transform:uppercase;letter-spacing:.05em;color:#64748b;}
+  </style>
+</head>
+<body>
+<div th:replace="~{fragments/sidebar :: menuLateral}"></div>
+<div class="main-content">
+  <div class="d-flex align-items-center gap-3 mb-4">
+    <a href="/crm/dashboard" class="btn btn-outline-secondary rounded-pill btn-sm"><i class="bi bi-arrow-left"></i> CRM</a>
+    <div>
+      <h2 class="fw-bold mb-0"><i class="bi bi-trophy me-2 text-warning"></i>Top Clientes</h2>
+      <p class="text-muted mb-0">Ranking por gasto total acumulado</p>
+    </div>
+  </div>
+
+  <!-- Podio top 3 -->
+  <div class="row g-3 mb-4" th:if="${#lists.size(clientes) >= 3}">
+    <div class="col-12 col-md-4" th:if="${#lists.size(clientes) > 1}">
+      <div class="card top-card rank-2 p-4 text-center">
+        <div class="rank-medal">🥈</div>
+        <h5 class="fw-bold mt-2" th:text="${clientes[1]?.cliente?.nombre}"></h5>
+        <div class="fs-4 fw-bold text-secondary" th:text="'S/ ' + ${#numbers.formatDecimal(clientes[1]?.gastoTotal,1,2)}"></div>
+        <small class="text-muted" th:text="${clientes[1]?.totalVisitas} + ' visitas'"></small>
+      </div>
+    </div>
+    <div class="col-12 col-md-4" th:if="${!#lists.isEmpty(clientes)}">
+      <div class="card top-card rank-1 p-4 text-center">
+        <div class="rank-medal">🥇</div>
+        <h5 class="fw-bold mt-2" th:text="${clientes[0]?.cliente?.nombre}"></h5>
+        <div class="fs-3 fw-bold" style="color:#92400e;" th:text="'S/ ' + ${#numbers.formatDecimal(clientes[0]?.gastoTotal,1,2)}"></div>
+        <small class="text-muted" th:text="${clientes[0]?.totalVisitas} + ' visitas'"></small>
+      </div>
+    </div>
+    <div class="col-12 col-md-4" th:if="${#lists.size(clientes) > 2}">
+      <div class="card top-card rank-3 p-4 text-center">
+        <div class="rank-medal">🥉</div>
+        <h5 class="fw-bold mt-2" th:text="${clientes[2]?.cliente?.nombre}"></h5>
+        <div class="fs-4 fw-bold" style="color:#92400e;" th:text="'S/ ' + ${#numbers.formatDecimal(clientes[2]?.gastoTotal,1,2)}"></div>
+        <small class="text-muted" th:text="${clientes[2]?.totalVisitas} + ' visitas'"></small>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabla completa -->
+  <div class="card top-card">
+    <div class="card-header bg-white border-0 pt-4 px-4">
+      <h6 class="fw-bold mb-0">Ranking completo — Top <span th:text="${limite}"></span></h6>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr><th>#</th><th>Cliente</th><th>DNI</th><th class="text-center">Visitas</th>
+              <th class="text-end">Gasto total</th><th class="text-end">Prom./visita</th>
+              <th class="text-center">Última visita</th><th>Segmento</th></tr>
+        </thead>
+        <tbody>
+          <tr th:if="${#lists.isEmpty(clientes)}">
+            <td colspan="8" class="text-center text-muted py-4">Sin datos de ventas. Recalcula las métricas.</td>
+          </tr>
+          <tr th:each="cm, i : ${clientes}">
+            <td>
+              <span th:text="${i.index == 0 ? '🥇' : (i.index == 1 ? '🥈' : (i.index == 2 ? '🥉' : i.index + 1))}"></span>
+            </td>
+            <td class="fw-semibold" th:text="${cm.cliente?.nombre}"></td>
+            <td class="text-muted" th:text="${cm.cliente?.dni}"></td>
+            <td class="text-center" th:text="${cm.totalVisitas}"></td>
+            <td class="text-end">
+              <strong th:text="'S/ ' + ${#numbers.formatDecimal(cm.gastoTotal,1,2)}"></strong>
+            </td>
+            <td class="text-end text-muted" th:text="'S/ ' + ${#numbers.formatDecimal(cm.gastoPromedio,1,2)}"></td>
+            <td class="text-center text-muted small">
+              <span th:if="${cm.ultimaVisita != null}" th:text="${#temporals.format(cm.ultimaVisita,'dd/MM/yyyy')}"></span>
+            </td>
+            <td>
+              <span class="badge rounded-pill"
+                    th:text="${cm.segmento?.nombre ?: '—'}"
+                    th:style="${cm.segmento?.nombre == 'VIP' ? 'background:#fef3c7;color:#92400e;' : 'background:#dbeafe;color:#1e40af;'}">
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Ticket de Venta | Veterinaria Mejía</title>
+    <style>
+        /* Estilos optimizados para Impresora Térmica (80mm) */
+        @page { margin: 0; }
+        body { 
+            font-family: 'Courier New', Courier, monospace; 
+            color: #000; 
+            margin: 0 auto; 
+            padding: 5mm; 
+            width: 72mm; /* Ancho imprimible estándar */
+            font-size: 12px; 
+            line-height: 1.4; 
+        }
+        
+        /* Utilidades de texto */
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        .text-left { text-align: left; }
+        .bold { font-weight: bold; }
+        .small { font-size: 10px; }
+        
+        /* Encabezado */
+        .header h2 { margin: 0 0 5px 0; font-size: 16px; letter-spacing: 1px; font-weight: 900; }
+        .info-local { margin-bottom: 10px; font-size: 11px; }
+        
+        /* Divisores */
+        .divisor { border-top: 1px dashed #000; margin: 8px 0; }
+        .divisor-doble { border-top: 2px dashed #000; margin: 8px 0; }
+        
+        /* Tabla de productos */
+        table { width: 100%; border-collapse: collapse; margin: 5px 0; font-size: 11px; }
+        th { border-bottom: 1px dashed #000; padding-bottom: 4px; }
+        td { padding: 4px 0; vertical-align: top; }
+        .col-cant { width: 12%; text-align: center; }
+        .col-desc { width: 48%; text-align: left; padding-right: 5px; }
+        .col-punit { width: 20%; text-align: right; padding-right: 5px; }
+        .col-subt { width: 20%; text-align: right; font-weight: bold; }
+        
+        /* Totales */
+        .totales-box { margin-top: 10px; font-size: 12px; }
+        .fila-total { display: flex; justify-content: space-between; margin-bottom: 3px; }
+        .fila-total-final { 
+            display: flex; 
+            justify-content: space-between; 
+            font-size: 14px; 
+            font-weight: bold; 
+            margin-top: 5px; 
+            padding-top: 5px; 
+            border-top: 1px dashed #000; 
+        }
+        
+        /* Pie de página */
+        .footer { margin-top: 20px; }
+        
+        /* Botones de Acción (No Imprimibles) */
+        .acciones { text-align: center; margin-top: 20px; padding: 15px 0; font-family: sans-serif; }
+        .acciones button { padding: 8px 12px; margin: 0 5px; cursor: pointer; border: 1px solid #ccc; background: #f8f9fa; border-radius: 5px; font-weight: bold; font-size: 12px; }
+        .acciones button:hover { background: #e2e6ea; }
+        .btn-pdf { background: #dc3545 !important; color: white; border-color: #dc3545 !important; }
+        .btn-pdf:hover { background: #c82333 !important; }
+
+        /* Ocultar márgenes del navegador al imprimir */
+        @media print { 
+            body { padding: 0; } 
+            .no-print { display: none !important; }
+        }
+    </style>
+    <!-- Librería html2pdf -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+<body>
+
+  <div id="ticket-content">
+    <div class="header text-center">
+        <h2>VETERINARIA MEJÍA</h2>
+        <div class="info-local">
+            <span class="bold">RUC: 10453829101</span><br>
+            Cuidado Profesional y Clínica<br>
+            Av. Central S/N - Lima, Perú<br>
+            Teléfono: 948 572 910
+        </div>
+    </div>
+
+    <div class="divisor-doble"></div>
+
+    <div style="font-size: 11px;">
+        <div class="text-center" style="margin-bottom: 5px;">
+            <span class="bold" th:text="${#strings.toUpperCase(venta.tipoComprobante)} + ' ELECTRÓNICA'"></span><br>
+            <span class="bold" style="font-size: 13px;" th:text="${venta.serie} + '-' + ${#numbers.formatInteger(venta.correlativo, 6)}"></span>
+        </div>
+        
+        <table>
+            <tr>
+                <td style="width: 35%;" class="bold">FECHA EMISIÓN</td>
+                <td style="width: 5%;">:</td>
+                <td style="width: 60%;" th:text="${#temporals.format(venta.fechaEmision, 'dd/MM/yyyy HH:mm')}"></td>
+            </tr>
+            <tr>
+                <td class="bold">MÉTODO PAGO</td>
+                <td>:</td>
+                <td th:text="${#strings.toUpperCase(venta.tipoPago)}"></td>
+            </tr>
+            <tr>
+                <td class="bold">CAJA / VEND.</td>
+                <td>:</td>
+                <td th:text="${#strings.toUpperCase(venta.usuario.nombreUsuario)} + ' (ID:' + ${venta.usuario.id} + ')'"></td>
+            </tr>
+            <tr>
+                <td class="bold">CLIENTE</td>
+                <td>:</td>
+                <td>
+                    <span th:text="${venta.cliente != null ? #strings.toUpperCase(venta.cliente.nombre) : 'PÚBLICO GENERAL'}"></span>
+                    <th:block th:if="${venta.cliente != null}">
+                        <br><span style="font-size: 10px;" th:text="'DNI: ' + ${venta.cliente.dni}"></span>
+                    </th:block>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="divisor"></div>
+
+    <table>
+        <thead>
+            <tr>
+                <th class="col-cant">CANT</th>
+                <th class="col-desc">DESCRIPCIÓN</th>
+                <th class="col-punit">P.UNIT</th>
+                <th class="col-subt">TOTAL</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="det : ${venta.detallesVentas}">
+                <td class="col-cant" th:text="${det.cantidad}"></td>
+                
+                <td class="col-desc">
+                    <span th:if="${det.producto != null}" th:text="${det.producto.nombre}"></span>
+                    <span th:if="${det.servicio != null}" th:text="${det.servicio.nombreServicio}"></span>
+                </td>
+                
+                <td class="col-punit" th:text="${#numbers.formatDecimal(det.precioUnitario, 1, 'COMMA', 2, 'POINT')}"></td>
+                
+                <td class="col-subt" th:text="${#numbers.formatDecimal(det.subtotal, 1, 'COMMA', 2, 'POINT')}"></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="divisor"></div>
+
+    <div class="totales-box">
+        <div class="fila-total">
+            <span>OP. GRAVADA:</span>
+            <span th:text="'S/ ' + ${#numbers.formatDecimal(venta.totalVenta / 1.18, 1, 'COMMA', 2, 'POINT')}"></span>
+        </div>
+        <div class="fila-total">
+            <span>I.G.V. (18%):</span>
+            <span th:text="'S/ ' + ${#numbers.formatDecimal(venta.totalVenta - (venta.totalVenta / 1.18), 1, 'COMMA', 2, 'POINT')}"></span>
+        </div>
+        
+        <div class="fila-total-final">
+            <span>TOTAL A PAGAR:</span>
+            <span th:text="'S/ ' + ${#numbers.formatDecimal(venta.totalVenta, 1, 'COMMA', 2, 'POINT')}"></span>
+        </div>
+    </div>
+
+    <div class="divisor-doble"></div>
+
+    <div class="footer text-center">
+        <span class="bold">*** GRACIAS POR SU PREFERENCIA ***</span><br>
+        <div class="small" style="margin-top: 8px;">
+            Gracias por confiar el cuidado de su engreído a nuestro equipo médico.<br>
+            Conserve este comprobante para cualquier cambio o devolución dentro de las próximas 48 horas.<br>
+        </div>
+        <br>
+        <span class="small" style="color: #666;">-- Sistema VetMejía POS --</span>
+    </div>
+  </div> <!-- Fin del content a exportar a PDF -->
+
+    <!-- Panel de acciones -->
+    <div class="acciones no-print" data-html2canvas-ignore="true">
+        <button onclick="window.print()">🖨️ Imprimir</button>
+        <button class="btn-pdf" onclick="descargarPDF()">📄 Descargar PDF</button>
+        <button onclick="window.location.href='/ventas/nuevo'">Volver a Caja</button>
+    </div>
+
+    <script th:inline="javascript">
+        window.onload = function() {
+            // Lanza el cuadro de impresión
+            window.print();
+        }
+
+        function descargarPDF() {
+            const elemento = document.getElementById('ticket-content');
+            const comprobanteName = /*[[${venta.serie} + '-' + ${#numbers.formatInteger(venta.correlativo, 6)}]]*/ 'Ticket';
+            
+            const opciones = {
+                margin:       0.1,
+                filename:     'VetMejia_' + comprobanteName + '.pdf',
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2 },
+                jsPDF:        { unit: 'in', format: [3.15, 8], orientation: 'portrait' } // Formato adaptado al rollo 80mm
+            };
+            
+            html2pdf().set(opciones).from(elemento).save();
+        }
+    </script>
+</body>
+</html>

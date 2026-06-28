@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head th:replace="~{fragments/head :: head('Agenda de Citas')}"></head>
+<body>
+<div th:replace="~{fragments/sidebar :: menuLateral}"></div>
+<div class="main-content">
+    <header th:replace="~{fragments/navbar :: topbar}"></header>
+    <main class="content">
+        
+        <div th:if="${successMsg}" class="alert alert-success alert-dismissible fade show mb-4 border-0 shadow-sm">
+            <i class="bi bi-check-circle-fill me-2"></i><span th:text="${successMsg}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="mb-1"><i class="bi bi-calendar-event text-primary me-2"></i>Agenda de Citas</h2>
+                <p class="text-muted mb-0">Próximas atenciones programadas para la clínica o a domicilio.</p>
+            </div>
+            <a th:href="@{/citas/nuevo}" class="btn btn-primary fw-600 shadow-sm">
+                <i class="bi bi-plus-lg me-1"></i>Programar Nueva Cita
+            </a>
+        </div>
+
+        <div class="card card-custom">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-4 py-3 text-secondary fw-600">Fecha y Hora</th>
+                                <th class="py-3 text-secondary fw-600">Paciente / Tutor</th>
+                                <th class="py-3 text-secondary fw-600">Servicio</th>
+                                <th class="py-3 text-secondary fw-600">Veterinario</th>
+                                <th class="py-3 text-secondary fw-600 text-center">Tipo</th>
+                                <th class="py-3 text-secondary fw-600 text-center">Estado</th>
+                                <th class="py-3 text-secondary fw-600 text-center pe-4">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:if="${#lists.isEmpty(citas)}">
+                                <td colspan="7" class="text-center py-5 text-muted">
+                                    <i class="bi bi-calendar-x fs-1 d-block mb-2"></i>No hay citas programadas en los próximos 7 días.
+                                </td>
+                            </tr>
+                            <tr th:each="cita : ${citas}">
+                                <td class="ps-4 fw-bold text-dark">
+                                    <div th:text="${#temporals.format(cita.fechaHora, 'dd/MM/yyyy')}"></div>
+                                    <small class="text-muted" th:text="${#temporals.format(cita.fechaHora, 'HH:mm')}"></small>
+                                </td>
+                                <td>
+                                    <div class="fw-600" th:text="${cita.paciente.nombre}"></div>
+                                    <small class="text-muted" th:text="'Tutor: ' + ${cita.paciente.cliente.nombre}"></small>
+                                </td>
+                                <td th:text="${cita.servicio != null ? cita.servicio.nombreServicio : 'Consulta General'}"></td>
+                                <td th:text="${cita.veterinario.nombreUsuario}"></td>
+                                <td class="text-center">
+                                    <span th:if="${cita.esVisitaExterna}" class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25">
+                                        <i class="bi bi-car-front me-1"></i>Domicilio
+                                    </span>
+                                    <span th:unless="${cita.esVisitaExterna}" class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25">
+                                        <i class="bi bi-hospital me-1"></i>Clínica
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <span th:switch="${cita.estado}" class="badge">
+                                        <span th:case="'Pendiente'" class="bg-secondary">Pendiente</span>
+                                        <span th:case="'Confirmada'" class="bg-info">Confirmada</span>
+                                        <span th:case="'Atendida'" class="bg-success">Atendida</span>
+                                        <span th:case="'Cancelada'" class="bg-danger">Cancelada</span>
+                                        <span th:case="'No_Asistió'" class="bg-dark">No Asistió</span>
+                                    </span>
+                                </td>
+                                <td class="text-center pe-4">
+                                    <a th:if="${cita.estado.name() == 'Pendiente'}" 
+                                       th:href="@{/citas/cambiar-estado/{id}/{estado}(id=${cita.id}, estado='Confirmada')}"
+                                       class="btn btn-sm btn-outline-success" title="Confirmar">
+                                        <i class="bi bi-check-circle"></i>
+                                    </a>
+                                    <a th:if="${cita.estado.name() == 'Confirmada'}" 
+                                       th:href="@{/citas/cambiar-estado/{id}/{estado}(id=${cita.id}, estado='Atendida')}"
+                                       class="btn btn-sm btn-outline-primary" title="Marcar Atendida">
+                                        <i class="bi bi-check2-circle"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

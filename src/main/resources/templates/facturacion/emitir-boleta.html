@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head th:replace="~{fragments/head :: head('Emitir Comprobante')}"></head>
+<style>
+  .tipo-card{border:2px solid #e2e8f0;border-radius:14px;padding:1.2rem;cursor:pointer;transition:all .2s;}
+  .tipo-card:hover,.tipo-card.activo{border-color:#3b82f6;background:#eff6ff;}
+  .tipo-card input[type=radio]{display:none;}
+  .monto-box{background:linear-gradient(135deg,#1e3a5f,#2563eb);border-radius:16px;color:#fff;padding:1.5rem 2rem;}
+</style>
+<body>
+<div th:replace="~{fragments/sidebar :: menuLateral}"></div>
+<div class="main-content p-4">
+
+  <div class="d-flex align-items-center gap-3 mb-4">
+    <a href="/facturacion" class="btn btn-outline-secondary rounded-circle" style="width:40px;height:40px;display:flex;align-items:center;justify-content:center;">
+      <i class="bi bi-arrow-left"></i>
+    </a>
+    <div>
+      <h2 class="fw-bold mb-0"><i class="bi bi-file-earmark-plus me-2 text-primary"></i>Emitir Comprobante Electrónico</h2>
+      <p class="text-muted mb-0">Venta #<span th:text="${venta?.id}"></span></p>
+    </div>
+  </div>
+
+  <!-- Resumen de la venta -->
+  <div class="monto-box mb-4">
+    <div class="d-flex justify-content-between align-items-center">
+      <div>
+        <p class="mb-1 opacity-75">Venta N° <span th:text="${venta?.id}"></span></p>
+        <div class="display-6 fw-bold" th:text="'S/ ' + ${#numbers.formatDecimal(venta?.totalVenta,1,2)}"></div>
+        <p class="mb-0 opacity-75 small">Incluye IGV 18%</p>
+      </div>
+      <div class="text-end">
+        <div class="opacity-75 small">Base imponible</div>
+        <div class="fw-bold fs-5" th:text="'S/ ' + ${#numbers.formatDecimal((venta?.totalVenta != null ? venta.totalVenta : 0) / 1.18, 1, 2)}"></div>
+        <div class="opacity-75 small mt-1">IGV (18%)</div>
+        <div class="fw-bold" th:text="'S/ ' + ${#numbers.formatDecimal((venta?.totalVenta != null ? venta.totalVenta : 0) - ((venta?.totalVenta != null ? venta.totalVenta : 0) / 1.18), 1, 2)}"></div>
+      </div>
+    </div>
+  </div>
+
+  <div th:if="${modoPrueba}" class="alert alert-warning rounded-3 mb-4">
+    <i class="bi bi-cone-striped me-2"></i>
+    <strong>Modo Demo:</strong> Este comprobante NO se enviará a SUNAT. Active el token de Nubefact para producción.
+  </div>
+
+  <div class="row g-4">
+    <!-- Tipo de comprobante -->
+    <div class="col-12 col-lg-5">
+      <div class="card border-0 shadow-sm p-4" style="border-radius:16px;">
+        <h6 class="fw-bold mb-3">1. Tipo de Comprobante</h6>
+        <div class="d-flex gap-3" id="tipoContainer">
+          <label class="tipo-card flex-fill activo" id="labelBoleta">
+            <input type="radio" name="tipoSel" value="boleta" checked>
+            <div class="text-center">
+              <i class="bi bi-file-earmark-text text-primary fs-2"></i>
+              <div class="fw-bold mt-1">BOLETA</div>
+              <small class="text-muted">DNI / Consumidor Final</small>
+              <div class="badge bg-primary mt-2">Serie B001</div>
+            </div>
+          </label>
+          <label class="tipo-card flex-fill" id="labelFactura">
+            <input type="radio" name="tipoSel" value="factura">
+            <div class="text-center">
+              <i class="bi bi-file-earmark-richtext text-warning fs-2"></i>
+              <div class="fw-bold mt-1">FACTURA</div>
+              <small class="text-muted">RUC Empresa</small>
+              <div class="badge bg-warning text-dark mt-2">Serie F001</div>
+            </div>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Datos del receptor -->
+    <div class="col-12 col-lg-7">
+      <div class="card border-0 shadow-sm p-4" style="border-radius:16px;">
+        <h6 class="fw-bold mb-3">2. Datos del Receptor</h6>
+
+        <!-- BOLETA -->
+        <form id="formBoleta" th:action="@{/facturacion/boleta}" method="post">
+          <input type="hidden" name="ventaId" th:value="${venta?.id}">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">DNI del Cliente</label>
+            <div class="input-group">
+              <input type="text" name="dniReceptor" class="form-control" maxlength="8"
+                     th:value="${dniPreloaded}" placeholder="Ej: 71234567 (dejar vacío = Consumidor Final)">
+              <span class="input-group-text text-muted">8 dígitos</span>
+            </div>
+            <div class="form-text">Deja vacío o ingresa 00000000 para Consumidor Final (sin nombre).</div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Nombre del Cliente</label>
+            <input type="text" name="nombreReceptor" class="form-control"
+                   th:value="${nombrePreloaded}" placeholder="Ej: Juan Carlos Pérez (opcional)">
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Email <span class="text-muted fw-normal">(envío del PDF)</span></label>
+            <input type="email" name="emailReceptor" class="form-control" placeholder="correo@ejemplo.com">
+          </div>
+          <div class="mb-4">
+            <label class="form-label fw-semibold">Medio de Pago</label>
+            <select name="medioPago" class="form-select">
+              <option value="EFECTIVO" th:selected="${venta?.tipoPago == 'Efectivo'}">Efectivo</option>
+              <option value="YAPE" th:selected="${venta?.tipoPago == 'Yape'}">Yape</option>
+              <option value="PLIN" th:selected="${venta?.tipoPago == 'Plin'}">Plin</option>
+              <option value="TARJETA" th:selected="${venta?.tipoPago == 'Tarjeta'}">Tarjeta</option>
+            </select>
+          </div>
+          <button type="submit" class="btn btn-primary w-100 py-3 rounded-pill fw-bold fs-5">
+            <i class="bi bi-send me-2"></i>Emitir Boleta Electrónica
+          </button>
+        </form>
+
+        <!-- FACTURA (oculto por defecto) -->
+        <form id="formFactura" th:action="@{/facturacion/factura}" method="post" style="display:none;">
+          <input type="hidden" name="ventaId" th:value="${venta?.id}">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">RUC de la Empresa <span class="text-danger">*</span></label>
+            <input type="text" name="rucReceptor" class="form-control" maxlength="11"
+                   placeholder="Ej: 20123456789" required>
+            <div class="form-text">11 dígitos. Comienza con 20.</div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Razón Social <span class="text-danger">*</span></label>
+            <input type="text" name="razonSocialReceptor" class="form-control"
+                   placeholder="Ej: EMPRESA SAC" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Email Empresa</label>
+            <input type="email" name="emailReceptor" class="form-control" placeholder="contabilidad@empresa.com">
+          </div>
+          <div class="mb-4">
+            <label class="form-label fw-semibold">Medio de Pago</label>
+            <select name="medioPago" class="form-select">
+              <option value="EFECTIVO">Efectivo</option>
+              <option value="YAPE">Yape</option>
+              <option value="TARJETA">Tarjeta</option>
+              <option value="TRANSFERENCIA">Transferencia</option>
+            </select>
+          </div>
+          <button type="submit" class="btn btn-warning w-100 py-3 rounded-pill fw-bold fs-5 text-dark">
+            <i class="bi bi-send me-2"></i>Emitir Factura Electrónica
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Info SUNAT -->
+  <div class="card border-0 p-3 mt-4" style="background:#f8fafc;border-radius:14px;">
+    <div class="d-flex gap-3 align-items-start">
+      <i class="bi bi-info-circle text-primary fs-5 mt-1"></i>
+      <div class="small text-muted">
+        <strong>Acerca del comprobante:</strong> El sistema genera automáticamente el número correlativo
+        (B001-00000001, B001-00000002…). El comprobante se firma digitalmente y se transmite a SUNAT
+        vía <strong>Nubefact</strong>. Recibirás el CDR (Constancia de Recepción) con el código hash de
+        aceptación. Los PDFs quedan almacenados en los servidores de Nubefact.
+        <br>IGV vigente: <strong>18%</strong> — Resolución SUNAT.
+      </div>
+    </div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  document.querySelectorAll('input[name="tipoSel"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+      const esBoleta = this.value === 'boleta';
+      document.getElementById('formBoleta').style.display  = esBoleta ? 'block' : 'none';
+      document.getElementById('formFactura').style.display = esBoleta ? 'none'  : 'block';
+      document.getElementById('labelBoleta').classList.toggle('activo', esBoleta);
+      document.getElementById('labelFactura').classList.toggle('activo', !esBoleta);
+    });
+  });
+</script>
+</body>
+</html>
