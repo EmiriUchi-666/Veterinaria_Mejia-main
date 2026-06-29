@@ -3,7 +3,6 @@ package com.Veterinaria.Mejia.controllers;
 import java.math.BigDecimal;
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,24 +22,18 @@ import com.Veterinaria.Mejia.repository.ProductoRepository;
 import com.Veterinaria.Mejia.services.CategoriaService;
 import com.Veterinaria.Mejia.services.ProductoService;
 
+import lombok.RequiredArgsConstructor;
+
 @Controller
 @RequestMapping("/almacen/productos")
+@RequiredArgsConstructor
 public class ProductoController {
 
-    @Autowired
-    private ProductoService productoService;
-
-    @Autowired
-    private CategoriaService categoriaService;
-
-    @Autowired
-    private ProductoRepository productoRepository;
-
-    @Autowired
-    private EspecieRepository especieRepository;
-
-    @Autowired
-    private CategoriaRepository categoriaRepository;
+    private final ProductoService productoService;
+    private final CategoriaService categoriaService;
+    private final ProductoRepository productoRepository;
+    private final EspecieRepository especieRepository;
+    private final CategoriaRepository categoriaRepository;
 
     // ==========================================
     // 1. CATÁLOGO DE PRODUCTOS 

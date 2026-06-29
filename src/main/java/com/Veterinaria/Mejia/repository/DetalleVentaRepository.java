@@ -8,12 +8,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import org.springframework.stereotype.Repository;
 
 import com.Veterinaria.Mejia.dto.TopProductoDTO;
 import com.Veterinaria.Mejia.models.DetalleVenta;
 
-@Repository
 public interface DetalleVentaRepository extends JpaRepository<DetalleVenta, Integer> {
 
     @Query("SELECT d FROM DetalleVenta d WHERE d.venta.id = :ventaId")

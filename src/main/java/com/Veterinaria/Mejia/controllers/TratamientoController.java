@@ -1,18 +1,30 @@
 package com.Veterinaria.Mejia.controllers;
 
-import com.Veterinaria.Mejia.models.*;
-import com.Veterinaria.Mejia.repository.*;
-import com.Veterinaria.Mejia.services.TratamientoService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import com.Veterinaria.Mejia.models.DetalleTratamiento;
+import com.Veterinaria.Mejia.models.HistoriaClinica;
+import com.Veterinaria.Mejia.models.Paciente;
+import com.Veterinaria.Mejia.models.Producto;
+import com.Veterinaria.Mejia.models.Tratamiento;
+import com.Veterinaria.Mejia.repository.HistoriaClinicaRepository;
+import com.Veterinaria.Mejia.repository.PacienteRepository;
+import com.Veterinaria.Mejia.repository.ProductoRepository;
+import com.Veterinaria.Mejia.services.TratamientoService;
+
+import lombok.RequiredArgsConstructor;
 
 /**
  * Controlador de Tratamientos Médicos.
@@ -21,19 +33,13 @@ import java.util.List;
  */
 @Controller
 @RequestMapping("/tratamientos")
+@RequiredArgsConstructor
 public class TratamientoController {
 
-    @Autowired
-    private TratamientoService tratamientoService;
-
-    @Autowired
-    private HistoriaClinicaRepository historiaClinicaRepo;
-
-    @Autowired
-    private PacienteRepository pacienteRepo;
-
-    @Autowired
-    private ProductoRepository productoRepo;
+    private final TratamientoService tratamientoService;
+    private final HistoriaClinicaRepository historiaClinicaRepo;
+    private final PacienteRepository pacienteRepo;
+    private final ProductoRepository productoRepo;
 
     /**
      * Lista los tratamientos de un paciente específico.

@@ -1,6 +1,5 @@
 package com.Veterinaria.Mejia.controllers;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -21,24 +20,18 @@ import com.Veterinaria.Mejia.services.IngresoStockService;
 import com.Veterinaria.Mejia.services.ProductoService;
 import com.Veterinaria.Mejia.services.ProveedorService;
 
+import lombok.RequiredArgsConstructor;
+
 @Controller
 @RequestMapping("/almacen/ingresos")
+@RequiredArgsConstructor
 public class IngresoStockController {
 
-    @Autowired
-    private IngresoStockService ingresoStockService;
-
-    @Autowired
-    private ProductoService productoService;
-
-    @Autowired
-    private ProveedorService proveedorService;
-
-    @Autowired
-    private CategoriaService categoriaService;
-
-    @Autowired
-    private EspecieService especieService;
+    private final IngresoStockService ingresoStockService;
+    private final ProductoService productoService;
+    private final ProveedorService proveedorService;
+    private final CategoriaService categoriaService;
+    private final EspecieService especieService;
 
     // ==========================================
     // 1. HISTORIAL DE INGRESOS (Auditoría)

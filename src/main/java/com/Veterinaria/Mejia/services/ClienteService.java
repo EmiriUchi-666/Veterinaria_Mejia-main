@@ -28,9 +28,9 @@ public class ClienteService {
     @Transactional
     public Cliente save(Cliente c) {
         // Validación limpia usando tu consulta explícita en JPQL
-        if (c.getDni() != null && !c.getDni().trim().isEmpty()) {
-            if (repo.existsByDniJPQL(c.getDni())) {
-                throw new RuntimeException("El número de DNI ya se encuentra registrado en el sistema.");
+        if (c.getNumeroDocumento() != null && !c.getNumeroDocumento().trim().isEmpty()) {
+            if (repo.existsByNumeroDocumento(c.getNumeroDocumento())) {
+                throw new RuntimeException("El número de documento ya se encuentra registrado en el sistema.");
             }
         }
         return repo.save(c);

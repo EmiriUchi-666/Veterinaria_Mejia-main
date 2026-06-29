@@ -2,7 +2,6 @@ package com.Veterinaria.Mejia.services.impl;
 
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -10,11 +9,13 @@ import com.Veterinaria.Mejia.models.Especie;
 import com.Veterinaria.Mejia.repository.EspecieRepository;
 import com.Veterinaria.Mejia.services.EspecieService;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class EspecieServiceImpl implements EspecieService {
 
-    @Autowired
-    private EspecieRepository especieRepository;
+    private final EspecieRepository especieRepository;
 
     @Override
     @Transactional(readOnly = true)

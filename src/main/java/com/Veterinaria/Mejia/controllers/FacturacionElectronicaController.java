@@ -1,25 +1,33 @@
 package com.Veterinaria.Mejia.controllers;
 
-import com.Veterinaria.Mejia.models.ComprobanteElectronico;
-import com.Veterinaria.Mejia.repository.VentaRepository;
-import com.Veterinaria.Mejia.services.FacturacionElectronicaService;
-import org.springframework.beans.factory.annotation.Autowired;
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import java.util.Map;
+import com.Veterinaria.Mejia.models.ComprobanteElectronico;
+import com.Veterinaria.Mejia.repository.VentaRepository;
+import com.Veterinaria.Mejia.services.FacturacionElectronicaService;
+
+import lombok.RequiredArgsConstructor;
 
 @Controller
 @RequestMapping("/facturacion")
+@RequiredArgsConstructor
 public class FacturacionElectronicaController {
 
-    @Autowired private FacturacionElectronicaService facService;
-    @Autowired private VentaRepository ventaRepo;
+    private final FacturacionElectronicaService facService;
+    private final VentaRepository ventaRepo;
 
     @Value("${nubefact.modo.prueba:true}") private boolean modoPrueba;
     @Value("${nubefact.ruc:20600000001}") private String rucEmisor;
@@ -46,7 +54,7 @@ public class FacturacionElectronicaController {
         model.addAttribute("modoPrueba", modoPrueba);
         // Pre-cargar datos del cliente si tiene uno asignado
         if (venta.getCliente() != null) {
-            model.addAttribute("dniPreloaded", venta.getCliente().getDni());
+            model.addAttribute("numDocPreloaded", venta.getCliente().getNumeroDocumento());
             model.addAttribute("nombrePreloaded", venta.getCliente().getNombre());
         }
         return "facturacion/emitir-boleta";

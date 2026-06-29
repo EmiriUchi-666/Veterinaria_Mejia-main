@@ -3,7 +3,6 @@ package com.Veterinaria.Mejia.controllers;
 import java.math.BigDecimal;
 import java.util.Optional;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -17,12 +16,15 @@ import com.Veterinaria.Mejia.models.Usuario;
 import com.Veterinaria.Mejia.repository.UsuarioRepository;
 import com.Veterinaria.Mejia.services.CajaService;
 
+import lombok.RequiredArgsConstructor;
+
 @Controller
 @RequestMapping("/caja")
+@RequiredArgsConstructor
 public class CajaController {
 
-    @Autowired private CajaService cajaService;
-    @Autowired private UsuarioRepository usuarioRepo;
+    private final CajaService cajaService;
+    private final UsuarioRepository usuarioRepo;
 
     @GetMapping("/estado")
     public String estado(Model model) {

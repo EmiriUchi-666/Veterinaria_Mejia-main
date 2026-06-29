@@ -57,9 +57,11 @@ public class ReporteService {
         datosGrafico.forEach(dto -> {
             // La query nativa devuelve un String, la JPQL un objeto Date/LocalDate
             if (dto.getFecha() instanceof String) {
-                labels.add((String) dto.getFecha());
+                labels.add(dto.getFecha().toString());
             } else if (dto.getFecha() instanceof java.sql.Date) {
                 labels.add(((java.sql.Date) dto.getFecha()).toLocalDate().format(formatoEjeX));
+            } else if (dto.getFecha() instanceof java.sql.Timestamp) {
+                labels.add(((java.sql.Timestamp) dto.getFecha()).toLocalDateTime().format(formatoEjeX));
             }
             data.add(dto.getTotalMonto());
         });

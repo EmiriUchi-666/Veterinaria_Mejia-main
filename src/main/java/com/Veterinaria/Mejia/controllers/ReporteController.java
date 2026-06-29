@@ -5,7 +5,6 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Map;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -14,12 +13,14 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import com.Veterinaria.Mejia.services.ReporteService;
 
+import lombok.RequiredArgsConstructor;
+
 @Controller
 @RequestMapping("/reportes")
+@RequiredArgsConstructor
 public class ReporteController {
 
-    @Autowired
-    private ReporteService reporteService;
+    private final ReporteService reporteService;
 
     @GetMapping
     public String mostrarReportesFinancieros(

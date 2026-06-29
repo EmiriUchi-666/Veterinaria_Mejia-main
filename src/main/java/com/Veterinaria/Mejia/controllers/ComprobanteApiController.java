@@ -3,7 +3,6 @@ package com.Veterinaria.Mejia.controllers;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -17,22 +16,20 @@ import com.Veterinaria.Mejia.repository.ClienteRepository;
 import com.Veterinaria.Mejia.repository.ProductoRepository;
 import com.Veterinaria.Mejia.repository.ServicioRepository;
 
+import lombok.RequiredArgsConstructor;
+
 /**
  * Controlador REST encargado de proveer datos utilitarios en formato JSON
  * para la gestión y cálculo de comprobantes de pago.
  */
 @RestController
 @RequestMapping("/api/utilidades")
+@RequiredArgsConstructor
 public class ComprobanteApiController {
 
-    @Autowired
-    private ProductoRepository productoRepository;
-
-    @Autowired
-    private ServicioRepository servicioRepository;
-
-    @Autowired
-    private ClienteRepository clienteRepository;
+    private final ProductoRepository productoRepository;
+    private final ServicioRepository servicioRepository;
+    private final ClienteRepository clienteRepository;
 
     /**
      * Obtiene de forma asíncrona el precio de venta y el stock actual de un producto.

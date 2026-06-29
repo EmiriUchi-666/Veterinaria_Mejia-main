@@ -1,27 +1,39 @@
 package com.Veterinaria.Mejia.controllers;
 
-import com.Veterinaria.Mejia.models.*;
-import com.Veterinaria.Mejia.repository.*;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-
-import java.io.File;
-import java.nio.file.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
 import java.util.UUID;
 
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import com.Veterinaria.Mejia.models.Paciente;
+import com.Veterinaria.Mejia.repository.ClienteRepository;
+import com.Veterinaria.Mejia.repository.DuenoRepository;
+import com.Veterinaria.Mejia.repository.EspecieRepository;
+import com.Veterinaria.Mejia.repository.PacienteRepository;
+
+import lombok.RequiredArgsConstructor;
+
 @Controller
 @RequestMapping("/pacientes")
+@RequiredArgsConstructor
 public class PacienteController {
 
-    @Autowired private PacienteRepository pacienteRepo;
-    @Autowired private DuenoRepository duenoRepo;
-    @Autowired private ClienteRepository clienteRepo;
-    @Autowired private EspecieRepository especieRepo;
+    private final PacienteRepository pacienteRepo;
+    private final DuenoRepository duenoRepo;
+    private final ClienteRepository clienteRepo;
+    private final EspecieRepository especieRepo;
 
     @GetMapping
     public String listar(Model model) {

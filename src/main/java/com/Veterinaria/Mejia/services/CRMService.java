@@ -5,7 +5,6 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,24 +18,20 @@ import com.Veterinaria.Mejia.repository.ClienteRepository;
 import com.Veterinaria.Mejia.repository.SegmentoClienteRepository;
 import com.Veterinaria.Mejia.repository.VentaRepository;
 
+import lombok.RequiredArgsConstructor;
+
 /**
  * Servicio CRM: calcula métricas de clientes, los clasifica en segmentos
  * (VIP, Frecuente, Ocasional, Inactivo) y detecta clientes en riesgo de abandono.
  */
 @Service
+@RequiredArgsConstructor
 public class CRMService {
 
-    @Autowired
-    private ClienteMetricaRepository metricaRepo;
-
-    @Autowired
-    private SegmentoClienteRepository segmentoRepo;
-
-    @Autowired
-    private VentaRepository ventaRepo;
-
-    @Autowired
-    private ClienteRepository clienteRepo;
+    private final ClienteMetricaRepository metricaRepo;
+    private final SegmentoClienteRepository segmentoRepo;
+    private final VentaRepository ventaRepo;
+    private final ClienteRepository clienteRepo;
 
     /**
      * Calcula y persiste las métricas de un cliente específico.

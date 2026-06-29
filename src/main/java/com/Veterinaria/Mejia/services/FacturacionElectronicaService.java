@@ -10,6 +10,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.Veterinaria.Mejia.facturacion.NubefactClient;
+import com.Veterinaria.Mejia.facturacion.NubefactMapper;
 import com.Veterinaria.Mejia.facturacion.NubefactRequestDTO;
 import com.Veterinaria.Mejia.facturacion.NubefactResponseDTO;
 import com.Veterinaria.Mejia.models.ComprobanteElectronico;

@@ -1,14 +1,14 @@
 package com.Veterinaria.Mejia.repository;
 
-import com.Veterinaria.Mejia.models.ComprobanteElectronico;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
-import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
 
-@Repository
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+import com.Veterinaria.Mejia.models.ComprobanteElectronico;
+
 public interface ComprobanteElectronicoRepository extends JpaRepository<ComprobanteElectronico, Integer> {
 
     /** Último número correlativo emitido por serie (para autoincremento) */

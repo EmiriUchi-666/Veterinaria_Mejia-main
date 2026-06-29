@@ -1,35 +1,38 @@
 package com.Veterinaria.Mejia.controllers;
 
-import com.Veterinaria.Mejia.models.Cita;
-import com.Veterinaria.Mejia.models.Paciente;
-import com.Veterinaria.Mejia.models.Servicio;
-import com.Veterinaria.Mejia.models.Usuario;
-import com.Veterinaria.Mejia.repository.*;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import com.Veterinaria.Mejia.models.Cita;
+import com.Veterinaria.Mejia.models.Paciente;
+import com.Veterinaria.Mejia.models.Servicio;
+import com.Veterinaria.Mejia.models.Usuario;
+import com.Veterinaria.Mejia.repository.CitaRepository;
+import com.Veterinaria.Mejia.repository.PacienteRepository;
+import com.Veterinaria.Mejia.repository.ServicioRepository;
+import com.Veterinaria.Mejia.repository.UsuarioRepository;
+
+import lombok.RequiredArgsConstructor;
+
 @Controller
 @RequestMapping("/citas")
+@RequiredArgsConstructor
 public class CitaController {
 
-    @Autowired
-    private CitaRepository citaRepo;
-
-    @Autowired
-    private PacienteRepository pacienteRepo;
-
-    @Autowired
-    private UsuarioRepository usuarioRepo;
-
-    @Autowired
-    private ServicioRepository servicioRepo;
+    private final CitaRepository citaRepo;
+    private final PacienteRepository pacienteRepo;
+    private final UsuarioRepository usuarioRepo;
+    private final ServicioRepository servicioRepo;
 
     @GetMapping
     public String listarCitas(Model model) {
@@ -42,9 +45,13 @@ public class CitaController {
     @GetMapping("/nuevo")
     public String formNuevaCita(Model model) {
         model.addAttribute("cita", new Cita());
-        model.addAttribute("pacientes", pacienteRepo.findByEstadoTrue());
-        model.addAttribute("veterinarios", usuarioRepo.findAll());
-        model.addAttribute("servicios", servicioRepo.findAll());
+        // Hacemos explícitos los tipos para usar los imports y mejorar la legibilidad
+        List<Paciente> pacientes = pacienteRepo.findByEstadoTrue();
+        List<Usuario> veterinarios = usuarioRepo.findAll();
+        List<Servicio> servicios = servicioRepo.findAll();
+        model.addAttribute("pacientes", pacientes);
+        model.addAttribute("veterinarios", veterinarios);
+        model.addAttribute("servicios", servicios);
         return "citas/form-cita";
     }
 

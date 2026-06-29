@@ -3,7 +3,6 @@ package com.Veterinaria.Mejia.services;
 import java.util.List;
 import java.util.Optional;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -11,11 +10,13 @@ import org.springframework.transaction.annotation.Transactional;
 import com.Veterinaria.Mejia.models.Proveedor;
 import com.Veterinaria.Mejia.repository.ProveedorRepository;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class ProveedorService {
 
-    @Autowired
-    private ProveedorRepository proveedorRepository;
+    private final ProveedorRepository proveedorRepository;
 
     public List<Proveedor> listarTodos() {
         return proveedorRepository.findAll();

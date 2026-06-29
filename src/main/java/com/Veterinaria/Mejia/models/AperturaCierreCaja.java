@@ -3,8 +3,6 @@ package com.Veterinaria.Mejia.models;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-import com.Veterinaria.Mejia.models.Usuario;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

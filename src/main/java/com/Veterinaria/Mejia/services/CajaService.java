@@ -5,7 +5,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,11 +14,14 @@ import com.Veterinaria.Mejia.models.Usuario;
 import com.Veterinaria.Mejia.repository.AperturaCierreCajaRepository;
 import com.Veterinaria.Mejia.repository.MovimientoCajaRepository;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class CajaService {
 
-    @Autowired private AperturaCierreCajaRepository cajaRepo;
-    @Autowired private MovimientoCajaRepository movRepo;
+    private final AperturaCierreCajaRepository cajaRepo;
+    private final MovimientoCajaRepository movRepo;
 
     @Transactional
     public AperturaCierreCaja abrirCaja(Usuario usuario, BigDecimal montoInicial) {

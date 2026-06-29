@@ -5,11 +5,9 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import org.springframework.stereotype.Repository;
 
 import com.Veterinaria.Mejia.models.Proveedor;
 
-@Repository
 public interface ProveedorRepository extends JpaRepository<Proveedor, Integer> {
 
     // JPQL: Busca un proveedor por su atributo 'ruc'

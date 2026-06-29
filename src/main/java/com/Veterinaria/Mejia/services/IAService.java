@@ -1,29 +1,28 @@
 package com.Veterinaria.Mejia.services;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
+
 import com.Veterinaria.Mejia.dto.DiagnosticoDTO;
 import com.Veterinaria.Mejia.dto.ResultadoDiagnosticoDTO;
 import com.Veterinaria.Mejia.ia.MotorHeuristico;
 import com.Veterinaria.Mejia.ia.ResultadoIA;
-import com.Veterinaria.Mejia.models.Paciente;
 import com.Veterinaria.Mejia.models.Producto;
 import com.Veterinaria.Mejia.repository.PacienteRepository;
 import com.Veterinaria.Mejia.repository.ProductoRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
 
 @Service
+@RequiredArgsConstructor
 public class IAService {
 
     private final MotorHeuristico motor = new MotorHeuristico();
 
-    @Autowired
-    private PacienteRepository pacienteRepo;
-
-    @Autowired
-    private ProductoRepository productoRepo;
+    private final PacienteRepository pacienteRepo;
+    private final ProductoRepository productoRepo;
 
     public ResultadoDiagnosticoDTO analizar(DiagnosticoDTO dto) {
 

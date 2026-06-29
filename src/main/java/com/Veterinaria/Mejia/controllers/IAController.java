@@ -1,5 +1,17 @@
 package com.Veterinaria.Mejia.controllers;
 
+import java.time.LocalDate;
+import java.util.Arrays;
+import java.util.List;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+
 import com.Veterinaria.Mejia.dto.DiagnosticoDTO;
 import com.Veterinaria.Mejia.dto.ResultadoDiagnosticoDTO;
 import com.Veterinaria.Mejia.models.HistorialVacuna;
@@ -9,14 +21,8 @@ import com.Veterinaria.Mejia.services.DiagnosticoService;
 import com.Veterinaria.Mejia.services.IAPredictivaService;
 import com.Veterinaria.Mejia.services.IAService;
 import com.Veterinaria.Mejia.services.ProductoService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDate;
-import java.util.Arrays;
-import java.util.List;
+import lombok.RequiredArgsConstructor;
 
 /**
  * Controlador del módulo de Inteligencia Artificial.
@@ -24,13 +30,14 @@ import java.util.List;
  */
 @Controller
 @RequestMapping("/ia")
+@RequiredArgsConstructor
 public class IAController {
 
-    @Autowired private IAService iaService;
-    @Autowired private DiagnosticoService diagnosticoService;
-    @Autowired private IAPredictivaService iaPredictivaService;
-    @Autowired private ProductoService productoService;
-    @Autowired private HistorialVacunaRepository vacunaRepo;
+    private final IAService iaService;
+    private final DiagnosticoService diagnosticoService;
+    private final IAPredictivaService iaPredictivaService;
+    private final ProductoService productoService;
+    private final HistorialVacunaRepository vacunaRepo;
 
     @GetMapping
     public String mostrarFormulario(Model model) {

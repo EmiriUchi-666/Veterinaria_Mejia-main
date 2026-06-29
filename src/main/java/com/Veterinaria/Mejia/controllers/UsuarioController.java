@@ -4,7 +4,6 @@ import java.security.Principal;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -22,16 +21,15 @@ import com.Veterinaria.Mejia.models.Usuario;
 import com.Veterinaria.Mejia.repository.RoleRepository;
 import com.Veterinaria.Mejia.services.UsuarioService;
 
+import lombok.RequiredArgsConstructor;
+
 @Controller
 @RequestMapping("/usuarios")
+@RequiredArgsConstructor
 public class UsuarioController {
 
-    @Autowired
-    private UsuarioService usuarioService;
-
-    // Inyectamos el repositorio de roles para poder llenar el <select> en el formulario
-    @Autowired
-    private RoleRepository roleRepository; 
+    private final UsuarioService usuarioService;
+    private final RoleRepository roleRepository;
 
     // ==========================================
     // 1. PANEL DE GESTIÓN DE USUARIOS

@@ -2,7 +2,6 @@ package com.Veterinaria.Mejia.services;
 
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -10,11 +9,13 @@ import org.springframework.transaction.annotation.Transactional;
 import com.Veterinaria.Mejia.models.Servicio;
 import com.Veterinaria.Mejia.repository.ServicioRepository;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class ServicioService {
 
-    @Autowired
-    private ServicioRepository servicioRepository;
+    private final ServicioRepository servicioRepository;
 
     // 1. BUSCADOR INTELIGENTE (Para tu panel de Gestión de Servicios)
     // Reemplaza a listarTodos() para no sobrecargar la memoria cargando todo de golpe

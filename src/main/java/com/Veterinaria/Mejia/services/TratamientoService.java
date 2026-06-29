@@ -1,34 +1,36 @@
 package com.Veterinaria.Mejia.services;
 
-import com.Veterinaria.Mejia.models.*;
-import com.Veterinaria.Mejia.repository.*;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.Veterinaria.Mejia.models.DetalleTratamiento;
+import com.Veterinaria.Mejia.models.HistoriaClinica;
+import com.Veterinaria.Mejia.models.Producto;
+import com.Veterinaria.Mejia.models.Tratamiento;
+import com.Veterinaria.Mejia.repository.DetalleTratamientoRepository;
+import com.Veterinaria.Mejia.repository.HistoriaClinicaRepository;
+import com.Veterinaria.Mejia.repository.ProductoRepository;
+import com.Veterinaria.Mejia.repository.TratamientoRepository;
+
+import lombok.RequiredArgsConstructor;
 
 /**
  * Servicio para la gestión de tratamientos médicos con trazabilidad de medicamentos.
  * Descuenta automáticamente el stock al registrar un detalle de tratamiento.
  */
 @Service
+@RequiredArgsConstructor
 public class TratamientoService {
 
-    @Autowired
-    private TratamientoRepository tratamientoRepo;
-
-    @Autowired
-    private DetalleTratamientoRepository detalleTratamientoRepo;
-
-    @Autowired
-    private HistoriaClinicaRepository historiaClinicaRepo;
-
-    @Autowired
-    private ProductoRepository productoRepo;
+    private final TratamientoRepository tratamientoRepo;
+    private final DetalleTratamientoRepository detalleTratamientoRepo;
+    private final HistoriaClinicaRepository historiaClinicaRepo;
+    private final ProductoRepository productoRepo;
 
     /**
      * Registra un nuevo tratamiento y descuenta el stock de cada producto usado.
@@ -55,7 +57,7 @@ public class TratamientoService {
             Producto producto = productoRepo.findById(detalle.getProducto().getId())
                     .orElseThrow(() -> new RuntimeException("Producto no encontrado: " + detalle.getProducto().getId()));
 
-            if (producto.getStockTotal().compareTo(detalle.getCantidadUsada()) < 0) {
+            if (producto.getStockTotal() == null || producto.getStockTotal().compareTo(detalle.getCantidadUsada()) < 0) {
                 throw new IllegalArgumentException(
                         "Stock insuficiente para '" + producto.getNombre() + "'. " +
                         "Stock disponible: " + producto.getStockTotal() + " | Requerido: " + detalle.getCantidadUsada()
@@ -76,9 +78,29 @@ public class TratamientoService {
         for (DetalleTratamiento detalle : detalles) {
             Producto producto = productoRepo.findById(detalle.getProducto().getId()).get();
 
-            // Descontar stock
-            BigDecimal nuevoStock = producto.getStockTotal().subtract(detalle.getCantidadUsada());
-            producto.setStockTotal(nuevoStock);
+            // --- LÓGICA DE DESCUENTO DE STOCK CORREGIDA ---
+            if (Boolean.TRUE.equals(producto.getPermiteFraccionamiento())) {
+                BigDecimal cantidadRequerida = detalle.getCantidadUsada();
+                // Si no hay suficiente en el stock abierto, se abre un envase cerrado.
+                while (producto.getStockAbierto().compareTo(cantidadRequerida) < 0) {
+                    if (producto.getContenidoPorEnvase() == null || producto.getContenidoPorEnvase().compareTo(BigDecimal.ZERO) <= 0) {
+                        throw new IllegalStateException("Configuración de envase inválida para '" + producto.getNombre() + "'.");
+                    }
+                    if (producto.getStockCerrado() == null || producto.getStockCerrado() <= 0) {
+                        throw new RuntimeException("Stock insuficiente para fraccionar: " + producto.getNombre());
+                    }
+                    producto.setStockCerrado(producto.getStockCerrado() - 1);
+                    producto.setStockAbierto(producto.getStockAbierto().add(producto.getContenidoPorEnvase()));
+                }
+                producto.setStockAbierto(producto.getStockAbierto().subtract(cantidadRequerida));
+            } else {
+                // Para productos no fraccionables, se descuenta de las unidades enteras.
+                int cantidadEntera = detalle.getCantidadUsada().intValue();
+                if (producto.getStockCerrado() < cantidadEntera) {
+                    throw new RuntimeException("Stock insuficiente de unidades cerradas para: " + producto.getNombre());
+                }
+                producto.setStockCerrado(producto.getStockCerrado() - cantidadEntera);
+            }
             productoRepo.save(producto);
 
             // Guardar detalle vinculado al tratamiento

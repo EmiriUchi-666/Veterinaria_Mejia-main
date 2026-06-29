@@ -1,10 +1,11 @@
 package com.Veterinaria.Mejia.repository;
-import com.Veterinaria.Mejia.models.CasoClinico;
+import java.util.List;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.stereotype.Repository;
-import java.util.List;
-@Repository
+
+import com.Veterinaria.Mejia.models.CasoClinico;
+
 public interface CasoClinicoRepository extends JpaRepository<CasoClinico, Integer> {
     List<CasoClinico> findByDiagnosticoVeterinarioNotNull();
     @Query("SELECT COUNT(c) FROM CasoClinico c WHERE c.coincidioIA = true")

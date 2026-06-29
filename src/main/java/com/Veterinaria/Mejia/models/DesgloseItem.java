@@ -2,9 +2,6 @@ package com.Veterinaria.Mejia.models;
 
 import java.math.BigDecimal;
 
-import com.Veterinaria.Mejia.models.Producto;
-import com.Veterinaria.Mejia.models.Servicio;
-
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;

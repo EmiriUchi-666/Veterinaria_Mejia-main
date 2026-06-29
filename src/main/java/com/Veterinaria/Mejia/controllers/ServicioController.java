@@ -1,6 +1,5 @@
 package com.Veterinaria.Mejia.controllers;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -15,13 +14,14 @@ import com.Veterinaria.Mejia.models.Servicio;
 import com.Veterinaria.Mejia.services.ServicioService;
 
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 
 @Controller
 @RequestMapping("/mantenimiento/servicios")
+@RequiredArgsConstructor
 public class ServicioController {
 
-    @Autowired
-    private ServicioService servicioService;
+    private final ServicioService servicioService;
 
     // ==========================================
     // 1. LISTAR TODOS LOS SERVICIOS (Activos e Inactivos)

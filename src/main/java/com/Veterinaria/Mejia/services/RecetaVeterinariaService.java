@@ -1,24 +1,34 @@
 package com.Veterinaria.Mejia.services;
 
-import com.Veterinaria.Mejia.models.*;
-import com.Veterinaria.Mejia.repository.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.Veterinaria.Mejia.models.LineaReceta;
+import com.Veterinaria.Mejia.models.Paciente;
+import com.Veterinaria.Mejia.models.RecetaVeterinaria;
+import com.Veterinaria.Mejia.models.Usuario;
+import com.Veterinaria.Mejia.repository.LineaRecetaRepository;
+import com.Veterinaria.Mejia.repository.PacienteRepository;
+import com.Veterinaria.Mejia.repository.RecetaVeterinariaRepository;
+import com.Veterinaria.Mejia.repository.UsuarioRepository;
+
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class RecetaVeterinariaService {
 
     private static final Logger log = LoggerFactory.getLogger(RecetaVeterinariaService.class);
 
-    @Autowired private RecetaVeterinariaRepository recetaRepo;
-    @Autowired private LineaRecetaRepository lineaRepo;
-    @Autowired private PacienteRepository pacienteRepo;
-    @Autowired private UsuarioRepository usuarioRepo;
+    private final RecetaVeterinariaRepository recetaRepo;
+    private final LineaRecetaRepository lineaRepo;
+    private final PacienteRepository pacienteRepo;
+    private final UsuarioRepository usuarioRepo;
 
     @Transactional
     public RecetaVeterinaria emitir(Integer pacienteId, Integer veterinarioId,

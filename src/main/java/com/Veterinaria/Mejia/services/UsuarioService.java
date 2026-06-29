@@ -50,6 +50,8 @@ public class UsuarioService {
     // REGISTRO DE NUEVO USUARIO
     @Transactional
     public Usuario guardarUsuarioNuevo(Usuario usuario) {
+        log.info("Intentando registrar nuevo usuario: {}", usuario.getNombreUsuario());
+
         // 2. Validar que el DNI/Username no se repita
         Optional<Usuario> existeUsuario = usuarioRepository.findByNombreUsuario(usuario.getNombreUsuario());
         if (existeUsuario.isPresent()) {
@@ -79,7 +81,9 @@ public class UsuarioService {
         }
 
         usuario.setEstado(true); // Siempre nace activo
-        return usuarioRepository.save(usuario);
+        Usuario guardado = usuarioRepository.save(usuario);
+        log.info("Usuario {} registrado exitosamente con rol {}", guardado.getNombreUsuario(), guardado.getRole().getNombreRol());
+        return guardado;
     }
 
     /// MODIFICAR ESTADO (Para bloquear el acceso al sistema)
@@ -98,6 +102,7 @@ public class UsuarioService {
         }
         
         usuario.setEstado(nuevoEstado);
+        log.info("Estado del usuario {} cambiado a: {}", usuario.getNombreUsuario(), nuevoEstado ? "Activo" : "Inactivo");
         usuarioRepository.save(usuario);
     }
 
@@ -106,6 +111,7 @@ public class UsuarioService {
     public void cambiarRol(Integer idUsuario, Role nuevoRol) {
         Usuario usuario = buscarPorId(idUsuario);
         usuario.setRole(nuevoRol); 
+        log.info("Rol del usuario {} cambiado a: {}", usuario.getNombreUsuario(), nuevoRol.getNombreRol());
         usuarioRepository.save(usuario);
     }
 
@@ -149,5 +155,6 @@ public class UsuarioService {
 
         usuario.setContrasena(passwordEncoder.encode(nuevaContrasenaPlana));
         usuarioRepository.save(usuario);
+        log.info("Contraseña actualizada para el usuario {}", usuario.getNombreUsuario());
     }
 }

@@ -16,11 +16,11 @@ import com.Veterinaria.Mejia.dto.ItemCarritoDTO;
 import com.Veterinaria.Mejia.dto.VentaRequestDTO;
 import com.Veterinaria.Mejia.models.Cliente;
 import com.Veterinaria.Mejia.models.DetalleVenta;
+import com.Veterinaria.Mejia.models.Producto;
 import com.Veterinaria.Mejia.models.Servicio;
 import com.Veterinaria.Mejia.models.Usuario;
 import com.Veterinaria.Mejia.models.Venta;
 import com.Veterinaria.Mejia.repository.ClienteRepository;
-import com.Veterinaria.Mejia.repository.ProductoRepository;
 import com.Veterinaria.Mejia.repository.ServicioRepository;
 import com.Veterinaria.Mejia.repository.UsuarioRepository;
 import com.Veterinaria.Mejia.repository.VentaRepository;
@@ -34,10 +34,10 @@ public class VentaCreacionService {
     private static final Logger log = LoggerFactory.getLogger(VentaCreacionService.class);
 
     private final VentaRepository ventaRepository;
-    private final ProductoRepository productoRepository;
     private final ClienteRepository clienteRepository;
     private final ServicioRepository servicioRepository;
     private final UsuarioRepository usuarioRepository;
+    private final InventarioService inventarioService;
 
     @Transactional(rollbackFor = Exception.class)
     public Venta procesarVentaTransaccional(VentaRequestDTO request, Authentication authentication) {
@@ -125,9 +125,21 @@ public class VentaCreacionService {
                 detalle.setPrecioUnitario(serv.getPrecioServicio());
                 detalle.setSubtotal(serv.getPrecioServicio().multiply(item.getCantidad()).setScale(2, RoundingMode.HALF_UP));
             } else if ("PRODUCTO_ENTERO".equalsIgnoreCase(item.getTipo()) || "PRODUCTO_FRACCIONADO".equalsIgnoreCase(item.getTipo())) {
-                // This part can be extracted to an InventoryService as well for even better SRP
-                // For now, keeping it here as requested.
-                // ... (logic for product processing)
+                // Delegamos la lógica de descuento de stock al servicio especializado
+                Producto prod = inventarioService.descontarStockDeProducto(item);
+                detalle.setProducto(prod);
+                
+                // Asignamos el precio y subtotal correspondiente al tipo de venta
+                if ("PRODUCTO_FRACCIONADO".equalsIgnoreCase(item.getTipo())) {
+                    detalle.setPrecioUnitario(prod.getPrecioPorFraccion());
+                    detalle.setSubtotal(prod.getPrecioPorFraccion()
+                            .multiply(item.getCantidad()).setScale(2, RoundingMode.HALF_UP));
+                } else {
+                    detalle.setPrecioUnitario(prod.getPrecioVentaActual());
+                    detalle.setSubtotal(prod.getPrecioVentaActual()
+                            .multiply(item.getCantidad()).setScale(2, RoundingMode.HALF_UP));
+                }
+
             } else {
                 throw new IllegalArgumentException("Tipo de ítem no reconocido: " + item.getTipo());
             }

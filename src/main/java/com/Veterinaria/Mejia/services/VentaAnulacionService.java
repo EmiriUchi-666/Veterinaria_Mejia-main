@@ -6,10 +6,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.Veterinaria.Mejia.models.NotaCredito;
-import com.Veterinaria.Mejia.models.Producto;
 import com.Veterinaria.Mejia.models.Venta;
 import com.Veterinaria.Mejia.repository.NotaCreditoRepository;
-import com.Veterinaria.Mejia.repository.ProductoRepository;
 import com.Veterinaria.Mejia.repository.VentaRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -21,9 +19,9 @@ public class VentaAnulacionService {
     private static final Logger log = LoggerFactory.getLogger(VentaAnulacionService.class);
 
     private final VentaRepository ventaRepository;
-    private final ProductoRepository productoRepository;
     private final NotaCreditoRepository notaCreditoRepository;
     private final VentaConsultaService ventaConsultaService;
+    private final InventarioService inventarioService;
 
     @Transactional(rollbackFor = Exception.class)
     public void anularVenta(Integer id) {
@@ -41,11 +39,7 @@ public class VentaAnulacionService {
         notaCreditoRepository.save(notaCredito);
 
         venta.getDetallesVentas().forEach(detalle -> {
-            if (detalle.getProducto() != null) {
-                Producto producto = productoRepository.findById(detalle.getProducto().getId()).orElseThrow();
-                producto.setStockAbierto(producto.getStockAbierto().add(detalle.getCantidad()));
-                productoRepository.save(producto);
-            }
+            inventarioService.devolverStockDeProducto(detalle);
         });
 
         log.info("[ANULACIÓN] Venta #{} anulada. Generada Nota de Crédito {} y stock devuelto.",

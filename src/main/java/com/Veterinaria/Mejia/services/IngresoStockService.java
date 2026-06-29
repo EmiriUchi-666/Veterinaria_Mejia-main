@@ -5,7 +5,6 @@ import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -17,14 +16,15 @@ import com.Veterinaria.Mejia.models.Producto;
 import com.Veterinaria.Mejia.repository.IngresoStockRepository;
 import com.Veterinaria.Mejia.repository.ProductoRepository;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class IngresoStockService {
 
-    @Autowired
-    private IngresoStockRepository ingresoStockRepository;
+    private final IngresoStockRepository ingresoStockRepository;
 
-    @Autowired
-    private ProductoRepository productoRepository;
+    private final ProductoRepository productoRepository;
 
     // ==========================================
     // 1. LISTAR HISTORIAL DE INGRESOS

@@ -1,19 +1,23 @@
 package com.Veterinaria.Mejia.services;
 
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.Veterinaria.Mejia.models.MedicamentoControlado;
 import com.Veterinaria.Mejia.models.Producto;
 import com.Veterinaria.Mejia.repository.MedicamentoControladoRepository;
 import com.Veterinaria.Mejia.repository.ProductoRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import java.util.List;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
+@RequiredArgsConstructor
 public class MedicamentoControladoService {
 
-    @Autowired private MedicamentoControladoRepository mcRepo;
-    @Autowired private ProductoRepository productoRepo;
+    private final MedicamentoControladoRepository mcRepo;
+    private final ProductoRepository productoRepo;
 
     @Transactional
     public MedicamentoControlado registrar(Integer productoId,

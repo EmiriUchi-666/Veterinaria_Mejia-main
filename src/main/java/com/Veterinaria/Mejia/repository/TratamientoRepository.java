@@ -1,13 +1,12 @@
 package com.Veterinaria.Mejia.repository;
 
-import com.Veterinaria.Mejia.models.Tratamiento;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
-import org.springframework.stereotype.Repository;
 import java.util.List;
 
-@Repository
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+
+import com.Veterinaria.Mejia.models.Tratamiento;
+
 public interface TratamientoRepository extends JpaRepository<Tratamiento, Integer> {
     List<Tratamiento> findByHistoriaClinicaPacienteIdOrderByFechaInicioDesc(Integer pacienteId);
     List<Tratamiento> findByEstado(Tratamiento.EstadoTratamiento estado);

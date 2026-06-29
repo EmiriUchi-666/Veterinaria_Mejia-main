@@ -1,18 +1,25 @@
 package com.Veterinaria.Mejia.controllers;
 
+import java.util.Map;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.Veterinaria.Mejia.services.ContingenciaService;
 import com.Veterinaria.Mejia.services.SunatValidacionService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import java.util.Map;
+
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api")
+@RequiredArgsConstructor
 public class UtilApiController {
 
-    @Autowired private SunatValidacionService validacionSvc;
-    @Autowired private ContingenciaService contingenciaSvc;
+    private final SunatValidacionService validacionSvc;
+    private final ContingenciaService contingenciaSvc;
 
     /** GET /api/validacion/ruc/{ruc} — Valida RUC peruano */
     @GetMapping("/validacion/ruc/{ruc}")

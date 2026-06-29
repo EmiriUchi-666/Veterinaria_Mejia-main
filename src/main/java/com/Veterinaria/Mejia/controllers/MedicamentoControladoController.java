@@ -1,20 +1,27 @@
 package com.Veterinaria.Mejia.controllers;
 
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
 import com.Veterinaria.Mejia.models.MedicamentoControlado;
 import com.Veterinaria.Mejia.repository.ProductoRepository;
 import com.Veterinaria.Mejia.services.MedicamentoControladoService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import lombok.RequiredArgsConstructor;
 
 @Controller
 @RequestMapping("/medicamentos-controlados")
+@RequiredArgsConstructor
 public class MedicamentoControladoController {
 
-    @Autowired private MedicamentoControladoService service;
-    @Autowired private ProductoRepository productoRepo;
+    private final MedicamentoControladoService service;
+    private final ProductoRepository productoRepo;
 
     @GetMapping
     public String listar(Model model) {

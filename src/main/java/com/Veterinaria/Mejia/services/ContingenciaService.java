@@ -9,7 +9,6 @@ import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -20,19 +19,22 @@ import com.Veterinaria.Mejia.models.ComprobantePendiente;
 import com.Veterinaria.Mejia.repository.ComprobanteElectronicoRepository;
 import com.Veterinaria.Mejia.repository.ComprobantePendienteRepository;
 
+import lombok.RequiredArgsConstructor;
+
 /**
  * C5 — Modo Contingencia SUNAT.
  * Guarda comprobantes fallidos en cola local y reintenta cada 5 min con
  * exponential backoff (máx. 10 intentos = ~72h operación sin conexión).
  */
 @Service
+@RequiredArgsConstructor
 public class ContingenciaService {
 
     private static final Logger log = LoggerFactory.getLogger(ContingenciaService.class);
     private static final int MAX_INTENTOS = 10;
 
-    @Autowired private ComprobantePendienteRepository pendienteRepo;
-    @Autowired private ComprobanteElectronicoRepository comprobanteRepo;
+    private final ComprobantePendienteRepository pendienteRepo;
+    private final ComprobanteElectronicoRepository comprobanteRepo;
 
     @Value("${nubefact.api.url:https://api.nubefact.com/api/v1}")
     private String apiUrl;
