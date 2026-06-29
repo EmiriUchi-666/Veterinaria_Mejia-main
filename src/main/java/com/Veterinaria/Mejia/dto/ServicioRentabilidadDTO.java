@@ -1,0 +1,15 @@
+package com.Veterinaria.Mejia.dto;
+
+import java.math.BigDecimal;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class ServicioRentabilidadDTO {
+    private String nombreServicio;
+    private BigDecimal totalRecaudado;
+}

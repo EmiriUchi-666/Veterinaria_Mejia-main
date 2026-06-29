@@ -79,6 +79,11 @@
                                     <span class="font-monospace small bg-light px-2 py-1 rounded border" th:text="${p.numeroHistoria}">HC-123</span>
                                 </td>
                                 <td class="text-center pe-4">
+                                    <a th:href="@{/pacientes/{id}/expediente(id=${p.id})}" 
+                                       class="btn btn-sm btn-primary"
+                                       title="Ver Expediente Completo">
+                                        <i class="bi bi-folder2-open"></i> Expediente
+                                    </a>
                                     <a th:href="@{/pacientes/eliminar/{id}(id=${p.id})}" 
                                        class="btn btn-sm btn-outline-danger ms-1"
                                        onclick="return confirm('¿Dar de baja a este paciente?');"

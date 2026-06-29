@@ -43,6 +43,7 @@ public class FacturacionElectronicaController {
     }
 
     /** GET /facturacion/emitir/{ventaId} — Formulario de emisión */
+    @SuppressWarnings("null")
     @GetMapping("/emitir/{ventaId}")
     public String formEmitir(@PathVariable Integer ventaId, Model model, RedirectAttributes ra) {
         var venta = ventaRepo.findById(ventaId).orElse(null);
@@ -61,6 +62,7 @@ public class FacturacionElectronicaController {
     }
 
     /** POST /facturacion/boleta — Emite boleta */
+    @SuppressWarnings("null")
     @PostMapping("/boleta")
     public String emitirBoleta(
             @RequestParam Integer ventaId,
@@ -90,6 +92,7 @@ public class FacturacionElectronicaController {
     }
 
     /** POST /facturacion/factura — Emite factura */
+    @SuppressWarnings("null")
     @PostMapping("/factura")
     public String emitirFactura(
             @RequestParam Integer ventaId,
@@ -111,6 +114,7 @@ public class FacturacionElectronicaController {
     }
 
     /** POST /facturacion/reenviar/{id} — Reintenta envío a SUNAT */
+    @SuppressWarnings("null")
     @PostMapping("/reenviar/{id}")
     public String reenviar(@PathVariable Integer id, RedirectAttributes ra) {
         try {

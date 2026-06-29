@@ -3,7 +3,9 @@ package com.Veterinaria.Mejia.services;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -147,5 +149,30 @@ public class CRMService {
     /** Lista todos los segmentos disponibles. */
     public List<SegmentoCliente> listarSegmentos() {
         return segmentoRepo.findAll();
+    }
+
+    /**
+     * FASE 7: Calcula la tasa de retorno de clientes para diferentes períodos.
+     * La tasa se define como: (clientes con >1 visita / clientes totales) * 100
+     * @return Un mapa con los períodos (30, 60, 90 días) y sus tasas de retorno.
+     */
+    public Map<Integer, Double> calcularTasasDeRetorno() {
+        Map<Integer, Double> tasas = new HashMap<>();
+        int[] periodos = {30, 60, 90};
+
+        for (int dias : periodos) {
+            LocalDateTime fin = LocalDateTime.now();
+            LocalDateTime inicio = fin.minusDays(dias);
+
+            long totalClientesUnicos = ventaRepo.countDistinctClientesInPeriod(inicio, fin);
+            long clientesQueRegresaron = ventaRepo.countReturningCustomersInPeriod(inicio, fin);
+
+            double tasa = 0.0;
+            if (totalClientesUnicos > 0) {
+                tasa = ((double) clientesQueRegresaron / totalClientesUnicos) * 100.0;
+            }
+            tasas.put(dias, tasa);
+        }
+        return tasas;
     }
 }

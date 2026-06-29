@@ -40,6 +40,7 @@ public class ComprobanteApiController {
      * @route GET /api/utilidades/producto/{id}
      */
     @GetMapping("/producto/{id}")
+    @SuppressWarnings("null")
     public ResponseEntity<Map<String, Object>> obtenerInfoProducto(@PathVariable Integer id) {
         Map<String, Object> respuesta = new HashMap<>();
         
@@ -68,6 +69,7 @@ public class ComprobanteApiController {
      * @route GET /api/utilidades/servicio/{id}
      */
     @GetMapping("/servicio/{id}")
+    @SuppressWarnings("null")
     public ResponseEntity<Map<String, Object>> obtenerInfoServicio(@PathVariable Integer id) {
         Map<String, Object> respuesta = new HashMap<>();
         

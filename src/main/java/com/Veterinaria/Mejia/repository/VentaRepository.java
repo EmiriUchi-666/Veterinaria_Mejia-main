@@ -111,4 +111,17 @@ public interface VentaRepository extends JpaRepository<Venta, Integer> {
            "GROUP BY d.servicio.id, d.servicio.nombreServicio " +
            "ORDER BY SUM(d.cantidad) DESC")
     List<TopItemProjection> obtenerTopServiciosPorFechaJPQL(java.time.LocalDateTime inicio, java.time.LocalDateTime fin, Pageable pageable);
+
+    // =========================================================================
+    // 4. CONSULTAS PARA CRM (Tasa de Retorno)
+    // =========================================================================
+
+    /** Cuenta los clientes únicos que realizaron al menos una compra en el período. */
+    @Query("SELECT COUNT(DISTINCT v.cliente.id) FROM Venta v WHERE v.cliente IS NOT NULL AND v.fechaEmision BETWEEN :inicio AND :fin")
+    long countDistinctClientesInPeriod(java.time.LocalDateTime inicio, java.time.LocalDateTime fin);
+
+    /** Cuenta los clientes que realizaron MÁS DE UNA compra en el período (clientes que retornaron). */
+    @Query(value = "SELECT COUNT(*) FROM (SELECT cliente_id FROM ventas WHERE cliente_id IS NOT NULL AND fecha_emision BETWEEN :inicio AND :fin GROUP BY cliente_id HAVING COUNT(id) > 1) AS returning_customers",
+           nativeQuery = true)
+    long countReturningCustomersInPeriod(java.time.LocalDateTime inicio, java.time.LocalDateTime fin);
 }

@@ -51,4 +51,13 @@ public interface ProductoRepository extends JpaRepository<Producto, Integer> {
     @org.springframework.data.jpa.repository.Query("SELECT p FROM Producto p WHERE p.id = :id")
     java.util.Optional<com.Veterinaria.Mejia.models.Producto> findByIdWithLock(
         @org.springframework.data.repository.query.Param("id") Integer id);
+
+    List<Producto> findByCategoriaNombre(String nombre);
+
+    /**
+     * FASE 8: Alerta de Baja Rotación.
+     * Devuelve productos que no han tenido ninguna venta desde la fecha límite especificada.
+     */
+    @Query("SELECT p FROM Producto p WHERE p.id NOT IN (SELECT DISTINCT d.producto.id FROM DetalleVenta d WHERE d.producto IS NOT NULL AND d.venta.fechaEmision >= :fechaLimite)")
+    List<Producto> findProductosSinVentasDesde(@Param("fechaLimite") java.time.LocalDateTime fechaLimite);
 }

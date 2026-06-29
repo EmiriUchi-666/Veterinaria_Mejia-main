@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+
+<head th:replace="~{fragments/head :: head('Expediente Clínico')}"></head>
+
+<body>
+
+    <div th:replace="~{fragments/sidebar :: menuLateral}"></div>
+
+    <div class="main-content">
+        
+        <header th:replace="~{fragments/navbar :: topbar}"></header>
+
+        <main class="content">
+
+            <div th:if="${successMsg}" class="alert alert-success alert-dismissible fade show mb-4 border-0 shadow-sm" role="alert">
+                <i class="bi bi-check-circle-fill me-2"></i><span th:text="${successMsg}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+
+            <!-- Cabecera del Paciente -->
+            <div class="card card-custom mb-4">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center">
+                        <div class="me-4">
+                            <div th:if="${paciente.rutaFoto != null}" style="width: 100px; height: 100px; border-radius: 50%; overflow: hidden; border: 3px solid #e2e8f0;">
+                                <img th:src="@{${paciente.rutaFoto}}" style="width: 100%; height: 100%; object-fit: cover;">
+                            </div>
+                            <div th:unless="${paciente.rutaFoto != null}" class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 100px; height: 100px;">
+                                <i class="bi bi-paw-fill" style="font-size: 48px;"></i>
+                            </div>
+                        </div>
+                        <div>
+                            <h2 class="fw-bold text-dark mb-1" th:text="${paciente.nombre}">Nombre Paciente</h2>
+                            <p class="text-muted mb-2">
+                                <span th:text="${paciente.especie.nombreEspecie}"></span> / 
+                                <span th:text="${paciente.raza}"></span>
+                            </p>
+                            <div class="d-flex align-items-center text-secondary small">
+                                <i class="bi bi-person-fill me-2"></i>
+                                <span>Tutor: <strong th:text="${paciente.cliente.nombre}"></strong></span>
+                            </div>
+                        </div>
+                        <div class="ms-auto">
+                            <a th:href="@{/pacientes}" class="btn btn-outline-secondary fw-600">
+                                <i class="bi bi-arrow-left me-1"></i>Volver al Directorio
+                            </a>
+                        </div>
+                    </div>
+                    <div th:if="${paciente.alergias != null and !paciente.alergias.isBlank()}" class="alert alert-danger mt-3 mb-0">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        <strong>¡Alerta de Alergia!</strong> Paciente con alergias registradas: <span th:text="${paciente.alergias}"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pestañas de Navegación -->
+            <ul class="nav nav-tabs nav-pills-custom" id="myTab" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="historias-tab" data-bs-toggle="tab" data-bs-target="#historias" type="button" role="tab">
+                        <i class="bi bi-file-earmark-medical me-2"></i>Historias Clínicas
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="vacunas-tab" data-bs-toggle="tab" data-bs-target="#vacunas" type="button" role="tab">
+                        <i class="bi bi-shield-check me-2"></i>Vacunas
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="tratamientos-tab" data-bs-toggle="tab" data-bs-target="#tratamientos" type="button" role="tab">
+                        <i class="bi bi-clipboard2-pulse me-2"></i>Tratamientos
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="recetas-tab" data-bs-toggle="tab" data-bs-target="#recetas" type="button" role="tab">
+                        <i class="bi bi-prescription2 me-2"></i>Recetas
+                    </button>
+                </li>
+            </ul>
+
+            <!-- Contenido de las Pestañas -->
+            <div class="tab-content card card-custom card-custom-tab" id="myTabContent">
+                
+                <!-- Pestaña de Historias Clínicas -->
+                <div class="tab-pane fade show active p-4" id="historias" role="tabpanel">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold text-dark">Historial de Atenciones</h5>
+                        <a th:href="@{/historias/nueva(pacienteId=${paciente.id})}" class="btn btn-primary btn-sm fw-600">
+                            <i class="bi bi-plus-lg me-1"></i>Nueva Historia
+                        </a>
+                    </div>
+                    <div th:if="${historias.isEmpty()}" class="text-center text-muted py-4">
+                        No hay historias clínicas registradas para este paciente.
+                    </div>
+                    <div class="list-group" th:unless="${historias.isEmpty()}">
+                        <a th:each="h : ${historias}" th:href="@{/historias/{id}(id=${h.id})}" class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1 fw-bold text-primary" th:text="${h.motivoConsulta}"></h6>
+                                <small th:text="${#temporals.format(h.fechaAtencion, 'dd/MM/yyyy HH:mm')}"></small>
+                            </div>
+                            <p class="mb-1"><strong>Diagnóstico:</strong> <span th:text="${h.diagnostico}"></span></p>
+                            <small>Atendido por: <span th:text="${h.veterinario.nombreUsuario}"></span></small>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Pestaña de Vacunas -->
+                <div class="tab-pane fade p-4" id="vacunas" role="tabpanel">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold text-dark">Registro de Vacunación</h5>
+                        <button type="button" class="btn btn-primary btn-sm fw-600" data-bs-toggle="modal" data-bs-target="#modalNuevaVacuna">
+                            <i class="bi bi-plus-lg me-1"></i>Registrar Vacuna
+                        </button>
+                    </div>
+                    <div th:if="${vacunas.isEmpty()}" class="text-center text-muted py-4">
+                        No hay vacunas registradas para este paciente.
+                    </div>
+                    <div class="table-responsive" th:unless="${vacunas.isEmpty()}">
+                        <table class="table table-sm table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Vacuna</th>
+                                    <th>Fecha Aplicación</th>
+                                    <th>Próximo Refuerzo</th>
+                                    <th>Lote</th>
+                                    <th>Observaciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="v : ${vacunas}" th:classappend="${v.fechaProximoRefuerzo != null and v.fechaProximoRefuerzo.isBefore(T(java.time.LocalDate).now().plusDays(30))} ? 'table-danger' : ''">
+                                    <td class="fw-bold" th:text="${v.nombreVacuna}"></td>
+                                    <td th:text="${#temporals.format(v.fechaAplicacion, 'dd/MM/yyyy')}"></td>
+                                    <td>
+                                        <span th:if="${v.fechaProximoRefuerzo != null}" th:text="${#temporals.format(v.fechaProximoRefuerzo, 'dd/MM/yyyy')}"></span>
+                                        <span th:if="${v.fechaProximoRefuerzo != null and v.fechaProximoRefuerzo.isBefore(T(java.time.LocalDate).now().plusDays(30))}" class="badge bg-danger ms-2">
+                                            <i class="bi bi-exclamation-triangle-fill"></i> Vence pronto
+                                        </span>
+                                        <span th:unless="${v.fechaProximoRefuerzo != null}" class="text-muted small">N/A</span>
+                                    </td>
+                                    <td th:text="${v.lote}"></td>
+                                    <td class="small text-muted" th:text="${v.observaciones}"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Pestaña de Tratamientos -->
+                <div class="tab-pane fade p-4" id="tratamientos" role="tabpanel">
+                    <h5 class="fw-bold text-dark mb-3">Tratamientos Activos y Pasados</h5>
+                    <div th:if="${tratamientos.isEmpty()}" class="text-center text-muted py-4">
+                        No hay tratamientos registrados para este paciente.
+                    </div>
+                    <div class="list-group" th:unless="${tratamientos.isEmpty()}">
+                        <a th:each="t : ${tratamientos}" th:href="@{/tratamientos/detalle/{id}(id=${t.id})}" class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1 fw-bold text-primary" th:text="${t.diagnostico}"></h6>
+                                <span class="badge" th:classappend="${t.estado.name() == 'Activo'} ? 'bg-success' : 'bg-secondary'" th:text="${t.estado.name()}"></span>
+                            </div>
+                            <p class="mb-1"><strong>Inicio:</strong> <span th:text="${#temporals.format(t.fechaInicio, 'dd/MM/yyyy')}"></span></p>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Pestaña de Recetas -->
+                <div class="tab-pane fade p-4" id="recetas" role="tabpanel">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold text-dark">Recetas Médicas Emitidas</h5>
+                        <a th:href="@{/recetas/nueva}" class="btn btn-primary btn-sm fw-600">
+                            <i class="bi bi-plus-lg me-1"></i>Nueva Receta
+                        </a>
+                    </div>
+                    <div th:if="${recetas.isEmpty()}" class="text-center text-muted py-4">
+                        No hay recetas emitidas para este paciente.
+                    </div>
+                    <div class="list-group" th:unless="${recetas.isEmpty()}">
+                        <a th:each="r : ${recetas}" th:href="@{/recetas/ver/{id}(id=${r.id})}" class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1 fw-bold text-primary" th:text="${r.numeroReceta}"></h6>
+                                <small th:text="${#temporals.format(r.fechaEmision, 'dd/MM/yyyy')}"></small>
+                            </div>
+                            <p class="mb-1"><strong>Diagnóstico:</strong> <span th:text="${r.diagnostico}"></span></p>
+                            <small>Emitida por: <span th:text="${r.veterinario.nombreUsuario}"></span></small>
+                        </a>
+                    </div>
+                </div>
+
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Modal para Nueva Vacuna -->
+    <div class="modal fade" id="modalNuevaVacuna" tabindex="-1" aria-labelledby="modalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form th:action="@{/vacunas/guardar}" method="POST">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalLabel"><i class="bi bi-shield-plus me-2"></i>Registrar Aplicación de Vacuna</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" name="pacienteId" th:value="${paciente.id}" />
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Nombre de la Vacuna</label>
+                            <input type="text" name="nombreVacuna" class="form-control" required>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Fecha de Aplicación</label>
+                                <input type="date" name="fechaAplicacion" class="form-control" th:value="${T(java.time.LocalDate).now()}" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Próximo Refuerzo (Opcional)</label>
+                                <input type="date" name="fechaProximoRefuerzo" class="form-control">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Lote (Opcional)</label>
+                            <input type="text" name="lote" class="form-control">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Observaciones (Opcional)</label>
+                            <textarea name="observaciones" class="form-control" rows="2"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary fw-bold">Guardar Registro</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>

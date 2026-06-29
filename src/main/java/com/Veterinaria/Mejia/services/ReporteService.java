@@ -10,6 +10,8 @@ import java.util.Map;
 
 import org.springframework.stereotype.Service;
 
+import com.Veterinaria.Mejia.dto.ProductoRentabilidadDTO;
+import com.Veterinaria.Mejia.dto.ServicioRentabilidadDTO;
 import com.Veterinaria.Mejia.dto.VentasDiaDTO;
 import com.Veterinaria.Mejia.repository.DetalleVentaRepository;
 import com.Veterinaria.Mejia.repository.MermaRepository;
@@ -73,5 +75,15 @@ public class ReporteService {
         reporte.put("graficoDatosGanancias", data);
 
         return reporte;
+    }
+
+    public List<ProductoRentabilidadDTO> generarReporteRentabilidad(LocalDateTime fechaInicio, LocalDateTime fechaFin) {
+        List<ProductoRentabilidadDTO> rentabilidad = detalleVentaRepository.obtenerRentabilidadProductos(fechaInicio, fechaFin);
+        // Aquí podrías añadir lógica adicional, como calcular el margen porcentual si lo necesitas en el DTO.
+        return rentabilidad;
+    }
+
+    public List<ServicioRentabilidadDTO> generarReporteRentabilidadServicios(LocalDateTime fechaInicio, LocalDateTime fechaFin) {
+        return detalleVentaRepository.obtenerRentabilidadServicios(fechaInicio, fechaFin);
     }
 }

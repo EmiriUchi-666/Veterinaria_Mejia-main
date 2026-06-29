@@ -37,6 +37,7 @@ public class CRMController {
         model.addAttribute("frecuentes",        crmService.obtenerPorSegmento("Frecuente"));
         model.addAttribute("ocasionales",       crmService.obtenerPorSegmento("Ocasional"));
         model.addAttribute("inactivos",         crmService.obtenerPorSegmento("Inactivo"));
+        model.addAttribute("tasasRetorno",      crmService.calcularTasasDeRetorno());
         return "crm/dashboard";
     }
 

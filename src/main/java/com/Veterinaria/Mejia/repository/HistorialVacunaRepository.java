@@ -1,11 +1,13 @@
 package com.Veterinaria.Mejia.repository;
 
-import com.Veterinaria.Mejia.models.HistorialVacuna;
+import java.time.LocalDate;
+import java.util.List;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import java.time.LocalDate;
-import java.util.List;
+
+import com.Veterinaria.Mejia.models.HistorialVacuna;
 
 public interface HistorialVacunaRepository extends JpaRepository<HistorialVacuna, Integer> {
     List<HistorialVacuna> findByPacienteId(Integer pacienteId);
@@ -15,4 +17,6 @@ public interface HistorialVacunaRepository extends JpaRepository<HistorialVacuna
 
     @Query("SELECT COUNT(v) FROM HistorialVacuna v WHERE v.fechaProximoRefuerzo BETWEEN :hoy AND :limite")
     long contarVacunasPendientes(@Param("hoy") LocalDate hoy, @Param("limite") LocalDate limite);
+
+    List<HistorialVacuna> findByPacienteIdOrderByFechaAplicacionDesc(Integer id);
 }

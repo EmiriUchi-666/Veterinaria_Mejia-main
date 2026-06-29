@@ -1,13 +1,23 @@
 package com.Veterinaria.Mejia.models;
 
-import jakarta.persistence.*;
 import java.time.LocalDate;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import lombok.Data;
 
 /**
  * A4 — Historial de vacunas con trazabilidad SENASA.
  * Incluye lote, laboratorio fabricante y registro sanitario.
  */
 @Entity
+@Data
 @Table(name = "historial_vacunas")
 public class HistorialVacuna {
 
@@ -63,37 +73,7 @@ public class HistorialVacuna {
     @Column(length = 500)
     private String observaciones;
 
-    // ── Getters & Setters ────────────────────────────────────────────────────
-    public Integer getId() { return id; }
-    public void setId(Integer id) { this.id = id; }
-    public Paciente getPaciente() { return paciente; }
-    public void setPaciente(Paciente paciente) { this.paciente = paciente; }
-    public String getNombreVacuna() { return nombreVacuna; }
-    public void setNombreVacuna(String n) { this.nombreVacuna = n; }
-    public String getEnfermedadObjetivo() { return enfermedadObjetivo; }
-    public void setEnfermedadObjetivo(String e) { this.enfermedadObjetivo = e; }
-    public String getLoteVacuna() { return loteVacuna; }
-    public void setLoteVacuna(String l) { this.loteVacuna = l; }
-    public String getLaboratorioFabricante() { return laboratorioFabricante; }
-    public void setLaboratorioFabricante(String l) { this.laboratorioFabricante = l; }
-    public String getRegistroSanitarioSenasa() { return registroSanitarioSenasa; }
-    public void setRegistroSanitarioSenasa(String r) { this.registroSanitarioSenasa = r; }
-    public String getNumeroSerie() { return numeroSerie; }
-    public void setNumeroSerie(String n) { this.numeroSerie = n; }
-    public LocalDate getFechaFabricacion() { return fechaFabricacion; }
-    public void setFechaFabricacion(LocalDate f) { this.fechaFabricacion = f; }
-    public LocalDate getFechaVencimientoVacuna() { return fechaVencimientoVacuna; }
-    public void setFechaVencimientoVacuna(LocalDate f) { this.fechaVencimientoVacuna = f; }
-    public LocalDate getFechaAplicacion() { return fechaAplicacion; }
-    public void setFechaAplicacion(LocalDate f) { this.fechaAplicacion = f; }
-    public LocalDate getFechaProximoRefuerzo() { return fechaProximoRefuerzo; }
-    public void setFechaProximoRefuerzo(LocalDate f) { this.fechaProximoRefuerzo = f; }
-    public Double getDosisMl() { return dosisMl; }
-    public void setDosisMl(Double d) { this.dosisMl = d; }
-    public String getViaAplicacion() { return viaAplicacion; }
-    public void setViaAplicacion(String v) { this.viaAplicacion = v; }
-    public Usuario getVeterinario() { return veterinario; }
-    public void setVeterinario(Usuario v) { this.veterinario = v; }
-    public String getObservaciones() { return observaciones; }
-    public void setObservaciones(String o) { this.observaciones = o; }
+    @ManyToOne
+    @JoinColumn(name = "producto_id")
+    private Producto productoVacuna;
 }

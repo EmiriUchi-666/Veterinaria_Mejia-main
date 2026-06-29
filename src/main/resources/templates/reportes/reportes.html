@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="es">
 
-<head th:replace="~{fragments/head :: head('Reportes y Estadísticas')}"></head>
+<head th:replace="~{fragments/head :: head('Reportes Financieros')}"></head>
 
 <body>
 
@@ -12,157 +12,119 @@
         <header th:replace="~{fragments/navbar :: topbar}"></header>
 
         <main class="content">
-            
-            <div th:if="${errorMsg}" class="alert alert-danger alert-dismissible fade show mb-4 border-0 shadow-sm" role="alert">
-                <i class="bi bi-exclamation-triangle-fill me-2"></i><span th:text="${errorMsg}"></span>
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
 
-            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+            <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
-                    <h2 class="mb-1"><i class="bi bi-bar-chart-fill text-primary me-2"></i>Reportes Financieros</h2>
-                    <p class="text-muted mb-0">Análisis detallado de ventas, inversiones, ganancias y productos top.</p>
-                </div>
-                <div class="d-flex gap-2">
-                    <button class="btn btn-outline-success fw-600 shadow-sm" onclick="window.print()">
-                        <i class="bi bi-file-earmark-excel me-1"></i>Exportar
-                    </button>
-                    <button class="btn btn-outline-danger fw-600 shadow-sm" onclick="window.print()">
-                        <i class="bi bi-file-earmark-pdf me-1"></i>Imprimir
-                    </button>
+                    <h2 class="mb-1"><i class="bi bi-bar-chart-line-fill text-primary me-2"></i>Reportes Financieros</h2>
+                    <p class="text-muted mb-0">Análisis de ingresos, costos y rentabilidad.</p>
                 </div>
             </div>
 
+            <!-- Filtros de Fecha -->
             <div class="card card-custom mb-4">
-                <div class="card-body p-4 d-flex flex-column flex-lg-row justify-content-between align-items-center gap-3">
-                    
-                    <div class="btn-group shadow-sm" role="group" aria-label="Filtros de tiempo">
-                        <a th:href="@{/reportes(filtro='hoy')}" class="btn fw-600 px-4" th:classappend="${filtro == 'hoy'} ? 'btn-primary' : 'btn-outline-primary'">Hoy</a>
-                        <a th:href="@{/reportes(filtro='semana')}" class="btn fw-600 px-4" th:classappend="${filtro == 'semana'} ? 'btn-primary' : 'btn-outline-primary'">Esta Semana</a>
-                        <a th:href="@{/reportes(filtro='mes')}" class="btn fw-600 px-4" th:classappend="${filtro == 'mes'} ? 'btn-primary' : 'btn-outline-primary'">Este Mes</a>
-                    </div>
-
-                    <div class="text-muted fw-bold">O usa fechas personalizadas:</div>
-
-                    <form th:action="@{/reportes}" method="GET" class="d-flex gap-2 align-items-end mb-0">
-                        <input type="hidden" name="filtro" value="personalizado">
-                        <div>
-                            <label class="form-label fw-600 text-secondary small mb-1">Inicio:</label>
-                            <input type="date" name="fechaInicio" class="form-control form-control-sm" th:value="${fechaInicio}" required>
+                <div class="card-body p-4">
+                    <form th:action="@{/reportes}" method="GET" class="row g-3 align-items-end">
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Rango Predefinido</label>
+                            <select name="rango" class="form-select" onchange="this.form.submit()">
+                                <option value="hoy" th:selected="${rangoActual == 'hoy'}">Hoy</option>
+                                <option value="semana" th:selected="${rangoActual == 'semana'}">Últimos 7 días</option>
+                                <option value="mes" th:selected="${rangoActual == 'mes'}">Últimos 30 días</option>
+                                <option value="personalizado" th:selected="${rangoActual == 'personalizado'}">Personalizado</option>
+                            </select>
                         </div>
-                        <div>
-                            <label class="form-label fw-600 text-secondary small mb-1">Fin:</label>
-                            <input type="date" name="fechaFin" class="form-control form-control-sm" th:value="${fechaFin}" required>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold">Fecha Inicio</label>
+                            <input type="date" name="fechaInicio" class="form-control" th:value="${#temporals.format(fechaInicio, 'yyyy-MM-dd')}">
                         </div>
-                        <button type="submit" class="btn btn-primary btn-sm fw-600 shadow-sm px-3">
-                            <i class="bi bi-search"></i>
-                        </button>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold">Fecha Fin</label>
+                            <input type="date" name="fechaFin" class="form-control" th:value="${#temporals.format(fechaFin, 'yyyy-MM-dd')}">
+                        </div>
+                        <div class="col-md-2 d-flex gap-2">
+                            <button type="submit" class="btn btn-primary w-100 fw-bold">
+                                <i class="bi bi-funnel-fill me-1"></i>Filtrar
+                            </button>
+                            <button type="submit" formaction="/reportes/exportar" formmethod="get" class="btn btn-success w-100 fw-bold" title="Exportar a Excel">
+                                <i class="bi bi-file-earmark-excel-fill"></i>
+                            </button>
+                        </div>
                     </form>
                 </div>
             </div>
 
-            <div class="row g-4 mb-4">
-                
-                <div class="col-md-3">
-                    <div class="card card-custom p-3 h-100" style="border-left: 4px solid #3b82f6;">
-                        <div class="d-flex justify-content-between">
-                            <div>
-                                <p class="text-muted mb-1 small fw-bold text-uppercase">Total Ventas (Bruto)</p>
-                                <h4 class="mb-0 fw-bold text-dark" th:text="'S/. ' + ${#numbers.formatDecimal(ingresosBrutos ?: 0, 1, 'COMMA', 2, 'POINT')}">S/. 0.00</h4>
-                            </div>
-                            <div class="bg-primary bg-opacity-10 text-primary rounded p-2 d-flex align-items-center justify-content-center" style="height: 40px; width: 40px;">
-                                <i class="bi bi-cash-stack fs-5"></i>
-                            </div>
-                        </div>
-                        <div class="mt-2 text-muted small"><span class="fw-bold text-dark" th:text="${cantidadVentas ?: 0}">0</span> tickets emitidos.</div>
-                    </div>
-                </div>
-
-                <div class="col-md-3">
-                    <div class="card card-custom p-3 h-100" style="border-left: 4px solid #f59e0b;">
-                        <div class="d-flex justify-content-between">
-                            <div>
-                                <p class="text-muted mb-1 small fw-bold text-uppercase">Costo Invertido</p>
-                                <h4 class="mb-0 fw-bold text-dark" th:text="'S/. ' + ${#numbers.formatDecimal(inversionVentas ?: 0, 1, 'COMMA', 2, 'POINT')}">S/. 0.00</h4>
-                            </div>
-                            <div class="bg-warning bg-opacity-10 text-warning rounded p-2 d-flex align-items-center justify-content-center" style="height: 40px; width: 40px;">
-                                <i class="bi bi-box-arrow-in-down fs-5"></i>
-                            </div>
-                        </div>
-                        <div class="mt-2 text-muted small">Costo base de los productos.</div>
-                    </div>
-                </div>
-
-                <div class="col-md-3">
-                    <div class="card card-custom p-3 h-100" style="border-left: 4px solid #10b981;">
-                        <div class="d-flex justify-content-between">
-                            <div>
-                                <p class="text-muted mb-1 small fw-bold text-uppercase">Ganancia Neta</p>
-                                <h4 class="mb-0 fw-bold text-success" th:text="'S/. ' + ${#numbers.formatDecimal(gananciaNeta ?: 0, 1, 'COMMA', 2, 'POINT')}">S/. 0.00</h4>
-                            </div>
-                            <div class="bg-success bg-opacity-10 text-success rounded p-2 d-flex align-items-center justify-content-center" style="height: 40px; width: 40px;">
-                                <i class="bi bi-graph-up-arrow fs-5"></i>
-                            </div>
-                        </div>
-                        <div class="mt-2 text-muted small">Beneficio real (Ventas - Costo).</div>
-                    </div>
-                </div>
-
-                <div class="col-md-3">
-                    <div class="card card-custom p-3 h-100" style="border-left: 4px solid #ef4444;">
-                        <div class="d-flex justify-content-between">
-                            <div>
-                                <p class="text-muted mb-1 small fw-bold text-uppercase">Pérdidas (Anulados)</p>
-                                <h4 class="mb-0 fw-bold text-danger" th:text="'S/. ' + ${#numbers.formatDecimal(perdidas ?: 0, 1, 'COMMA', 2, 'POINT')}">S/. 0.00</h4>
-                            </div>
-                            <div class="bg-danger bg-opacity-10 text-danger rounded p-2 d-flex align-items-center justify-content-center" style="height: 40px; width: 40px;">
-                                <i class="bi bi-arrow-down-right-circle fs-5"></i>
-                            </div>
-                        </div>
-                        <div class="mt-2 text-muted small">Ventas devueltas o fallidas.</div>
-                    </div>
-                </div>
-
-            </div>
-
-            <div class="card card-custom mb-4">
-                <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
-                    <span class="fw-600 text-dark"><i class="bi bi-activity text-primary me-2"></i>Curva de Ventas (<span th:text="${filtroTexto}">Rango</span>)</span>
-                </div>
-                <div class="card-body p-4">
-                    <div style="height: 300px; width: 100%;">
-                        <canvas id="ventasChart"></canvas>
-                    </div>
-                </div>
-            </div>
-
             <div class="row g-4">
-                
-                <div class="col-lg-6">
+                <div class="col-lg-8">
+                    <!-- Tabla de Rentabilidad por Producto -->
+            <div class="card card-custom h-100">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h5 class="card-title m-0 fw-bold text-dark"><i class="bi bi-cash-coin me-2 text-success"></i>Rentabilidad por Producto</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0" id="tabla-rentabilidad">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-4 py-3">Producto</th>
+                                    <th class="text-center">Unidades Vendidas</th>
+                                    <th class="text-center">Precio Compra</th>
+                                    <th class="text-center">Precio Venta</th>
+                                    <th class="text-center">Ingresos Totales</th>
+                                    <th class="text-center">Costo Total</th>
+                                    <th class="text-center sortable" onclick="sortTable(6)">
+                                        Utilidad Total <i class="bi bi-arrow-down-up small"></i>
+                                    </th>
+                                    <th class="text-center pe-4">Margen (%)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:if="${rentabilidadProductos.isEmpty()}">
+                                    <td colspan="8" class="text-center py-5 text-muted">No hay datos de ventas para el período seleccionado.</td>
+                                </tr>
+                                <tr th:each="p : ${rentabilidadProductos}">
+                                    <td class="ps-4 fw-bold" th:text="${p.nombreProducto}"></td>
+                                    <td class="text-center" th:text="${#numbers.formatDecimal(p.unidadesVendidas, 1, 0)}"></td>
+                                    <td class="text-center" th:text="'S/ ' + ${#numbers.formatDecimal(p.precioCompra, 1, 2)}"></td>
+                                    <td class="text-center" th:text="'S/ ' + ${#numbers.formatDecimal(p.precioVenta, 1, 2)}"></td>
+                                    <td class="text-center" th:text="'S/ ' + ${#numbers.formatDecimal(p.ingresosTotales, 1, 2)}"></td>
+                                    <td class="text-center text-danger" th:text="'S/ ' + ${#numbers.formatDecimal(p.costoTotal, 1, 2)}"></td>
+                                    <td class="text-center fw-bold text-success" th:text="'S/ ' + ${#numbers.formatDecimal(p.utilidadTotal, 1, 2)}"></td>
+                                    <td class="text-center pe-4">
+                                        <span th:with="margen=${p.costoTotal > 0 ? (p.utilidadTotal / p.costoTotal) * 100 : 0}"
+                                              th:text="${#numbers.formatDecimal(margen, 1, 1)} + '%'"
+                                              class="badge"
+                                              th:classappend="${margen > 50 ? 'bg-success' : (margen > 20 ? 'bg-warning text-dark' : 'bg-danger')}">
+                                        </span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+                </div>
+                <div class="col-lg-4">
+                    <!-- Tabla de Rentabilidad por Servicio -->
                     <div class="card card-custom h-100">
-                        <div class="card-header bg-white py-3 border-bottom">
-                            <span class="fw-600 text-dark"><i class="bi bi-trophy text-warning me-2"></i>Top 10 Productos Más Vendidos</span>
+                        <div class="card-header bg-light">
+                            <h5 class="card-title m-0 fw-bold text-dark"><i class="bi bi-clipboard-data me-2 text-info"></i>Ingresos por Servicio</h5>
                         </div>
                         <div class="card-body p-0">
                             <div class="table-responsive">
                                 <table class="table table-hover align-middle mb-0">
                                     <thead class="table-light">
                                         <tr>
-                                            <th class="ps-4">#</th>
-                                            <th>Producto</th>
-                                            <th class="text-center">Vendidos</th>
-                                            <th class="text-end pe-4">Ganancia Neta</th>
+                                            <th class="ps-4 py-3">Servicio</th>
+                                            <th class="text-end pe-4">Total Recaudado</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <tr th:if="${topProductos == null or #lists.isEmpty(topProductos)}">
-                                            <td colspan="4" class="text-center py-4 text-muted small">No hay datos en este rango.</td>
+                                        <tr th:if="${rentabilidadServicios.isEmpty()}">
+                                            <td colspan="2" class="text-center py-5 text-muted">No hay datos.</td>
                                         </tr>
-                                        <tr th:each="prod, iterStat : ${topProductos}">
-                                            <td class="ps-4 text-muted fw-bold" th:text="${iterStat.count}">1</td>
-                                            <td class="fw-500 text-dark" th:text="${prod.nombre}">Producto X</td>
-                                            <td class="text-center"><span class="badge bg-primary bg-opacity-10 text-primary border border-primary-subtle" th:text="${prod.cantidad}">0</span></td>
-                                            <td class="text-end pe-4 fw-600 text-success" th:text="'S/. ' + ${#numbers.formatDecimal(prod.ganancia ?: 0, 1, 'COMMA', 2, 'POINT')}">S/. 0.00</td>
+                                        <tr th:each="s : ${rentabilidadServicios}">
+                                            <td class="ps-4 fw-bold" th:text="${s.nombreServicio}"></td>
+                                            <td class="text-end pe-4 text-success fw-bold" th:text="'S/ ' + ${#numbers.formatDecimal(s.totalRecaudado, 1, 2)}"></td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -170,92 +132,52 @@
                         </div>
                     </div>
                 </div>
-
-                <div class="col-lg-6">
-                    <div class="card card-custom h-100">
-                        <div class="card-header bg-white py-3 border-bottom">
-                            <span class="fw-600 text-dark"><i class="bi bi-stars text-info me-2"></i>Servicios Solicitados</span>
-                        </div>
-                        <div class="card-body p-0">
-                            <div class="table-responsive">
-                                <table class="table table-hover align-middle mb-0">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th class="ps-4">#</th>
-                                            <th>Servicio</th>
-                                            <th class="text-center">Atenciones</th>
-                                            <th class="text-end pe-4">Recaudado</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr th:if="${topServicios == null or #lists.isEmpty(topServicios)}">
-                                            <td colspan="4" class="text-center py-4 text-muted small">No hay datos en este rango.</td>
-                                        </tr>
-                                        <tr th:each="serv, iterStat : ${topServicios}">
-                                            <td class="ps-4 text-muted fw-bold" th:text="${iterStat.count}">1</td>
-                                            <td class="fw-500 text-dark" th:text="${serv.nombre}">Servicio Y</td>
-                                            <td class="text-center"><span class="badge bg-info bg-opacity-10 text-info border border-info-subtle" th:text="${serv.cantidad}">0</span></td>
-                                            <td class="text-end pe-4 fw-600 text-success" th:text="'S/. ' + ${#numbers.formatDecimal(serv.ganancia ?: 0, 1, 'COMMA', 2, 'POINT')}">S/. 0.00</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
             </div>
 
         </main>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        let sortDirection = 'desc';
 
-    <script th:inline="javascript">
-        // Extraemos los datos enviados desde Java mediante Thymeleaf
-        const etiquetasGrafico = /*[[${graficoLabels}]]*/ ['Lunes', 'Martes', 'Miércoles'];
-        const datosVentasGrafico = /*[[${graficoDatosVentas}]]*/ [0, 0, 0];
-        const datosGananciasGrafico = /*[[${graficoDatosGanancias}]]*/ [0, 0, 0];
+        function sortTable(columnIndex) {
+            const table = document.getElementById("tabla-rentabilidad");
+            const tbody = table.querySelector("tbody");
+            const rows = Array.from(tbody.querySelectorAll("tr"));
 
-        // Configuración de Chart.js
-        const ctx = document.getElementById('ventasChart').getContext('2d');
-        new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: etiquetasGrafico,
-                datasets: [
-                    {
-                        label: 'Ventas Brutas (S/.)',
-                        data: datosVentasGrafico,
-                        borderColor: '#3b82f6', // Azul
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                        borderWidth: 2,
-                        tension: 0.3,
-                        fill: true
-                    },
-                    {
-                        label: 'Ganancia Neta (S/.)',
-                        data: datosGananciasGrafico,
-                        borderColor: '#10b981', // Verde
-                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                        borderWidth: 2,
-                        tension: 0.3,
-                        fill: true
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { position: 'top' }
-                },
-                scales: {
-                    y: { beginAtZero: true }
+            const sortedRows = rows.sort((a, b) => {
+                const aText = a.cells[columnIndex].textContent.trim().replace('S/ ', '').replace(',', '');
+                const bText = b.cells[columnIndex].textContent.trim().replace('S/ ', '').replace(',', '');
+                
+                const aValue = parseFloat(aText);
+                const bValue = parseFloat(bText);
+
+                if (sortDirection === 'asc') {
+                    return aValue - bValue;
+                } else {
+                    return bValue - aValue;
                 }
-            }
+            });
+
+            // Re-append sorted rows
+            sortedRows.forEach(row => tbody.appendChild(row));
+
+            // Toggle sort direction
+            sortDirection = (sortDirection === 'asc' ? 'desc' : 'asc');
+
+            // Update sort indicator
+            const headers = table.querySelectorAll('th.sortable');
+            headers.forEach(h => h.querySelector('i').className = 'bi bi-arrow-down-up small');
+            const currentHeaderIcon = headers[0].querySelector('i'); // Assuming only one sortable column for now
+            currentHeaderIcon.className = sortDirection === 'asc' ? 'bi bi-sort-up small' : 'bi bi-sort-down small';
+        }
+
+        // Initial sort on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            sortTable(6); // Sort by "Utilidad Total" (column index 6) by default
         });
     </script>
+
 </body>
 </html>

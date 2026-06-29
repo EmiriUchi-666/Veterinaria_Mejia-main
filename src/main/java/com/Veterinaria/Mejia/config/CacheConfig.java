@@ -1,12 +1,14 @@
 package com.Veterinaria.Mejia.config;
 
-import com.github.benmanes.caffeine.cache.Caffeine;
+import java.util.concurrent.TimeUnit;
+
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cache.caffeine.CaffeineCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import java.util.concurrent.TimeUnit;
+
+import com.github.benmanes.caffeine.cache.Caffeine;
 
 /**
  * M4 — Cache en memoria con Caffeine para consultas frecuentes del dashboard.
@@ -17,6 +19,7 @@ import java.util.concurrent.TimeUnit;
 public class CacheConfig {
 
     @Bean
+    @SuppressWarnings("null")
     public CacheManager cacheManager() {
         CaffeineCacheManager mgr = new CaffeineCacheManager(
             "topProductos",     // Top productos más vendidos

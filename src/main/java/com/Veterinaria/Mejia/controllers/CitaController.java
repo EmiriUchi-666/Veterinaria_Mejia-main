@@ -73,6 +73,7 @@ public class CitaController {
     }
 
     @GetMapping("/cambiar-estado/{id}/{estado}")
+    @SuppressWarnings("null")
     public String cambiarEstado(@PathVariable Integer id, @PathVariable String estado, RedirectAttributes ra) {
         Cita cita = citaRepo.findById(id).orElse(null);
         if (cita != null) {

@@ -79,6 +79,7 @@ public class CategoriaController {
     // 4. ELIMINAR DE FORMA SEGURA
     // ==========================================
     @GetMapping("/eliminar/{id}")
+    @SuppressWarnings("null")
     public String eliminarCategoria(@PathVariable("id") Integer id, RedirectAttributes redirectAttrs) {
         long productosAsociados = categoriaRepository.contarProductosAsociadosJPQL(id);
         

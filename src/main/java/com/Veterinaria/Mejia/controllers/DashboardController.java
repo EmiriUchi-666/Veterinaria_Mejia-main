@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
@@ -12,11 +13,12 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 
+import com.Veterinaria.Mejia.models.AlertaSistema;
 import com.Veterinaria.Mejia.models.AperturaCierreCaja;
+import com.Veterinaria.Mejia.repository.AlertaSistemaRepository;
 import com.Veterinaria.Mejia.repository.CitaRepository;
 import com.Veterinaria.Mejia.repository.DuenoRepository;
 import com.Veterinaria.Mejia.repository.PacienteRepository;
-import com.Veterinaria.Mejia.repository.ProductoRepository;
 import com.Veterinaria.Mejia.services.CajaService;
 import com.Veterinaria.Mejia.services.ReporteService;
 
@@ -31,7 +33,7 @@ public class DashboardController {
     private final PacienteRepository pacienteRepo;
     private final DuenoRepository duenoRepo;
     private final CitaRepository citaRepo;
-    private final ProductoRepository productoRepo;
+    private final AlertaSistemaRepository alertaSistemaRepo;
 
     @GetMapping("/dashboard")
     public String mostrarInicio(Model model) {
@@ -46,10 +48,7 @@ public class DashboardController {
         model.addAttribute("totalPacientes", pacienteRepo.count());
         model.addAttribute("totalDuenos",    duenoRepo.countByEstadoTrue());
         model.addAttribute("totalCitas",     citaRepo.count());
-        model.addAttribute("productosStockBajo",
-            productoRepo.findAll().stream().filter(p ->
-                Boolean.TRUE.equals(p.getEstado()) &&
-                p.getStockTotal().compareTo(p.getStockMinimo()) < 0).count());
+        model.addAttribute("totalAlertas", alertaSistemaRepo.countByLeidaFalse());
 
         // ── Estado de caja ─────────────────────────────────────────────────
         Optional<AperturaCierreCaja> caja = cajaService.getCajaAbierta();
@@ -61,6 +60,11 @@ public class DashboardController {
             BigDecimal saldo = c.getSaldoActual(); 
             model.addAttribute("saldoCaja", saldo);
         }
+
+        // ── FASE 8: Alertas del día ────────────────────────────────────────
+        // Ahora se leen las alertas pre-calculadas de la BD
+        List<AlertaSistema> alertas = alertaSistemaRepo.findByLeidaFalseOrderByFechaGeneradaDesc();
+        model.addAttribute("alertas", alertas);
 
         // ── Fecha actual ───────────────────────────────────────────────────
         model.addAttribute("fechaHoy",
