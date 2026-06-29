@@ -3,7 +3,8 @@ package com.Veterinaria.Mejia.services;
 import java.util.List;
 import java.util.Optional;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,17 +13,17 @@ import com.Veterinaria.Mejia.models.Role;
 import com.Veterinaria.Mejia.models.Usuario;
 import com.Veterinaria.Mejia.repository.UsuarioRepository;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class UsuarioService {
 
-    @Autowired
-    private UsuarioRepository usuarioRepository;
+    private final UsuarioRepository usuarioRepository;
+    private final PasswordEncoder passwordEncoder; // Inyectamos el encriptador de contraseñas
 
-    @Autowired
-    private PasswordEncoder passwordEncoder; // Inyectamos el encriptador de contraseñas
+    private static final Logger log = LoggerFactory.getLogger(UsuarioService.class);
 
-    // Límite de capacidad de usuarios para la veterinaria
-    private static final long MAXIMO_USUARIOS_PERMITIDOS = 5;
 
     // Regex de contraseña compartida para creación y actualización
     private static final String PASSWORD_REGEX = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&.])[A-Za-z\\d@$!%*?&.]{8,}$";
@@ -49,11 +50,6 @@ public class UsuarioService {
     // REGISTRO DE NUEVO USUARIO
     @Transactional
     public Usuario guardarUsuarioNuevo(Usuario usuario) {
-        // 1. Validar límite de licencias/usuarios
-        if (usuarioRepository.count() >= MAXIMO_USUARIOS_PERMITIDOS) {
-            throw new RuntimeException("Límite alcanzado: El sistema solo permite un máximo de " + MAXIMO_USUARIOS_PERMITIDOS + " usuarios.");
-        }
-
         // 2. Validar que el DNI/Username no se repita
         Optional<Usuario> existeUsuario = usuarioRepository.findByNombreUsuario(usuario.getNombreUsuario());
         if (existeUsuario.isPresent()) {

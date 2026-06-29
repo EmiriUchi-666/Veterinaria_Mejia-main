@@ -1,8 +1,12 @@
 package com.Veterinaria.Mejia.services;
 
-import com.Veterinaria.Mejia.models.*;
-import com.Veterinaria.Mejia.repository.*;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.LocalDateTime;
+import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,10 +15,10 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.net.URI;
-import java.net.http.*;
-import java.time.LocalDateTime;
-import java.util.List;
+import com.Veterinaria.Mejia.models.ComprobanteElectronico;
+import com.Veterinaria.Mejia.models.ComprobantePendiente;
+import com.Veterinaria.Mejia.repository.ComprobanteElectronicoRepository;
+import com.Veterinaria.Mejia.repository.ComprobantePendienteRepository;
 
 /**
  * C5 — Modo Contingencia SUNAT.
@@ -109,7 +113,7 @@ public class ContingenciaService {
                     ComprobanteElectronico comp = p.getComprobante();
                     comp.setEstado(ComprobanteElectronico.EstadoComprobante.ACEPTADO);
                     comprobanteRepo.save(comp);
-                    log.info("[CONTINGENCIA] ✅ Comprobante {} enviado exitosamente en intento {}.",
+                    log.info("[CONTINGENCIA] Comprobante {} enviado exitosamente en intento {}.",
                             comp.getNumeroCompleto(), p.getIntentos());
                 } else {
                     p.setEstado(ComprobantePendiente.EstadoPendiente.PENDIENTE);

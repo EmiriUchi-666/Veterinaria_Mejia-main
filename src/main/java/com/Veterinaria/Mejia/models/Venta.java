@@ -47,7 +47,7 @@ public class Venta {
     @JoinColumn(name = "cliente_id")
     private Cliente cliente;
 
-    @Column(name = "fecha_emision", insertable = false, updatable = false)
+    @Column(name = "fecha_emision")
     private LocalDateTime fechaEmision;
 
     @NotNull(message = "El total de la venta no puede ser nulo.")
@@ -61,12 +61,12 @@ public class Venta {
     private String tipoPago;
 
     @NotBlank(message = "El tipo de comprobante es obligatorio.")
-    @Pattern(regexp = "^(Boleta|Ticket)$", message = "El comprobante debe ser Boleta o Ticket.")
+    @Pattern(regexp = "^(Boleta|Factura|NotaCredito)$", message = "El comprobante debe ser Boleta, Factura o NotaCredito.")
     @Column(name = "tipo_comprobante", nullable = false)
     private String tipoComprobante;
 
     @NotBlank(message = "La serie del comprobante es obligatoria.")
-    @Pattern(regexp = "^(B001|T001)$", message = "La serie debe ser B001 para Boletas o T001 para Tickets.")
+    @Pattern(regexp = "^(B001|F001|N001)$", message = "La serie debe ser B001, F001 o N001.")
     @Column(nullable = false, length = 4)
     private String serie;
 

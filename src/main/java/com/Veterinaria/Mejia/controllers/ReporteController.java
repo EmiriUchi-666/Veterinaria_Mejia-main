@@ -1,5 +1,8 @@
 package com.Veterinaria.Mejia.controllers;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,20 +23,39 @@ public class ReporteController {
 
     @GetMapping
     public String mostrarReportesFinancieros(
-            @RequestParam(name = "rango", defaultValue = "hoy") String rango, 
+            @RequestParam(name = "rango", defaultValue = "hoy") String rango,
+            @RequestParam(name = "fechaInicio", required = false) LocalDate fechaInicio,
+            @RequestParam(name = "fechaFin", required = false) LocalDate fechaFin,
             Model model) {
 
-        // 1. Estandarizamos el filtro (hoy, semana, mes)
-        String rangoSeleccionado = rango.toLowerCase();
+        // FASE 5: Centralizar cálculo de fechas
+        LocalDateTime inicio, fin;
+        switch (rango.toLowerCase()) {
+            case "semana":
+                inicio = LocalDate.now().minusDays(6).atStartOfDay();
+                fin = LocalDateTime.now();
+                break;
+            case "mes":
+                inicio = LocalDate.now().minusMonths(1).atStartOfDay();
+                fin = LocalDateTime.now();
+                break;
+            case "personalizado":
+                inicio = (fechaInicio != null) ? fechaInicio.atStartOfDay() : LocalDate.now().atStartOfDay();
+                fin = (fechaFin != null) ? fechaFin.atTime(LocalTime.MAX) : LocalDateTime.now();
+                break;
+            case "hoy":
+            default:
+                inicio = LocalDate.now().atStartOfDay();
+                fin = LocalDateTime.now();
+                break;
+        }
 
-        // 2. Generamos todas las métricas, gráficos y tops desde el Service
-        Map<String, Object> datosReporte = reporteService.generarReporteDashboard(rangoSeleccionado);
+        Map<String, Object> datosReporte = reporteService.generarReporteDashboard(rango, inicio, fin);
 
-        // 3. Enviamos todos los datos (cantidadVentas, valorInvertido, etc.) al HTML
         model.addAllAttributes(datosReporte);
-
-        // 4. Enviamos el rango actual para que el botón correspondiente se pinte de "Activo" en la vista
-        model.addAttribute("rangoActual", rangoSeleccionado);
+        model.addAttribute("rangoActual", rango);
+        model.addAttribute("fechaInicio", inicio.toLocalDate());
+        model.addAttribute("fechaFin", fin.toLocalDate());
 
         return "reportes/reportes"; // Tu archivo HTML de reportes
     }

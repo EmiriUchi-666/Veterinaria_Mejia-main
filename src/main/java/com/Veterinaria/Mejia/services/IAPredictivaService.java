@@ -1,15 +1,24 @@
 package com.Veterinaria.Mejia.services;
 
-import com.Veterinaria.Mejia.models.*;
-import com.Veterinaria.Mejia.repository.*;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
+import java.text.Normalizer;
 import java.time.LocalDate;
 import java.time.Period;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.Veterinaria.Mejia.models.HistoriaClinica;
+import com.Veterinaria.Mejia.models.Paciente;
+import com.Veterinaria.Mejia.models.RiesgoPaciente;
+import com.Veterinaria.Mejia.repository.HistoriaClinicaRepository;
+import com.Veterinaria.Mejia.repository.HistorialVacunaRepository;
+import com.Veterinaria.Mejia.repository.PacienteRepository;
+import com.Veterinaria.Mejia.repository.RiesgoPacienteRepository;
+
+import lombok.RequiredArgsConstructor;
 
 /**
  * Motor de IA Predictiva basado en reglas heurísticas IF-THEN.
@@ -17,19 +26,15 @@ import java.util.List;
  * y generar recomendaciones preventivas personalizadas.
  */
 @Service
+@RequiredArgsConstructor
 public class IAPredictivaService {
 
-    @Autowired
-    private PacienteRepository pacienteRepo;
+    private final PacienteRepository pacienteRepo;
+    private final HistoriaClinicaRepository historiaClinicaRepo;
+    private final HistorialVacunaRepository vacunaRepo;
+    private final RiesgoPacienteRepository riesgoRepo;
 
-    @Autowired
-    private HistoriaClinicaRepository historiaClinicaRepo;
-
-    @Autowired
-    private HistorialVacunaRepository vacunaRepo;
-
-    @Autowired
-    private RiesgoPacienteRepository riesgoRepo;
+    private static final Pattern DIACRITICS_AND_FRIENDS = Pattern.compile("[\\p{InCombiningDiacriticalMarks}\\p{IsLm}\\p{IsSk}]+");
 
     /**
      * Evalúa el riesgo predictivo de un paciente y lo persiste.
@@ -57,19 +62,21 @@ public class IAPredictivaService {
             edadAnios = Period.between(paciente.getFechaNacimiento(), LocalDate.now()).getYears();
         }
 
-        String raza = paciente.getRaza() != null ? paciente.getRaza().toLowerCase() : "";
-        String alergias = paciente.getAlergias() != null ? paciente.getAlergias().toLowerCase() : "";
+        // FASE 4: Normalización de texto para mejorar la IA
+        String raza = normalize(paciente.getRaza());
+        String alergias = normalize(paciente.getAlergias());
 
         // Concatenar diagnósticos históricos para análisis
         StringBuilder historialTexto = new StringBuilder();
         for (HistoriaClinica h : historiales) {
-            if (h.getDiagnostico() != null) historialTexto.append(h.getDiagnostico().toLowerCase()).append(" ");
-            if (h.getSintomas() != null) historialTexto.append(h.getSintomas().toLowerCase()).append(" ");
+            if (h.getDiagnostico() != null) historialTexto.append(normalize(h.getDiagnostico())).append(" ");
+            if (h.getSintomas() != null) historialTexto.append(normalize(h.getSintomas())).append(" ");
         }
         String historial = historialTexto.toString();
 
         // ── REGLA 1: Razas propensas a problemas articulares ────────
-        if (raza.contains("pastor alemán") || raza.contains("pastor aleman") ||
+        // Ahora 'pastor aleman' coincide con 'pastor alemán'
+        if (raza.contains("pastor aleman") ||
                 raza.contains("labrador") || raza.contains("golden") ||
                 raza.contains("rottweiler") || raza.contains("bernés")) {
             riesgo.setRiesgoArticular(75.0);
@@ -97,9 +104,7 @@ public class IAPredictivaService {
 
         // ── REGLA 4: Historial de infecciones recurrentes ───────────
         long infecciones = historiales.stream()
-                .filter(h -> h.getDiagnostico() != null &&
-                        (h.getDiagnostico().toLowerCase().contains("infección") ||
-                         h.getDiagnostico().toLowerCase().contains("infeccion")))
+                .filter(h -> h.getDiagnostico() != null && normalize(h.getDiagnostico()).contains("infeccion"))
                 .count();
         if (infecciones >= 2) {
             riesgo.setRiesgoEnfermedadesRecurrentes(riesgo.getRiesgoEnfermedadesRecurrentes() + 40);
@@ -116,7 +121,10 @@ public class IAPredictivaService {
         }
 
         // ── REGLA 6: Vacunas vencidas ────────────────────────────────
-        long vacunasPendientes = vacunaRepo.contarVacunasPendientes(LocalDate.now(), LocalDate.now().plusDays(30));
+        // FASE 4: Corregido para filtrar por el paciente actual.
+        long vacunasPendientes = vacunaRepo.findByPacienteId(pacienteId).stream()
+                .filter(v -> v.getFechaProximoRefuerzo() != null && v.getFechaProximoRefuerzo().isBefore(LocalDate.now().plusDays(30)))
+                .count();
         if (vacunasPendientes > 0) {
             recomendaciones.add("Actualizar calendario de vacunación urgente (" + vacunasPendientes + " vacuna(s) próximas a vencer)");
         }
@@ -140,6 +148,15 @@ public class IAPredictivaService {
                 .ifPresent(r -> riesgoRepo.delete(r));
 
         return riesgoRepo.save(riesgo);
+    }
+
+    // Método de utilidad para normalizar texto (quitar tildes, a minúsculas)
+    private static String normalize(String input) {
+        if (input == null || input.isBlank()) {
+            return "";
+        }
+        String normalized = Normalizer.normalize(input, Normalizer.Form.NFD);
+        return DIACRITICS_AND_FRIENDS.matcher(normalized).replaceAll("").toLowerCase();
     }
 
     /** Retorna la última evaluación de riesgo de un paciente (sin re-calcular). */

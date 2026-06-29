@@ -83,11 +83,13 @@ public class IngresoStockService {
                         producto.setStockAbierto(producto.getStockAbierto().add(contenidoExtra));
                     }
                 } else {
+                    // Para productos no fraccionables, la cantidad debe ser entera.
                     int cantidadEntera = detalle.getCantidad().intValue();
                     if (detalle.getCantidad().compareTo(new BigDecimal(cantidadEntera)) != 0) {
                         throw new IllegalArgumentException("La cantidad de ingreso para '" + producto.getNombre() + "' debe ser un número entero cerrado.");
                     }
-                    int stockCerradoActual = producto.getStockCerrado() != null ? producto.getStockCerrado() : 0;
+                    // El stock se suma a 'stockCerrado' que ahora representa las unidades.
+                    int stockCerradoActual = producto.getStockCerrado() != null ? producto.getStockCerrado() : 0; 
                     producto.setStockCerrado(stockCerradoActual + cantidadEntera);
                 }
                 

@@ -2,21 +2,14 @@ package com.Veterinaria.Mejia.services;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.Veterinaria.Mejia.facturacion.NubefactItemDTO;
 import com.Veterinaria.Mejia.facturacion.NubefactRequestDTO;
 import com.Veterinaria.Mejia.facturacion.NubefactResponseDTO;
 import com.Veterinaria.Mejia.models.ComprobanteElectronico;
@@ -27,48 +20,26 @@ import com.Veterinaria.Mejia.repository.DetalleVentaRepository;
 import com.Veterinaria.Mejia.repository.UsuarioRepository;
 import com.Veterinaria.Mejia.repository.VentaRepository;
 
-import tools.jackson.databind.ObjectMapper;
+import lombok.RequiredArgsConstructor;
 
-/**
- * Servicio de Facturación Electrónica — integración con PSE Nubefact.
- *
- * Flujo:
- *  1. Genera el comprobante en la BD (serie+correlativo auto)
- *  2. Arma el JSON para Nubefact
- *  3. Envía vía HTTP POST a la API de Nubefact
- *  4. Actualiza el estado con la respuesta SUNAT (CDR, URL PDF)
- *
- * Configurar en application.properties:
- *   nubefact.api.url=https://api.nubefact.com/api/v1/{ruc}
- *   nubefact.api.token=TU_TOKEN_AQUI
- *   nubefact.ruc=20600000001
- *   nubefact.razon.social=VETERINARIA MEJIA E.I.R.L.
- */
 @Service
+@RequiredArgsConstructor
 public class FacturacionElectronicaService {
-
-    @Value("${nubefact.api.url:https://api.nubefact.com/api/v1}")
-    private String apiUrl;
 
     @Value("${nubefact.api.token:DEMO}")
     private String apiToken;
-
-    @Value("${nubefact.ruc:20600000001}")
-    private String rucEmisor;
-
-    @Value("${nubefact.razon.social:VETERINARIA MEJIA E.I.R.L.}")
-    private String razonSocialEmisor;
 
     @Value("${nubefact.modo.prueba:true}")
     private boolean modoPrueba;
 
     private static final BigDecimal IGV_RATE = new BigDecimal("0.18");
-    private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("dd-MM-yyyy");
 
-    @Autowired private ComprobanteElectronicoRepository comprobanteRepo;
-    @Autowired private DetalleVentaRepository detalleVentaRepo;
-    @Autowired private VentaRepository ventaRepo;
-    @Autowired private UsuarioRepository usuarioRepo;
+    private final ComprobanteElectronicoRepository comprobanteRepo;
+    private final DetalleVentaRepository detalleVentaRepo;
+    private final VentaRepository ventaRepo;
+    private final UsuarioRepository usuarioRepo;
+    private final NubefactMapper nubefactMapper;
+    private final NubefactClient nubefactClient;
 
     /**
      * Emite una boleta de venta electrónica para la venta indicada.
@@ -228,77 +199,24 @@ public class FacturacionElectronicaService {
 
     private void enviarANubefact(ComprobanteElectronico comp) {
         try {
-            NubefactRequestDTO req = construirRequest(comp);
-            ObjectMapper mapper = new ObjectMapper();
-            String jsonBody = mapper.writeValueAsString(req);
+            // 1. Mapear nuestro comprobante al DTO de Nubefact
+            NubefactRequestDTO requestPayload = nubefactMapper.toNubefactRequest(comp);
 
-            String url = apiUrl + "/" + rucEmisor + "/comprobante";
-            HttpClient client = HttpClient.newHttpClient();
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(url))
-                    .header("Content-Type", "application/json")
-                    .header("Authorization", "Token " + apiToken)
-                    .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
-                    .build();
+            // 2. Enviar la petición a través del cliente HTTP
+            NubefactResponseDTO response = nubefactClient.enviarComprobante(requestPayload);
 
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-
-            if (response.statusCode() == 200 || response.statusCode() == 201) {
-                NubefactResponseDTO resp = mapper.readValue(response.body(), NubefactResponseDTO.class);
-                comp.setCodigoRespuestaSunat(resp.sunatCodigo);
-                comp.setDescripcionRespuesta(resp.sunatDescripcion);
-                comp.setCodigoHash(resp.codigoHash);
-                comp.setUrlPdf(resp.enlaceDelPdf);
-                comp.setUrlXml(resp.enlaceDelXml);
-                comp.setEstado(resp.esExitoso()
-                        ? ComprobanteElectronico.EstadoComprobante.ACEPTADO
-                        : ComprobanteElectronico.EstadoComprobante.RECHAZADO);
-            } else {
-                comp.setEstado(ComprobanteElectronico.EstadoComprobante.ERROR);
-                comp.setDescripcionRespuesta("HTTP " + response.statusCode() + ": " + response.body());
-            }
+            // 3. Actualizar nuestro comprobante con la respuesta de SUNAT
+            comp.setCodigoRespuestaSunat(response.sunatCodigo);
+            comp.setDescripcionRespuesta(response.sunatDescripcion);
+            comp.setCodigoHash(response.codigoHash);
+            comp.setUrlPdf(response.enlaceDelPdf);
+            comp.setUrlXml(response.enlaceDelXml);
+            comp.setEstado(response.esExitoso() ? ComprobanteElectronico.EstadoComprobante.ACEPTADO : ComprobanteElectronico.EstadoComprobante.RECHAZADO);
         } catch (Exception e) {
             comp.setEstado(ComprobanteElectronico.EstadoComprobante.ERROR);
-            comp.setDescripcionRespuesta("Error de conexión con Nubefact: " + e.getMessage());
+            comp.setDescripcionRespuesta("Error al procesar con Nubefact: " + e.getMessage());
         }
         comprobanteRepo.save(comp);
-    }
-
-    private NubefactRequestDTO construirRequest(ComprobanteElectronico comp) {
-        NubefactRequestDTO req = new NubefactRequestDTO();
-        req.tipoDeComprobante = Integer.parseInt(comp.getTipoComprobante().codigoSunat);
-        req.serie = comp.getSerie();
-        req.numero = comp.getNumero();
-        req.clienteTipoDeDocumento = Integer.parseInt(comp.getReceptorTipoDoc());
-        req.clienteNumeroDeDocumento = comp.getReceptorNumDoc();
-        req.clienteDenominacion = comp.getReceptorDenominacion();
-        req.clienteEmail = comp.getReceptorEmail() != null ? comp.getReceptorEmail() : "";
-        req.fechaDeEmision = comp.getFechaEmision().format(DATE_FMT);
-        req.totalGravada = comp.getTotalGravada();
-        req.totalIgv = comp.getTotalIgv();
-        req.total = comp.getTotal();
-        req.medioDePago = comp.getMedioPago();
-        req.enviarCliente = comp.getReceptorEmail() != null && !comp.getReceptorEmail().isBlank();
-
-        // Items
-        List<NubefactItemDTO> items = new ArrayList<>();
-        if (comp.getDetalles() != null) {
-            for (DetalleComprobante d : comp.getDetalles()) {
-                NubefactItemDTO item = new NubefactItemDTO();
-                item.unidadDeMedida = d.getUnidadMedida();
-                item.codigo = d.getCodigo() != null ? d.getCodigo() : "";
-                item.descripcion = d.getDescripcion();
-                item.cantidad = d.getCantidad();
-                item.valorUnitario = d.getValorUnitario();
-                item.precioUnitario = d.getPrecioUnitario();
-                item.subtotal = d.getValorUnitario().multiply(d.getCantidad()).setScale(2, RoundingMode.HALF_UP);
-                item.igv = d.getIgv();
-                item.total = d.getTotal();
-                items.add(item);
-            }
-        }
-        req.items = items;
-        return req;
     }
 
     /** Reintenta el envío de un comprobante que falló. */

@@ -1,6 +1,7 @@
 package com.Veterinaria.Mejia.models;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.*;
@@ -23,8 +24,8 @@ public class Producto {
     private Especie especie;
 
     @NotBlank(message = "El nombre es obligatorio")
-    @Size(max = 100, message = "El nombre no debe superar los 100 caracteres")
-    @Column(nullable = false, length = 100)
+    @Size(max = 150, message = "El nombre no debe superar los 150 caracteres")
+    @Column(nullable = false, length = 150)
     private String nombre;
 
     @NotBlank(message = "El tipo de unidad es obligatorio")
@@ -39,13 +40,12 @@ public class Producto {
     @Column(name = "precio_venta_actual", nullable = false, precision = 10, scale = 2)
     private BigDecimal precioVentaActual;
 
-    @Column(name = "stock_total", precision = 10, scale = 2)
-    @Builder.Default
-    private BigDecimal stockTotal = BigDecimal.ZERO;
+    @Transient // Campo calculado, no se persiste en BD.
+    private BigDecimal stockTotal;
 
-    @Column(name = "stock_minimo", precision = 10, scale = 2, updatable = false)
+    @Column(name = "stock_minimo", precision = 10, scale = 2)
     @Builder.Default
-    private BigDecimal stockMinimo = new BigDecimal("12.00");
+    private BigDecimal stockMinimo = new BigDecimal("12.00"); // Eliminado 'final'
 
     @Column(name = "estado", nullable = false, columnDefinition = "TINYINT(1)")
     @Builder.Default
@@ -86,6 +86,12 @@ public class Producto {
     @Builder.Default
     private Boolean esAlimento = false;
 
+    // ── Clasificación de Uso ─────────────────────────────────────────────────
+    /** Indica si el producto es exclusivo para uso clínico (no para venta en caja) */
+    @Column(name = "uso_clinico", columnDefinition = "TINYINT(1)")
+    @Builder.Default
+    private Boolean usoClinico = false;
+
     /** Peso en kg de un producto suelto (para calcular kg totales) */
     @Column(name = "peso_unitario_kg", precision = 10, scale = 2)
     @Builder.Default
@@ -93,13 +99,22 @@ public class Producto {
 
     // ── Métodos calculados ───────────────────────────────────────────────────
 
-    /** Kg totales = (sacos cerrados × contenido) + stock abierto */
-    public BigDecimal getKgTotales() {
-        if (!Boolean.TRUE.equals(permiteFraccionamiento)) return stockTotal;
-        BigDecimal kgCerrados = contenidoPorEnvase
-                .multiply(new BigDecimal(stockCerrado != null ? stockCerrado : 0));
-        BigDecimal kgAbiertos = stockAbierto != null ? stockAbierto : BigDecimal.ZERO;
-        return kgCerrados.add(kgAbiertos);
+    /**
+     * Calcula el stock total disponible en tiempo de ejecución.
+     * - Si permite fraccionamiento: (unidades cerradas * contenido por envase) + stock abierto.
+     * - Si no permite fraccionamiento: stock de unidades cerradas.
+     * Este método reemplaza al campo 'stockTotal' persistido.
+     */
+    public BigDecimal getStockTotal() {
+        if (Boolean.TRUE.equals(permiteFraccionamiento)) {
+            BigDecimal contenido = (contenidoPorEnvase != null && contenidoPorEnvase.compareTo(BigDecimal.ZERO) > 0) ? contenidoPorEnvase : BigDecimal.ONE;
+            BigDecimal stockDeCerrados = new BigDecimal(stockCerrado != null ? stockCerrado : 0).multiply(contenido);
+            BigDecimal stockDeAbierto = stockAbierto != null ? stockAbierto : BigDecimal.ZERO;
+            return stockDeCerrados.add(stockDeAbierto).setScale(2, RoundingMode.HALF_UP);
+        } else {
+            // Para productos no fraccionables, el stock son las unidades enteras.
+            return new BigDecimal(stockCerrado != null ? stockCerrado : 0).setScale(2, RoundingMode.HALF_UP);
+        }
     }
 
     public BigDecimal calcularInversionTotal() {

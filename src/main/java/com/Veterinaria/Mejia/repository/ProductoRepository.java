@@ -36,10 +36,21 @@ public interface ProductoRepository extends JpaRepository<Producto, Integer> {
     @Query("SELECT p FROM Producto p WHERE p.stockCerrado <= p.stockMinimo")
     List<Producto> buscarProductosStockCriticoJPQL();
 
-}
-    // A6 – Optimistic locking para evitar stock negativo en concurrencia
-    @org.springframework.data.jpa.repository.Query(
-        value = "SELECT p FROM Producto p WHERE p.id = :id",
-        lockMode = jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    /**
+     * Devuelve los productos habilitados para la venta en caja (que no son de uso clínico exclusivo)
+     */
+    @Query("SELECT p FROM Producto p WHERE p.estado = true AND p.usoClinico = false")
+    List<Producto> buscarProductosParaVenta();
+
+    /**
+     * Devuelve los productos habilitados exclusivamente para curaciones/recetas (uso clínico)
+     */
+    @Query("SELECT p FROM Producto p WHERE p.estado = true AND p.usoClinico = true")
+    List<Producto> buscarProductosParaClinica();
+
+       // A6 – Optimistic/Pessimistic locking para evitar stock negativo en concurrencia
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @org.springframework.data.jpa.repository.Query("SELECT p FROM Producto p WHERE p.id = :id")
     java.util.Optional<com.Veterinaria.Mejia.models.Producto> findByIdWithLock(
         @org.springframework.data.repository.query.Param("id") Integer id);
+}

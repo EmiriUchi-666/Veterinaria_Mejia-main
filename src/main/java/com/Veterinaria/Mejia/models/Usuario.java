@@ -1,8 +1,22 @@
 package com.Veterinaria.Mejia.models;
 
-import jakarta.persistence.*;
-import jakarta.validation.constraints.*;
-import lombok.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "usuarios")
@@ -18,8 +32,8 @@ public class Usuario {
 
     // Nickname: Empieza con U o u, seguido de exactamente 8 números (DNI)
     @NotBlank(message = "El nombre de usuario es obligatorio")
-    @Pattern(regexp = "^[uU][0-9]{8}$", message = "El usuario debe empezar con 'U' seguido de 8 dígitos (DNI).")
-    @Column(name = "nombre_usuario", unique = true, nullable = false, length = 9)
+    @Pattern(regexp = "^[a-zA-Z0-9_]{4,20}$", message = "El usuario debe tener entre 4 y 20 caracteres alfanuméricos.")
+    @Column(name = "nombre_usuario", unique = true, nullable = false, length = 20)
     private String nombreUsuario;
 
     // Aquí guardaremos el Hash de BCrypt (No la contraseña plana)
@@ -36,10 +50,10 @@ public class Usuario {
     private Boolean estado = true; // Siempre activo al nacer
 
     @NotBlank(message = "Debes elegir una pregunta de seguridad")
+    @Size(max = 150)
     @Column(name = "pregunta_secreta", nullable = false, length = 150)
     private String preguntaSecreta;
 
-    @NotBlank(message = "La respuesta secreta es obligatoria")
     @Column(name = "respuesta_secreta", nullable = false, length = 255)
     private String respuestaSecreta;
 }

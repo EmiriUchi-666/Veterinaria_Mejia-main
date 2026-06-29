@@ -61,11 +61,10 @@
                                 <tr>
                                     <th class="ps-4 py-3 text-secondary fw-600">ID Lote</th>
                                     <th class="py-3 text-secondary fw-600">Fecha y Hora</th>
-                                    <th class="py-3 text-secondary fw-600">Proveedor</th>
-                                    <th class="py-3 text-secondary fw-600">Producto Ingresado</th>
-                                    <th class="py-3 text-secondary fw-600">Costo Unit.</th>
-                                    <th class="py-3 text-secondary fw-600">Cantidad</th>
-                                    <th class="py-3 text-secondary fw-600 text-end pe-4">Total Invertido</th>
+                                    <th class="py-3 text-secondary fw-600">Distribuidora</th>
+                                    <th class="py-3 text-secondary fw-600">Items</th>
+                                    <th class="py-3 text-secondary fw-600">Total Invertido</th>
+                                    <th class="py-3 text-secondary fw-600 text-center pe-4">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -78,7 +77,7 @@
                                 </tr>
 
                                 <!-- Iteración de los ingresos -->
-                                <tr th:each="ingreso : ${ingresos}">
+                                <tr th:each="ingreso : ${ingresosPage.content}">
                                     
                                     <!-- ID -->
                                     <td class="ps-4 fw-bold text-dark">
@@ -97,40 +96,27 @@
                                     <!-- Proveedor -->
                                     <td class="fw-500">
                                         <i class="bi bi-truck text-primary me-1"></i>
-                                        <span th:text="${ingreso.proveedor != null ? ingreso.proveedor.razonSocial : 'Proveedor Desconocido'}">Distribuidora X</span>
+                                        <span th:text="${ingreso.proveedor != null ? ingreso.proveedor.nombreProveedor : 'Proveedor Desconocido'}">Distribuidora X</span>
                                     </td>
                                     
-                                    <!-- Producto (Tomamos el primero de la lista de detalles) -->
+                                    <!-- Items -->
                                     <td>
-                                        <span class="badge bg-light text-dark border" 
-                                              th:if="${ingreso.detallesIngreso != null and !ingreso.detallesIngreso.empty}"
-                                              th:text="${ingreso.detallesIngreso[0].producto.nombre}">
-                                            Nombre Producto
+                                        <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle">
+                                            <i class="bi bi-box-seam me-1"></i>
+                                            <span th:text="${#lists.size(ingreso.detallesIngreso)}"></span> Productos
                                         </span>
                                     </td>
                                     
-                                    <!-- Costo Unitario -->
-                                    <td class="text-secondary">
-                                        S/. <span th:if="${ingreso.detallesIngreso != null and !ingreso.detallesIngreso.empty}"
-                                                  th:text="${#numbers.formatDecimal(ingreso.detallesIngreso[0].precioCompra, 1, 'COMMA', 2, 'POINT')}">
-                                            0.00
-                                        </span>
+                                    <!-- Total Invertido -->
+                                    <td class="fw-bold text-success">
+                                        S/. <span th:text="${#numbers.formatDecimal(ingreso.totalInvertido, 1, 'COMMA', 2, 'POINT')}">0.00</span>
                                     </td>
                                     
-                                    <!-- Cantidad -->
-                                    <td>
-                                        <span class="badge bg-info text-dark" 
-                                              th:if="${ingreso.detallesIngreso != null and !ingreso.detallesIngreso.empty}">
-                                              <span th:text="${ingreso.detallesIngreso[0].cantidad}">0</span> sacos/unid.
-                                        </span>
-                                    </td>
-                                    
-                                    <!-- Total Invertido (Multiplicación de precio x cantidad) -->
-                                    <td class="text-end pe-4 fw-bold text-success">
-                                        S/. <span th:if="${ingreso.detallesIngreso != null and !ingreso.detallesIngreso.empty}"
-                                                  th:text="${#numbers.formatDecimal(ingreso.detallesIngreso[0].precioCompra * ingreso.detallesIngreso[0].cantidad, 1, 'COMMA', 2, 'POINT')}">
-                                            0.00
-                                        </span>
+                                    <!-- Acciones -->
+                                    <td class="text-center pe-4">
+                                        <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" th:data-bs-target="'#detalleModal-' + ${ingreso.id}">
+                                            <i class="bi bi-list-ul"></i> Ver Detalle
+                                        </button>
                                     </td>
                                     
                                 </tr>
@@ -139,7 +125,8 @@
                     </div>
 
                     <!-- Controles de Paginación -->
-                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mt-3 p-3 bg-light border-top" th:if="${ingresosPage != null and ingresosPage.totalPages > 1}">
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mt-3 p-3 bg-light border-top" 
+                         th:if="${ingresosPage != null and ingresosPage.totalPages > 1}">
                         <span class="text-muted small mb-3 mb-md-0">
                             Mostrando página <strong th:text="${ingresosPage.number + 1}"></strong> de <strong th:text="${ingresosPage.totalPages}"></strong>
                             (<span th:text="${ingresosPage.totalElements}"></span> registros en total)
@@ -167,6 +154,36 @@
                 </div>
             </div>
             
+            <!-- MODALES GENERADOS DINÁMICAMENTE -->
+            <div th:each="ingreso : ${ingresosPage.content}">
+                <div class="modal fade" th:id="'detalleModal-' + ${ingreso.id}" tabindex="-1" aria-labelledby="modalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="modalLabel">
+                                    <i class="bi bi-box-seam me-2"></i>Detalle del Ingreso #<span th:text="${ingreso.id}"></span>
+                                </h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <ul class="list-group">
+                                    <li th:each="detalle : ${ingreso.detallesIngreso}" class="list-group-item d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <div class="fw-bold" th:text="${detalle.producto.nombre}">Nombre del Producto</div>
+                                            <small class="text-muted">Costo Unitario: S/. <span th:text="${#numbers.formatDecimal(detalle.precioCompra, 1, 2)}"></span></small>
+                                        </div>
+                                        <span class="badge bg-primary rounded-pill fs-6">
+                                            <span th:text="${#numbers.formatDecimal(detalle.cantidad, 1, 2)}">10</span> 
+                                            <span th:text="${detalle.producto.tipoUnidad}">Unidades</span>
+                                        </span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </main>
     </div>
 

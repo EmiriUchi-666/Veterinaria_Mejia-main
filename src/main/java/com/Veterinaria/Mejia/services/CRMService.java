@@ -1,17 +1,23 @@
 package com.Veterinaria.Mejia.services;
 
-import com.Veterinaria.Mejia.models.*;
-import com.Veterinaria.Mejia.repository.*;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
-import java.util.List;
+import com.Veterinaria.Mejia.models.Cliente;
+import com.Veterinaria.Mejia.models.ClienteMetrica;
+import com.Veterinaria.Mejia.models.SegmentoCliente;
+import com.Veterinaria.Mejia.models.Venta;
+import com.Veterinaria.Mejia.repository.ClienteMetricaRepository;
+import com.Veterinaria.Mejia.repository.ClienteRepository;
+import com.Veterinaria.Mejia.repository.SegmentoClienteRepository;
+import com.Veterinaria.Mejia.repository.VentaRepository;
 
 /**
  * Servicio CRM: calcula métricas de clientes, los clasifica en segmentos
@@ -53,7 +59,7 @@ public class CRMService {
                 .mapToDouble(v -> v.getTotalVenta() != null ? v.getTotalVenta().doubleValue() : 0.0)
                 .sum();
         double gastoPromedio = totalVisitas > 0 ? gastoTotal / totalVisitas : 0.0;
-
+        LocalDateTime primeraVisita = ventas.isEmpty() ? null : ventas.get(ventas.size() - 1).getFechaEmision();
         LocalDateTime ultimaVisita = ventas.isEmpty() ? null : ventas.get(0).getFechaEmision();
         int diasSinVisita = 0;
         if (ultimaVisita != null) {
@@ -73,7 +79,7 @@ public class CRMService {
         metrica.setDiasSinVisita(diasSinVisita);
 
         // Clasificar segmento
-        SegmentoCliente segmento = clasificarSegmento(totalVisitas, gastoTotal, diasSinVisita);
+        SegmentoCliente segmento = clasificarSegmento(totalVisitas, gastoTotal, diasSinVisita, primeraVisita);
         metrica.setSegmento(segmento);
 
         return metricaRepo.save(metrica);
@@ -83,12 +89,19 @@ public class CRMService {
      * Determina el segmento de un cliente según sus métricas.
      * Reglas: VIP > Frecuente > Ocasional > Inactivo
      */
-    private SegmentoCliente clasificarSegmento(int visitas, double gasto, int diasInactivo) {
+    private SegmentoCliente clasificarSegmento(int visitas, double gasto, int diasInactivo, LocalDateTime primeraVisita) {
         if (diasInactivo > 180) {
             return segmentoRepo.findByNombre("Inactivo").orElse(null);
         }
-        // Visitas equivalentes al año (aproximación)
-        int visitasAnio = (int) (visitas * (365.0 / Math.max(diasInactivo + 1, 365)));
+
+        // FASE 4: Corrección de la proyección de visitas.
+        double visitasAnio;
+        if (primeraVisita == null || visitas <= 1) {
+            visitasAnio = visitas; // No se puede proyectar con una sola visita.
+        } else {
+            long diasComoCliente = ChronoUnit.DAYS.between(primeraVisita, LocalDateTime.now()) + 1;
+            visitasAnio = (double) visitas / diasComoCliente * 365.0;
+        }
 
         if (visitasAnio >= 12 && gasto >= 500.0) {
             return segmentoRepo.findByNombre("VIP").orElse(null);

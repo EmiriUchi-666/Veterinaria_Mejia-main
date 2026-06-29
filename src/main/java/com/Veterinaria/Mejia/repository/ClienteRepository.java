@@ -1,12 +1,14 @@
 package com.Veterinaria.Mejia.repository;
 
-import com.Veterinaria.Mejia.models.Cliente;
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import java.util.List;
-import java.util.Optional;
+
+import com.Veterinaria.Mejia.models.Cliente;
 
 @Repository
 public interface ClienteRepository extends JpaRepository<Cliente, Integer> {
@@ -22,4 +24,6 @@ public interface ClienteRepository extends JpaRepository<Cliente, Integer> {
     // JPQL: Validación de existencia para el formulario de registro de dueños
     @Query("SELECT COUNT(c) > 0 FROM Cliente c WHERE c.dni = :dni")
     boolean existsByDniJPQL(@Param("dni") String dni);
+
+    Optional<Cliente> findByNumeroDocumento(String numDocIngresado);
 }

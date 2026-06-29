@@ -1,37 +1,43 @@
 package com.Veterinaria.Mejia.services;
 
-import com.Veterinaria.Mejia.repository.HistoriaClinicaRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.springframework.stereotype.Service;
 
-import java.util.Arrays;
-import java.util.List;
+import com.Veterinaria.Mejia.dto.DiagnosticoCount;
+import com.Veterinaria.Mejia.repository.HistoriaClinicaRepository;
+
+import lombok.RequiredArgsConstructor;
 
 /**
  * Servicio de estadísticas del módulo de diagnóstico clínico.
  * Provee datos para el dashboard de IA.
  */
 @Service
+@RequiredArgsConstructor
 public class DiagnosticoService {
 
-    @Autowired
-    private HistoriaClinicaRepository historiaClinicaRepo;
+    private final HistoriaClinicaRepository historiaClinicaRepo;
 
     /** Cuenta el total de diagnósticos (historias clínicas) registrados. */
     public long contarDiagnosticos() {
         return historiaClinicaRepo.count();
     }
 
-    /** Etiquetas para el gráfico de dona de diagnósticos por categoría. */
+    /** FASE 4: Etiquetas para el gráfico de dona, obtenidas de la BD. */
     public List<String> obtenerLabels() {
-        return Arrays.asList("Digestivo", "Respiratorio", "Ortopédico", "Dermatológico", "Preventivo", "Otro");
+        return historiaClinicaRepo.countByDiagnostico().stream()
+                .map(DiagnosticoCount::getDiagnostico)
+                .collect(Collectors.toList());
     }
 
     /**
-     * Datos (%) para el gráfico de dona.
-     * En producción se obtendría con una query agrupando por tipo de diagnóstico.
+     * FASE 4: Datos para el gráfico de dona, obtenidos de la BD.
      */
-    public List<Integer> obtenerDatos() {
-        return Arrays.asList(25, 20, 15, 18, 12, 10);
+    public List<Long> obtenerDatos() {
+        return historiaClinicaRepo.countByDiagnostico().stream()
+                .map(DiagnosticoCount::getCount)
+                .collect(Collectors.toList());
     }
 }

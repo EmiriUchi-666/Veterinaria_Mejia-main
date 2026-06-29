@@ -12,11 +12,10 @@ import com.Veterinaria.Mejia.services.UsuarioService;
 @Controller
 public class AuthController {
     
-    // Declaramos el servicio como final para garantizar la inmutabilidad
     private final UsuarioService usuarioService;
 
-    // Inyección por constructor: Es la mejor práctica recomendada por Spring (ya no requiere @Autowired aquí)
     public AuthController(UsuarioService usuarioService) {
+        // Inyección por constructor: Es la mejor práctica recomendada por Spring
         this.usuarioService = usuarioService;
     }
 
@@ -52,11 +51,11 @@ public class AuthController {
     // ==========================================
 
     // Muestra el formulario HTML para recuperar la clave
-    @GetMapping("/recuperar-password")
+    @GetMapping("/forgot-password")
     public String mostrarFormularioRecuperacion(Model model) {
         // Paso 1: Mostrar solo el campo de usuario
         model.addAttribute("paso", 1);
-        return "auth/recuperar-password";
+        return "auth/forgot-password";
     }
 
     // Busca al usuario y, si existe, muestra su pregunta secreta
@@ -70,16 +69,16 @@ public class AuthController {
                 model.addAttribute("paso", 2);
                 model.addAttribute("nombreUsuario", usuario.getNombreUsuario());
                 model.addAttribute("preguntaSecreta", usuario.getPreguntaSecreta());
-                return "auth/recuperar-password";
+                return "auth/forgot-password";
             })
             .orElseGet(() -> {
                 redirectAttributes.addFlashAttribute("errorMsg", "El nombre de usuario ingresado no existe.");
-                return "redirect:/recuperar-password";
+                return "redirect:/forgot-password";
             });
     }
 
     // Procesa el cambio de contraseña final
-    @PostMapping("/recuperar-password")
+    @PostMapping("/reset-password")
     public String procesarRecuperacion(@RequestParam("nombreUsuario") String nombreUsuario,
                                        @RequestParam("respuestaSecreta") String respuestaSecreta,
                                        @RequestParam("nuevaContrasena") String nuevaContrasena,
@@ -102,7 +101,7 @@ public class AuthController {
                 model.addAttribute("preguntaSecreta", usuario.getPreguntaSecreta());
             });
             
-            return "auth/recuperar-password";
+            return "auth/forgot-password";
         }
     }
 }

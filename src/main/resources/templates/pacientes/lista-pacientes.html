@@ -64,8 +64,11 @@
                                     <small class="text-muted" th:text="${p.raza}">Labrador</small>
                                 </td>
                                 <td>
-                                    <div class="fw-500" th:text="${p.cliente.nombre}">Juan Pérez</div>
-                                    <small class="text-muted" th:text="${p.cliente.telefono}">999888777</small>
+                                    <!-- FASE 6: Acceso seguro a datos relacionados. Se muestra 'N/A' si el cliente es nulo. -->
+                                    <div class="fw-500" th:text="${p.cliente != null ? p.cliente.nombre : 'N/A'}">Juan Pérez</div>
+                                    <small class="text-muted" th:if="${p.cliente != null and p.cliente.telefono != null}">
+                                        <i class="bi bi-telephone me-1"></i><span th:text="${p.cliente.telefono}">999888777</span>
+                                    </small>
                                 </td>
                                 <td class="text-center">
                                     <span class="badge" 

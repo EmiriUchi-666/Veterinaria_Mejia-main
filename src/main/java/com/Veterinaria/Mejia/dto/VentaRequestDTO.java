@@ -7,6 +7,8 @@ import lombok.Data;
 @Data
 public class VentaRequestDTO {
     private String clienteDni;
+    private String clienteNumDoc;
+    private String clienteTipoDoc;
     private String clienteNombre;
     private String tipoComprobante; // "Boleta", "Factura"
     private String tipoPago; // "Efectivo", "Yape", etc.
