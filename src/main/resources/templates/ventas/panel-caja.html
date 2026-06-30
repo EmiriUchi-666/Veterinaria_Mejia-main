@@ -52,6 +52,12 @@
                 }
                 .resultados-busqueda::-webkit-scrollbar { width: 6px; }
                 .resultados-busqueda::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+                
+                /* Clase para el error visual del DNI */
+                .is-invalid-custom {
+                    border-color: #dc3545 !important;
+                    box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.25) !important;
+                }
             </style>
 
             <div th:if="${errorMsg}" class="alert alert-danger alert-dismissible fade show mb-4 border-0 shadow-sm" role="alert">
@@ -77,91 +83,21 @@
 
             <div class="row g-4">
                 
-                <div class="col-lg-6">
-                    <div class="card card-custom p-4 h-100 border-0 shadow-sm">
-                        <div class="d-flex align-items-center mb-3">
-                            <div class="p-2 rounded-3 me-3 text-primary bg-opacity-10 bg-primary">
-                                <i class="bi bi-funnel-fill fs-4"></i>
-                            </div>
-                            <h5 class="fw-bold m-0 text-secondary">Filtros de Catálogo</h5>
+                <div class="col-lg-4">
+                    <div class="card card-custom p-4 h-100 border-0 shadow-sm d-flex flex-column justify-content-center align-items-center text-center">
+                        <div class="p-3 rounded-circle text-primary bg-primary bg-opacity-10 mb-3">
+                            <i class="bi bi-box-seam fs-1"></i>
                         </div>
+                        <h5 class="fw-bold text-secondary mb-3">Agregar Items</h5>
+                        <p class="text-muted small mb-4">Busca y selecciona productos o servicios clínicos para añadirlos al comprobante actual.</p>
                         
-                        <div class="row mb-3">
-                            <div class="col-md-6 mb-2">
-                                <label class="form-label text-muted small fw-semibold">Filtrar por Especie</label>
-                                <select id="filtro-especie" onchange="aplicarFiltros()" class="form-select border-light-subtle shadow-sm">
-                                    <option value="">Todas las especies</option>
-                                    <option th:each="e : ${especies}" th:value="${e.nombreEspecie}" th:text="${e.nombreEspecie}"></option>
-                                </select>
-                            </div>
-                            <div class="col-md-6 mb-2">
-                                <label class="form-label text-muted small fw-semibold">Filtrar por Categoría</label>
-                                <select id="filtro-categoria" onchange="aplicarFiltros()" class="form-select border-light-subtle shadow-sm">
-                                    <option value="">Todas las categorías</option>
-                                    <option th:each="cat : ${categorias}" th:value="${cat.nombre}" th:text="${cat.nombre}"></option>
-                                </select>
-                            </div>
-                        </div>
-                        
-                        <div class="input-group mb-3 shadow-sm">
-                            <span class="input-group-text bg-white border-end-0 text-muted">
-                                <i class="bi bi-search"></i>
-                            </span>
-                            <input type="text" id="busqueda-nombre" onkeyup="aplicarFiltros()" class="form-control border-start-0 ps-0" placeholder="Buscar por nombre..." />
-                        </div>
-                        
-                        <div class="resultados-busqueda" id="contenedor-productos">
-                            
-                            <div class="item-resultado" th:each="p : ${productos}" 
-                                 th:if="${p.estado}"
-                                     th:data-id="${p.id}" th:data-nombre="${p.nombre}" 
-                                     th:data-precio="${p.precioVentaActual}" 
-                                     th:data-precio-fraccion="${p.precioPorFraccion != null ? p.precioPorFraccion : 0}"
-                                     th:data-stock-cerrado="${p.stockCerrado != null ? p.stockCerrado : 0}" 
-                                     th:data-permite-fraccion="${p.permiteFraccionamiento != null ? p.permiteFraccionamiento : false}"
-                                     th:data-categoria="${p.categoria.nombre}" 
-                                     th:data-especie="${p.especie != null ? p.especie.nombreEspecie : 'General'}">
-                                <div>
-                                    <div class="fw-bold text-dark mb-1" th:text="${p.nombre}"></div>
-                                    <div class="text-muted small">
-                                        <span class="badge bg-light text-dark border badge-tipo me-1">P</span>
-                                            Stock: <span th:text="${p.stockCerrado != null ? p.stockCerrado : 0}"></span> sacos
-                                            <span th:if="${p.permiteFraccionamiento != null and p.permiteFraccionamiento}" class="ms-1 text-primary fw-semibold">
-                                                (Abierto: <span th:text="${p.stockAbierto != null ? p.stockAbierto : 0}"></span> u/kg)
-                                            </span>
-                                    </div>
-                                </div>
-                                    <div class="text-end d-flex flex-column gap-2">
-                                        <button type="button" class="btn btn-sm btn-success py-0 px-2 fw-bold" onclick="agregarAlCarrito(this.closest('.item-resultado'), 'producto_entero')">
-                                            + Entero (S/. <span th:text="${#numbers.formatDecimal(p.precioVentaActual, 1, 'COMMA', 2, 'POINT')}"></span>)
-                                        </button>
-                                        <button type="button" class="btn btn-sm btn-primary py-0 px-2 fw-bold" th:if="${p.permiteFraccionamiento != null and p.permiteFraccionamiento}" onclick="agregarAlCarrito(this.closest('.item-resultado'), 'producto_fraccionado')">
-                                            + Suelto (S/. <span th:text="${#numbers.formatDecimal(p.precioPorFraccion, 1, 'COMMA', 2, 'POINT')}"></span>)
-                                        </button>
-                                </div>
-                            </div>
-                            
-                            <div class="item-resultado" th:each="s : ${servicios}" 
-                                 th:data-id="${s.id}" th:data-nombre="${s.nombreServicio}" th:data-precio="${s.precioServicio}" 
-                                 th:data-stock="9999" th:data-categoria="Servicio" th:data-especie="General"
-                                 onclick="agregarAlCarrito(this, 'servicio')">
-                                <div>
-                                    <div class="fw-bold text-dark mb-1" th:text="${s.nombreServicio}"></div>
-                                    <div class="text-muted small">
-                                        <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 badge-tipo me-1">S</span>
-                                        Servicio Clínico
-                                    </div>
-                                </div>
-                                <div class="text-end">
-                                    <span class="fw-bold text-primary">S/. <span th:text="${#numbers.formatDecimal(s.precioServicio, 1, 'COMMA', 2, 'POINT')}"></span></span>
-                                </div>
-                            </div>
-
-                        </div>
+                        <button type="button" class="btn btn-primary btn-lg w-100 rounded-4 shadow-sm fw-bold" data-bs-toggle="modal" data-bs-target="#modalCatalogo">
+                            <i class="bi bi-search me-2"></i> Abrir Catálogo
+                        </button>
                     </div>
                 </div>
 
-                <div class="col-lg-6">
+                <div class="col-lg-8">
                     <div class="card card-custom p-4 h-100 border-0 shadow-sm border-top border-4 border-success">
                         <div class="d-flex align-items-center mb-3">
                             <div class="p-2 rounded-3 me-3 text-success bg-opacity-10 bg-success">
@@ -174,19 +110,26 @@
                             <input type="hidden" th:field="*{totalVenta}" id="input-total-final" value="0.00" />
                             
                             <div class="row g-3 mb-4">
-                                <div class="col-md-4">
-                                    <label class="form-label text-muted small fw-semibold">DNI (Opcional)</label>
-                                    <input type="text" name="dniIngresado" id="dniIngresado" oninput="buscarClientePorDNI(this.value)" class="form-control" placeholder="Nro Documento" maxlength="15"/>
+                                <div class="col-md-5">
+                                    <label class="form-label text-muted small fw-semibold">DNI/RUC (Opcional)</label>
+                                    <input type="text" name="dniIngresado" id="dniIngresado" oninput="buscarClientePorDNI(this.value); this.classList.remove('is-invalid-custom');" class="form-control" placeholder="Nro Documento" maxlength="15"/>
                                 </div>
-                                <div class="col-md-8 position-relative">
+                                <div class="col-md-7 position-relative">
                                     <label class="form-label text-muted small fw-semibold">Nombre Cliente (Opcional)</label>
                                     <input type="text" name="nombreIngresado" id="nombreIngresado" class="form-control pe-5" placeholder="Público General si está vacío"/>
-                                    <!-- Spinner oculto por defecto (d-none) -->
-                                    <div id="spinnerBusqueda" class="spinner-border text-primary spinner-border-sm position-absolute d-none" style="right: 22px; bottom: 10px;" role="status">
+                                    <div id="spinnerBusqueda" class="spinner-border text-primary spinner-border-sm position-absolute d-none" style="right: 12px; bottom: 10px;" role="status">
                                         <span class="visually-hidden">Buscando...</span>
                                     </div>
                                 </div>
-                                <div class="col-md-12">
+                                <div class="col-md-6">
+                                    <label class="form-label text-muted small fw-semibold">Teléfono</label>
+                                    <input type="text" name="telefonoIngresado" id="telefonoIngresado" class="form-control" placeholder="Opcional"/>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label text-muted small fw-semibold">Dirección</label>
+                                    <input type="text" name="direccionIngresado" id="direccionIngresado" class="form-control" placeholder="Opcional"/>
+                                </div>
+                                <div class="col-12">
                                     <label class="form-label text-muted small fw-semibold">Método de Pago</label>
                                     <div class="input-group">
                                         <span class="input-group-text bg-light text-muted"><i class="bi bi-wallet2"></i></span>
@@ -229,48 +172,142 @@
                     </div>
                 </div>
             </div>
+
+            <div class="modal fade" id="modalCatalogo" tabindex="-1" aria-labelledby="modalCatalogoLabel" aria-hidden="true">
+                <div class="modal-dialog modal-xl modal-dialog-scrollable">
+                    <div class="modal-content card-custom border-0 shadow">
+                        <div class="modal-header bg-light border-bottom-0 p-4">
+                            <h5 class="modal-title fw-bold text-secondary" id="modalCatalogoLabel">
+                                <i class="bi bi-funnel-fill text-primary me-2"></i> Catálogo de Inventario y Servicios
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                        </div>
+                        <div class="modal-body p-4 bg-light bg-opacity-50">
+                            
+                            <div class="row mb-4 g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label text-muted small fw-semibold">Especie</label>
+                                    <select id="filtro-especie" onchange="aplicarFiltros()" class="form-select shadow-sm">
+                                        <option value="">Todas las especies</option>
+                                        <option th:each="e : ${especies}" th:value="${e.nombreEspecie}" th:text="${e.nombreEspecie}"></option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label text-muted small fw-semibold">Categoría</label>
+                                    <select id="filtro-categoria" onchange="aplicarFiltros()" class="form-select shadow-sm">
+                                        <option value="">Todas las categorías</option>
+                                        <option th:each="cat : ${categorias}" th:value="${cat.nombre}" th:text="${cat.nombre}"></option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label text-muted small fw-semibold">Búsqueda directa</label>
+                                    <div class="input-group shadow-sm">
+                                        <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
+                                        <input type="text" id="busqueda-nombre" onkeyup="aplicarFiltros()" class="form-control border-start-0 ps-0" placeholder="Nombre del producto..." />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="resultados-busqueda shadow-sm" id="contenedor-productos">
+                                
+                                <div class="item-resultado" th:each="p : ${productos}" 
+                                     th:if="${p.estado}"
+                                     th:data-id="${p.id}" th:data-nombre="${p.nombre}" 
+                                     th:data-precio="${p.precioVentaActual}" 
+                                     th:data-precio-fraccion="${p.precioPorFraccion != null ? p.precioPorFraccion : 0}"
+                                     th:data-stock-cerrado="${p.stockCerrado != null ? p.stockCerrado : 0}" 
+                                     th:data-permite-fraccion="${p.permiteFraccionamiento != null ? p.permiteFraccionamiento : false}"
+                                     th:data-categoria="${p.categoria.nombre}" 
+                                     th:data-especie="${p.especie != null ? p.especie.nombreEspecie : 'General'}">
+                                    <div>
+                                        <div class="fw-bold text-dark mb-1" th:text="${p.nombre}"></div>
+                                        <div class="text-muted small">
+                                            <span class="badge bg-light text-dark border badge-tipo me-1">P</span>
+                                            Stock: <span th:text="${p.stockCerrado != null ? p.stockCerrado : 0}"></span> sacos
+                                            <span th:if="${p.permiteFraccionamiento != null and p.permiteFraccionamiento}" class="ms-1 text-primary fw-semibold">
+                                                (Abierto: <span th:text="${p.stockAbierto != null ? p.stockAbierto : 0}"></span> u/kg)
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="text-end d-flex flex-column gap-2">
+                                        <button type="button" class="btn btn-sm btn-success py-0 px-2 fw-bold" onclick="agregarAlCarrito(this.closest('.item-resultado'), 'producto_entero')">
+                                            + Entero (S/. <span th:text="${#numbers.formatDecimal(p.precioVentaActual, 1, 'COMMA', 2, 'POINT')}"></span>) 
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-primary py-0 px-2 fw-bold" th:if="${p.permiteFraccionamiento != null and p.permiteFraccionamiento}" onclick="agregarAlCarrito(this.closest('.item-resultado'), 'producto_fraccionado')">
+                                            + Suelto (S/. <span th:text="${#numbers.formatDecimal(p.precioPorFraccion, 1, 'COMMA', 2, 'POINT')}"></span>) 
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div class="item-resultado" th:each="s : ${servicios}" 
+                                     th:data-id="${s.id}" th:data-nombre="${s.nombreServicio}" th:data-precio="${s.precioServicio}" 
+                                     th:data-stock="9999" th:data-categoria="Servicio" th:data-especie="General"
+                                     onclick="agregarAlCarrito(this, 'servicio')">
+                                    <div>
+                                        <div class="fw-bold text-dark mb-1" th:text="${s.nombreServicio}"></div>
+                                        <div class="text-muted small">
+                                            <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 badge-tipo me-1">S</span>
+                                            Servicio Clínico
+                                        </div>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="fw-bold text-primary">S/. <span th:text="${#numbers.formatDecimal(s.precioServicio, 1, 'COMMA', 2, 'POINT')}"></span></span>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                        <div class="modal-footer border-top-0 p-4">
+                            <button type="button" class="btn btn-secondary px-4 fw-bold rounded-3" data-bs-dismiss="modal">Cerrar Catálogo</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </main>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        let indice = 0;
-
-        // FILTRO DE BÚSQUEDA
+        // =========================================================================
+        // FILTROS DEL CATÁLOGO (EN EL MODAL)
+        // =========================================================================
         function aplicarFiltros() {
             const esp = document.getElementById("filtro-especie").value.toLowerCase();
             const cat = document.getElementById("filtro-categoria").value.toLowerCase();
             const nom = document.getElementById("busqueda-nombre").value.toLowerCase();
             
             document.querySelectorAll(".item-resultado").forEach(item => {
-                const iEsp = item.getAttribute("data-especie").toLowerCase();
-                const iCat = item.getAttribute("data-categoria").toLowerCase();
-                const iNom = item.getAttribute("data-nombre").toLowerCase();
+                const itemEspecie = item.dataset.especie.toLowerCase();
+                const itemCategoria = item.dataset.categoria.toLowerCase();
+                const itemNombre = item.dataset.nombre.toLowerCase();
                 
-                const coincideEspecie = (esp === "" || iEsp.includes(esp) || iCat === "servicio");
-                const coincideCategoria = (cat === "" || iCat.includes(cat));
-                const coincideNombre = (nom === "" || iNom.includes(nom));
-
+                const coincideEspecie = (esp === "" || itemEspecie.includes(esp) || itemCategoria === "servicio");
+                const coincideCategoria = (cat === "" || itemCategoria.includes(cat));
+                const coincideNombre = (nom === "" || itemNombre.includes(nom));
+                
                 if (coincideEspecie && coincideCategoria && coincideNombre) {
-                    item.style.setProperty("display", "flex", "important");
+                    item.style.display = "flex";
                 } else {
-                    item.style.setProperty("display", "none", "important");
+                    item.style.display = "none";
                 }
             });
         }
 
-        // AGREGAR AL CARRITO
+        // =========================================================================
+        // LÓGICA DEL CARRITO DE COMPRAS
+        // =========================================================================
         function agregarAlCarrito(el, tipo) {
             const id = el.getAttribute("data-id");
-            let nombre = el.getAttribute("data-nombre");
+            const nombreOriginal = el.getAttribute("data-nombre");
             let precio = parseFloat(el.getAttribute("data-precio"));
             let stock = parseFloat(el.getAttribute("data-stock-cerrado") || "9999");
             const tbody = document.getElementById("cuerpo-carrito");
             
-            let duplicado = false;
             let valTipo = 'SERVICIO';
             let labelTipo = '<span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 me-1">S</span>';
             let stepYMin = '1';
+            let nombre = nombreOriginal;
             
             if (tipo === 'producto_entero') {
                 valTipo = 'PRODUCTO_ENTERO';
@@ -281,36 +318,29 @@
                 valTipo = 'PRODUCTO_FRACCIONADO';
                 labelTipo = '<span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 me-1">F</span>';
                 precio = parseFloat(el.getAttribute("data-precio-fraccion"));
-                stock = 9999; // Stock controlado en el Backend (puede romper sacos)
+                stock = 9999;
                 stepYMin = '0.01';
                 nombre += ' <small class="text-primary">(Suelto)</small>';
             }
             
-            // Verificar si ya existe en el carrito
-            document.querySelectorAll("#cuerpo-carrito tr").forEach(tr => {
-                const hiddenId = tr.querySelector("input[name='itemId']");
-                const hiddenTipo = tr.querySelector("input[name='itemTipo']");
-                
-                if (hiddenId && hiddenId.value === id && hiddenTipo && hiddenTipo.value === valTipo) {
-                    const inputCant = tr.querySelector("input[name='itemCantidad']");
-                    const cantidadActual = parseFloat(inputCant.value);
-                    
-                    if (cantidadActual < stock) {
-                        inputCant.value = (cantidadActual + 1).toFixed(valTipo === 'PRODUCTO_FRACCIONADO' ? 2 : 0);
-                    } else if (valTipo === 'PRODUCTO_ENTERO') {
-                        alert("Has alcanzado el límite de stock de este producto.");
-                    }
-                    duplicado = true;
+            const filaExistente = tbody.querySelector(`tr[data-id='${id}'][data-tipo='${valTipo}']`);
+            if (filaExistente) {
+                const inputCant = filaExistente.querySelector("input[name='itemCantidad']");
+                const cantidadActual = parseFloat(inputCant.value);
+                const maxStock = parseFloat(inputCant.max);
+
+                if (cantidadActual < maxStock) {
+                    inputCant.value = (cantidadActual + 1).toFixed(valTipo === 'PRODUCTO_FRACCIONADO' ? 2 : 0);
+                    recalcular();
+                } else if (valTipo === 'PRODUCTO_ENTERO') {
+                    alert("Has alcanzado el límite de stock de este producto.");
                 }
-            });
-            
-            if (duplicado) { 
-                recalcular(); 
-                return; 
+                return;
             }
             
-            // Crear nueva fila con nombres simples
             const tr = document.createElement("tr");
+            tr.dataset.id = id;
+            tr.dataset.tipo = valTipo;
 
             tr.innerHTML = `
                 <td>
@@ -335,14 +365,12 @@
                 </td>
             `;
             tbody.appendChild(tr);
-            indice++;
             recalcular();
         }
 
-        // CÁLCULO EN TIEMPO REAL
         function recalcular() {
             let total = 0;
-            document.querySelectorAll("#cuerpo-carrito tr").forEach(tr => {
+            document.getElementById("cuerpo-carrito").querySelectorAll("tr").forEach(tr => {
                 const cant = parseFloat(tr.querySelector(".cantidad-input").value) || 0;
                 const prec = parseFloat(tr.querySelector("input[name='itemPrecio']").value);
                 const sub = cant * prec;
@@ -355,49 +383,108 @@
             document.getElementById("input-total-final").value = total.toFixed(2);
         }
 
-        // VALIDACIÓN ANTES DE ENVIAR
+        // =========================================================================
+        // VALIDACIÓN SUNAT (OBLIGATORIEDAD DE DNI POR > 700)
+        // =========================================================================
         function validarCarritoAntesDeCobrar() {
             const filas = document.querySelectorAll("#cuerpo-carrito tr").length;
             if (filas === 0) {
                 alert("No puedes procesar una venta vacía. Agrega productos o servicios al comprobante primero.");
                 return false; 
             }
+
+            const totalFinal = parseFloat(document.getElementById("input-total-final").value);
+            const dniInput = document.getElementById("dniIngresado");
+            const dniValue = dniInput.value.trim();
+            
+            if (totalFinal >= 700 && dniValue.length < 8) {
+                alert("Por exigencia de SUNAT, las boletas o facturas a partir de S/ 700.00 requieren obligatoriamente el DNI/RUC del cliente.");
+                dniInput.classList.add('is-invalid-custom');
+                dniInput.focus();
+                return false; 
+            }
+
             return true; 
         }
 
-        // BÚSQUEDA AUTOMÁTICA DE CLIENTE POR DNI
-        async function buscarClientePorDNI(dni) {
+        // =========================================================================
+        // BÚSQUEDA DE CLIENTE POR API
+        // =========================================================================
+        async function buscarClientePorDNI() {
+            const dniInput = document.getElementById("dniIngresado");
             const inputNombre = document.getElementById("nombreIngresado");
+            const inputTelefono = document.getElementById("telefonoIngresado");
+            const inputDireccion = document.getElementById("direccionIngresado");
             const spinner = document.getElementById("spinnerBusqueda");
+            const dni = dniInput.value.trim();
             
-            // Empezamos a buscar a partir de 8 caracteres (DNI peruano estándar)
-            if (dni.length >= 8) {
-                // 1. Mostramos el spinner mientras espera
+            const limpiarCampos = () => {
+                inputNombre.value = '';
+                inputTelefono.value = '';
+                inputDireccion.value = '';
+                inputNombre.readOnly = false;
+                inputTelefono.readOnly = false;
+                inputDireccion.readOnly = false;
+                inputNombre.placeholder = 'Público General si está vacío';
+            };
+
+            if (dni.length < 8) {
+                limpiarCampos();
+                return;
+            }
+
+            try {
                 spinner.classList.remove("d-none");
-                
-                try {
-                    const response = await fetch(`/api/utilidades/cliente/${dni}`);
-                    const data = await response.json();
-                    
-                    if (data.success) {
-                        inputNombre.value = data.nombre;
-                        // Efecto visual opcional para indicar que lo encontró exitosamente
-                        inputNombre.classList.add("border-success", "bg-success", "bg-opacity-10", "fw-bold");
-                    } else {
-                        // Si no lo encuentra, quitamos el efecto por si estaba de antes
-                        inputNombre.classList.remove("border-success", "bg-success", "bg-opacity-10", "fw-bold");
-                    }
-                } catch (error) {
-                    console.error("Error en la búsqueda de cliente:", error);
-                } finally {
-                    // 2. Ocultamos el spinner sin importar si hubo éxito o error
-                    spinner.classList.add("d-none");
+                const response = await fetch(`/api/clientes/${dni}`);
+
+                if (!response.ok) { 
+                    limpiarCampos();
+                    return;
                 }
-            } else {
-                inputNombre.classList.remove("border-success", "bg-success", "bg-opacity-10", "fw-bold");
-                spinner.classList.add("d-none"); // Por precaución
+
+                const cliente = await response.json();
+                inputNombre.value = cliente.nombre;
+                inputTelefono.value = cliente.telefono || '';
+                inputDireccion.value = cliente.direccion || '';
+                inputNombre.readOnly = true;
+                inputTelefono.readOnly = true;
+                inputDireccion.readOnly = true;
+
+            } catch (error) {
+                console.error("Error al buscar cliente:", error);
+                limpiarCampos();
+            } finally {
+                spinner.classList.add("d-none");
             }
         }
+
+        // =========================================================================
+        // EVENT LISTENERS DE DELEGACIÓN
+        // =========================================================================
+        document.addEventListener('DOMContentLoaded', function() {
+            const contenedorProductos = document.getElementById('contenedor-productos');
+            const cuerpoCarrito = document.getElementById('cuerpo-carrito');
+
+            contenedorProductos.addEventListener('click', function(e) {
+                const itemResultado = e.target.closest('.item-resultado');
+                if (!itemResultado) return;
+
+                if (e.target.closest('button')) {
+                    const tipo = e.target.textContent.includes('Entero') ? 'producto_entero' : 'producto_fraccionado';
+                    agregarAlCarrito(itemResultado, tipo);
+                } 
+                else if (itemResultado.dataset.categoria === 'Servicio') {
+                    agregarAlCarrito(itemResultado, 'servicio');
+                }
+            });
+
+            cuerpoCarrito.addEventListener('click', function(e) {
+                if (e.target.closest('.btn-outline-danger')) {
+                    e.target.closest('tr').remove();
+                    recalcular();
+                }
+            });
+        });
     </script>
 </body>
 </html>

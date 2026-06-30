@@ -23,11 +23,21 @@
         <div class="card border-0 shadow-sm p-4" style="border-radius:16px;">
           <h6 class="fw-bold mb-3 border-bottom pb-2"><i class="bi bi-person-badge text-primary me-2"></i>Datos Clínicos</h6>
           <div class="mb-3">
-            <label class="form-label fw-semibold">Paciente <span class="text-danger">*</span></label>
-            <select name="pacienteId" class="form-select" required>
-              <option value="">-- Seleccionar mascota --</option>
-              <option th:each="p : ${pacientes}" th:value="${p.id}"
-                      th:text="${p.nombre} + ' (' + ${p.especie?.nombreEspecie} + ') — ' + ${p.dueno?.nombre ?: 'Sin dueño'}"></option>
+            <label class="form-label fw-semibold">Dueño / Tutor <span class="text-danger">*</span></label>
+            <select id="selectDueno" class="form-select" onchange="filtrarMascotas()">
+              <option value="">-- Seleccionar dueño --</option>
+              <option th:each="d : ${duenos}" th:value="${d.id}" th:text="${d.nombre}"></option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Mascota (Paciente) <span class="text-danger">*</span></label>
+            <select name="pacienteId" id="selectMascota" class="form-select" required>
+              <option value="">-- Primero selecciona un dueño --</option>
+              <option th:each="p : ${pacientes}"
+                      th:value="${p.id}"
+                      th:text="${p.nombre} + ' (' + ${p.especie?.nombreEspecie} + ')'"
+                      th:data-dueno-id="${p.dueno?.id}"
+                      style="display:none;"></option>
             </select>
           </div>
           <div class="mb-3">
@@ -38,8 +48,8 @@
             </select>
           </div>
           <div class="mb-3">
-            <label class="form-label fw-semibold">N° CMP <span class="text-muted fw-normal">(Colegiatura)</span></label>
-            <input type="text" name="cmpVeterinario" class="form-control" placeholder="Ej: 12345">
+            <label class="form-label fw-semibold">N° CMP</label>
+            <input type="text" name="cmpVeterinario" class="form-control" placeholder="Ej: 12345" >
           </div>
           <div class="mb-3">
             <label class="form-label fw-semibold">Diagnóstico <span class="text-danger">*</span></label>
@@ -65,31 +75,21 @@
           <div id="lineasContainer">
             <div class="linea-row" id="linea_0">
               <button type="button" class="btn btn-sm btn-danger btn-rm rounded-circle" style="display:none;" onclick="quitarLinea(0)"><i class="bi bi-x"></i></button>
-              <div class="row g-2">
-                <div class="col-md-4">
-                  <label class="form-label small fw-semibold">Producto del catálogo</label>
-                  <select name="productoId" class="form-select form-select-sm">
-                    <option value="">-- Seleccionar (o ingresar libre) --</option>
-                    <option th:each="p : ${productos}" th:value="${p.id}" th:text="${p.nombre}"></option>
-                  </select>
+              <div class="row g-2 align-items-end">
+                <div class="col-md-6">
+                  <label class="form-label small fw-semibold">Medicamento</label>
+                  <input type="text" name="medicamento" class="form-control form-control-sm" placeholder="Nombre del medicamento" required>
+                  <input type="hidden" name="productoId">
                 </div>
-                <div class="col-md-4">
-                  <label class="form-label small fw-semibold">O escribir medicamento</label>
-                  <input type="text" name="medicamento" class="form-control form-control-sm" placeholder="Nombre libre">
-                </div>
-                <div class="col-md-2">
+                <div class="col-md-3">
                   <label class="form-label small fw-semibold">Cantidad</label>
                   <input type="number" name="cantidad" step="0.01" min="0.01" class="form-control form-control-sm" placeholder="1.00" value="1">
                 </div>
-                <div class="col-md-2">
-                  <label class="form-label small fw-semibold">Unidad</label>
-                  <input type="text" name="unidadDosis" class="form-control form-control-sm" placeholder="mg, ml, comp">
-                </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                   <label class="form-label small fw-semibold">Frecuencia</label>
                   <input type="text" name="frecuencia" class="form-control form-control-sm" placeholder="Cada 12 horas">
                 </div>
-                <div class="col-md-2">
+                <div class="col-md-3">
                   <label class="form-label small fw-semibold">Días</label>
                   <input type="number" name="duracionDias" min="1" class="form-control form-control-sm" placeholder="7">
                 </div>
@@ -101,7 +101,7 @@
                     <option value="SC">SC</option><option value="Tópica">Tópica</option>
                   </select>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-6">
                   <label class="form-label small fw-semibold">Indicaciones</label>
                   <input type="text" name="indicLinea" class="form-control form-control-sm" placeholder="Con comida...">
                 </div>
@@ -122,33 +122,41 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script th:inline="javascript">
   const productosOpts = /*[[${productos}]]*/ [];
-  let count = 1;
+  let count = 1; 
+
+  function filtrarMascotas() {
+    const duenoId = document.getElementById('selectDueno').value;
+    const selectMascota = document.getElementById('selectMascota');
+    selectMascota.value = ''; // Reset selection
+    for (const option of selectMascota.options) {
+      if (option.value === '') continue;
+      option.style.display = (duenoId === '' || option.dataset.duenoId === duenoId) ? 'block' : 'none';
+    }
+  }
+
   function agregarLinea() {
     const idx = count++;
-    const opts = productosOpts.map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
     const div = document.createElement('div');
     div.className = 'linea-row'; div.id = 'linea_' + idx;
     div.innerHTML = `
       <button type="button" class="btn btn-sm btn-danger btn-rm rounded-circle" onclick="quitarLinea(${idx})"><i class="bi bi-x"></i></button>
-      <div class="row g-2">
-        <div class="col-md-4"><label class="form-label small fw-semibold">Producto</label>
-          <select name="productoId" class="form-select form-select-sm"><option value="">-- Seleccionar --</option>${opts}</select></div>
-        <div class="col-md-4"><label class="form-label small fw-semibold">O escribir</label>
-          <input type="text" name="medicamento" class="form-control form-control-sm" placeholder="Nombre libre"></div>
-        <div class="col-md-2"><label class="form-label small fw-semibold">Cantidad</label>
+      <div class="row g-2 align-items-end">
+        <div class="col-md-6"><label class="form-label small fw-semibold">Medicamento</label>
+          <input type="text" name="medicamento" class="form-control form-control-sm" placeholder="Nombre del medicamento" required>
+          <input type="hidden" name="productoId">
+        </div>
+        <div class="col-md-3"><label class="form-label small fw-semibold">Cantidad</label>
           <input type="number" name="cantidad" step="0.01" min="0.01" class="form-control form-control-sm" value="1"></div>
-        <div class="col-md-2"><label class="form-label small fw-semibold">Unidad</label>
-          <input type="text" name="unidadDosis" class="form-control form-control-sm" placeholder="mg"></div>
-        <div class="col-md-4"><label class="form-label small fw-semibold">Frecuencia</label>
+        <div class="col-md-3"><label class="form-label small fw-semibold">Frecuencia</label>
           <input type="text" name="frecuencia" class="form-control form-control-sm" placeholder="Cada 12 horas"></div>
-        <div class="col-md-2"><label class="form-label small fw-semibold">Días</label>
+        <div class="col-md-3"><label class="form-label small fw-semibold">Días</label>
           <input type="number" name="duracionDias" min="1" class="form-control form-control-sm" placeholder="7"></div>
         <div class="col-md-3"><label class="form-label small fw-semibold">Vía</label>
           <select name="via" class="form-select form-select-sm">
             <option>Oral</option><option>IM</option><option>IV</option><option>SC</option><option>Tópica</option>
           </select></div>
-        <div class="col-md-3"><label class="form-label small fw-semibold">Indicaciones</label>
-          <input type="text" name="indicLinea" class="form-control form-control-sm"></div>
+        <div class="col-md-6"><label class="form-label small fw-semibold">Indicaciones</label>
+          <input type="text" name="indicLinea" class="form-control form-control-sm" placeholder="Con comida..."></div>
       </div>`;
     document.getElementById('lineasContainer').appendChild(div);
   }

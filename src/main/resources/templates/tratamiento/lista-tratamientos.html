@@ -26,15 +26,18 @@
 
   <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-      <h2 class="fw-bold mb-0"><i class="bi bi-prescription2 me-2 text-primary"></i>Tratamientos</h2>
-      <p class="text-muted mb-0">
+      <h2 class="fw-bold mb-0"><i class="bi bi-prescription2 me-2 text-primary"></i>
+        <span th:if="${paciente != null}">Tratamientos del Paciente</span>
+        <span th:unless="${paciente != null}">Historial General de Tratamientos</span>
+      </h2>
+      <p class="text-muted mb-0" th:if="${paciente != null}">
         Paciente: <strong th:text="${paciente?.nombre}"></strong>
         &nbsp;|&nbsp; <span th:text="${paciente?.especie?.nombre}"></span>
         &nbsp;—&nbsp; Historia: <span th:text="${paciente?.numeroHistoria}"></span>
       </p>
     </div>
     <div class="d-flex gap-2">
-      <a href="/pacientes" class="btn btn-outline-secondary rounded-pill btn-sm">
+      <a th:href="${paciente != null ? '/pacientes/' + paciente.id + '/expediente' : '/pacientes'}" class="btn btn-outline-secondary rounded-pill btn-sm">
         <i class="bi bi-arrow-left me-1"></i>Pacientes
       </a>
     </div>
@@ -67,6 +70,10 @@
                 th:classappend="${t.estado?.name() == 'Activo' ? 'estado-activo' : (t.estado?.name() == 'Completado' ? 'estado-completado' : 'estado-suspendido')}"
                 th:text="${t.estado}"></span>
           <strong th:text="${t.diagnostico != null ? (#strings.abbreviate(t.diagnostico, 80)) : 'Sin diagnóstico'}"></strong>
+          <th:block th:if="${paciente == null}">
+            <span class="mx-2 text-muted">|</span>
+            <small class="text-muted">Paciente: <strong th:text="${t.historiaClinica?.paciente?.nombre ?: t.pacienteTratado?.nombre}"></strong></small>
+          </th:block>
         </div>
         <div class="text-muted small">
           <i class="bi bi-calendar3 me-1"></i>Inicio: <span th:text="${t.fechaInicio}"></span>

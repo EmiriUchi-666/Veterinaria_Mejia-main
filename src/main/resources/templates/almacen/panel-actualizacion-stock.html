@@ -126,8 +126,7 @@
                                         <tr>
                                             <th style="width: 30%;">Producto</th>
                                             <th style="width: 20%;" class="text-center">Cant. Ingresa</th>
-                                            <th style="width: 20%;" class="text-center">Costo Unit.</th>
-                                            <th style="width: 20%;" class="text-center">Precio Público</th>
+                                            <th style="width: 40%;" class="text-center">Costo Unit.</th>
                                             <th style="width: 10%;" class="text-center"><i class="bi bi-trash"></i></th>
                                         </tr>
                                     </thead>
@@ -215,18 +214,14 @@
                     <input type="hidden" name="detallesIngreso[${indiceLote}].producto.id" value="${id}">
                 </td>
                 <td>
-                    <input type="number" step="0.01" min="0.01" name="detallesIngreso[${indiceLote}].cantidad" value="1.00" 
-                           class="form-control form-control-sm text-center fw-bold" oninput="calcularInversion()" required>
+                    <input type="number" step="1" min="1" name="detallesIngreso[${indiceLote}].cantidad" value="1" 
+                           class="form-control form-control-sm text-center fw-bold" 
+                           oninput="this.value = Math.floor(Math.abs(this.value)) || 1; calcularInversion()" required>
                 </td>
                 <td>
                     <input type="number" step="0.01" min="0" name="detallesIngreso[${indiceLote}].precioCompra" value="${costo}" 
                            class="form-control form-control-sm text-center input-costo" oninput="calcularInversion()" required>
                     <div class="text-muted text-center mt-1" style="font-size: 9px;">Actual: S/. ${costo}</div>
-                </td>
-                <td>
-                    <input type="number" step="0.01" min="0" name="preciosVentaNuevos" value="${venta}" 
-                           class="form-control form-control-sm text-center border-success text-success fw-bold" required>
-                    <div class="text-muted text-center mt-1" style="font-size: 9px;">Actual: S/. ${venta}</div>
                 </td>
                 <td class="text-center">
                     <button type="button" class="btn btn-sm btn-outline-danger border-0" onclick="this.closest('tr').remove(); calcularInversion();">

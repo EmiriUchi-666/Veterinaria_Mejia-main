@@ -96,8 +96,11 @@ public class ProductoController {
             producto.setEstado(true); // Siempre activo al nacer
             
             // Si el usuario dejó el stock inicial vacío, lo ponemos en 0
-            if (producto.getStockTotal() == null) {
-                producto.setStockTotal(BigDecimal.ZERO);
+            if (producto.getStockCerrado() == null) {
+                producto.setStockCerrado(0);
+            }
+            if (producto.getStockFraccionado() == null) {
+                producto.setStockFraccionado(BigDecimal.ZERO);
             }
 
             productoService.guardarProductoNuevo(producto);
@@ -142,12 +145,21 @@ public class ProductoController {
             Producto prod = productoRepository.findById(id)
                     .orElseThrow(() -> new RuntimeException("El producto solicitado no existe."));
             
-            productoService.modificarEstado(id, !prod.getEstado());
+            productoService.modificarEstado(id, !prod.isEstado());
             redirectAttrs.addFlashAttribute("successMsg", "Estado del producto actualizado.");
             
         } catch (RuntimeException e) { 
             redirectAttrs.addFlashAttribute("errorMsg", e.getMessage());
         }
+        return "redirect:/almacen/productos";
+    }
+
+    @PostMapping("/precio/{id}")
+    public String actualizarPrecio(@PathVariable Integer id,
+                                @RequestParam BigDecimal nuevoPrecio,
+                                RedirectAttributes ra) {
+        productoService.actualizarPrecioVenta(id, nuevoPrecio);
+        ra.addFlashAttribute("successMsg", "Precio actualizado correctamente.");
         return "redirect:/almacen/productos";
     }
 }

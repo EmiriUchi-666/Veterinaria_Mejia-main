@@ -1,7 +1,18 @@
 package com.Veterinaria.Mejia.models;
 
-import jakarta.persistence.*;
 import java.util.List;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
 
 /**
  * Dueño/Tutor de la mascota. Entidad independiente de Cliente (facturación).
@@ -42,6 +53,11 @@ public class Dueno {
     @OneToMany(mappedBy = "dueno", fetch = FetchType.LAZY)
     private List<Paciente> mascotas;
 
+    // Relación uno a uno con el perfil de facturación del cliente.
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JoinColumn(name = "cliente_id", referencedColumnName = "id")
+    private Cliente cliente;
+
     // Getters y Setters
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
@@ -63,4 +79,6 @@ public class Dueno {
     public void setEstado(Boolean estado) { this.estado = estado; }
     public List<Paciente> getMascotas() { return mascotas; }
     public void setMascotas(List<Paciente> mascotas) { this.mascotas = mascotas; }
+    public Cliente getCliente() { return cliente; }
+    public void setCliente(Cliente cliente) { this.cliente = cliente; }
 }

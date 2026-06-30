@@ -23,11 +23,6 @@ public class AuthController {
     // 1. RUTAS DE INICIO DE SESIÓN
     // ==========================================
 
-    @GetMapping("/")
-    public String redireccionarALogin() {
-        return "redirect:/login";
-    }
-    
     @GetMapping("/login")
     public String loginForm(@RequestParam(required = false) String error, 
                             @RequestParam(required = false) String success, 

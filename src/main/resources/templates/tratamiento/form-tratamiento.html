@@ -1,190 +1,144 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="es">
 <head>
-  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-  <title>Registrar Tratamiento | VetMejía</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-  <style>
-    body{background:#f0f9ff;font-family:'Segoe UI',sans-serif;}
-    .main-content{margin-left:260px;padding:2rem;}
-    .form-card{border:none;border-radius:16px;box-shadow:0 4px 12px rgba(0,0,0,.06);}
-    .detalle-row{background:#f8fafc;border-radius:10px;padding:1rem;margin-bottom:.75rem;position:relative;}
-    .btn-remove{position:absolute;top:.5rem;right:.5rem;}
-    .badge-stock-ok{background:#dcfce7;color:#166534;}
-    .badge-stock-low{background:#fee2e2;color:#991b1b;}
-  </style>
-</head>
-<body>
-<div th:replace="~{fragments/sidebar :: menuLateral}"></div>
-<div class="main-content">
-  <div class="d-flex align-items-center gap-3 mb-4">
-    <a th:href="@{/tratamientos/paciente/{id}(id=${historia?.paciente?.id})}"
-       class="btn btn-outline-secondary rounded-pill btn-sm"><i class="bi bi-arrow-left"></i> Volver</a>
-    <div>
-      <h2 class="fw-bold mb-0"><i class="bi bi-prescription2 me-2 text-primary"></i>Registrar Tratamiento</h2>
-      <p class="text-muted mb-0" th:text="'Paciente: ' + ${historia?.paciente?.nombre}"></p>
-    </div>
-  </div>
-
-  <div th:if="${errorMsg}" class="alert alert-danger rounded-3 mb-4">
-    <i class="bi bi-exclamation-triangle me-2"></i><span th:text="${errorMsg}"></span>
-  </div>
-
-  <form th:action="@{/tratamientos/guardar}" method="post" id="formTratamiento">
-    <input type="hidden" name="historiaClinicaId" th:value="${historia?.id}">
-
-    <div class="row g-4">
-      <!-- Columna izquierda: Info clínica -->
-      <div class="col-12 col-lg-5">
-        <div class="card form-card p-4 mb-3">
-          <h6 class="fw-bold mb-3 text-muted"><i class="bi bi-file-medical me-2"></i>Datos Clínicos</h6>
-          <div class="mb-3">
-            <label class="form-label fw-semibold">Historia Clínica</label>
-            <input class="form-control bg-light" readonly
-                   th:value="'HC #' + ${historia?.id} + ' — ' + ${historia?.paciente?.nombre}">
-          </div>
-          <div class="mb-3">
-            <label class="form-label fw-semibold">Diagnóstico <span class="text-danger">*</span></label>
-            <textarea name="diagnostico" class="form-control" rows="3" required
-                      placeholder="Ej: Gastroenteritis bacteriana con deshidratación leve"></textarea>
-          </div>
-          <div class="mb-3">
-            <label class="form-label fw-semibold">Observaciones</label>
-            <textarea name="observaciones" class="form-control" rows="2"
-                      placeholder="Notas adicionales del veterinario..."></textarea>
-          </div>
-        </div>
-
-        <div class="alert alert-info rounded-3 small">
-          <i class="bi bi-info-circle me-2"></i>
-          Al guardar, el stock de cada medicamento será <strong>descontado automáticamente</strong>.
-          Solo se pueden usar productos con stock disponible.
-        </div>
-      </div>
-
-      <!-- Columna derecha: Medicamentos -->
-      <div class="col-12 col-lg-7">
-        <div class="card form-card p-4">
-          <div class="d-flex justify-content-between align-items-center mb-3">
-            <h6 class="fw-bold mb-0 text-muted"><i class="bi bi-capsule me-2"></i>Medicamentos / Productos Usados</h6>
-            <button type="button" class="btn btn-sm btn-primary rounded-pill" onclick="agregarDetalle()">
-              <i class="bi bi-plus me-1"></i>Agregar
-            </button>
-          </div>
-
-          <div id="detallesContainer">
-            <!-- Fila inicial -->
-            <div class="detalle-row" id="fila_0">
-              <button type="button" class="btn btn-sm btn-danger btn-remove rounded-circle"
-                      onclick="eliminarFila(0)" style="display:none;">
-                <i class="bi bi-x"></i>
-              </button>
-              <div class="row g-2">
-                <div class="col-12 col-md-5">
-                  <label class="form-label small fw-semibold">Producto / Medicamento</label>
-                  <select name="productoId" class="form-select form-select-sm" onchange="actualizarStock(this, 0)">
-                    <option value="">-- Seleccionar --</option>
-                    <option th:each="p : ${productos}"
-                            th:value="${p.id}"
-                            th:text="${p.nombre + ' (Stock: ' + p.stockTotal + ' ' + p.tipoUnidad + ')'}"
-                            th:attr="data-stock=${p.stockTotal}">
-                    </option>
-                  </select>
-                  <small class="text-muted" id="stock_0">Stock disponible: —</small>
+    <head th:replace="~{fragments/head :: head('Nuevo Tratamiento')}"></head>
+    
+    <body>
+    
+        <div th:replace="~{fragments/sidebar :: menuLateral}"></div>
+    
+        <div class="main-content">
+            
+            <header th:replace="~{fragments/navbar :: topbar}"></header>
+    
+        <main class="content p-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="mb-1 fw-bold text-dark"><i class="bi bi-clipboard2-pulse-fill text-primary me-2"></i>Registrar Tratamiento Médico</h2>
+                    <p class="text-muted mb-0" th:if="${historia != null}">
+                        Registrando tratamiento para la consulta del paciente: <strong th:text="${historia.paciente.nombre}"></strong>
+                    </p>
+                    <p class="text-muted mb-0" th:unless="${historia != null}">
+                        Registro de un tratamiento general o no asociado a una consulta específica.
+                    </p>
                 </div>
-                <div class="col-6 col-md-2">
-                  <label class="form-label small fw-semibold">Cantidad</label>
-                  <input type="number" name="cantidad" step="0.01" min="0.01"
-                         class="form-control form-control-sm" placeholder="0">
-                </div>
-                <div class="col-6 col-md-2">
-                  <label class="form-label small fw-semibold">Lote</label>
-                  <input type="text" name="lote" maxlength="50"
-                         class="form-control form-control-sm" placeholder="Opcional">
-                </div>
-                <div class="col-12 col-md-3">
-                  <label class="form-label small fw-semibold">Observación</label>
-                  <input type="text" name="obsDetalle"
-                         class="form-control form-control-sm" placeholder="Dosis, vía...">
-                </div>
-              </div>
+                <a th:href="${historia != null ? '/pacientes/' + historia.paciente.id + '/expediente' : '/pacientes'}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-2"></i>Volver
+                </a>
             </div>
-          </div>
-
-          <div class="mt-3 text-muted small" id="infoDetalles">
-            Agrega al menos un medicamento para registrar el tratamiento.
-          </div>
-        </div>
-      </div>
+    
+            <div th:if="${errorMsg}" class="alert alert-danger alert-dismissible fade show rounded-3 mb-4">
+                <i class="bi bi-exclamation-triangle me-2"></i><span th:text="${errorMsg}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+    
+            <div class="card card-custom border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <form th:action="@{/tratamientos/guardar}" method="post" id="form-tratamiento">
+                        <input type="hidden" name="historiaClinicaId" th:if="${historia != null}" th:value="${historia.id}">
+    
+                        <div class="mb-3" th:if="${historia == null}">
+                            <label class="form-label fw-semibold">
+                              <i class="bi bi-paw me-1 text-primary"></i>
+                              Mascota atendida <span class="text-muted fw-normal">(opcional — se registrará en su historial)</span>
+                            </label>
+                            <select name="pacienteId" class="form-select">
+                              <option value="">-- Sin mascota específica / Consulta general --</option>
+                              <option th:each="p : ${pacientes}" 
+                                      th:value="${p.id}"
+                                      th:text="${p.nombre} + ' (' + ${p.especie.nombreEspecie} + ' — Tutor: ' + ${p.dueno != null ? p.dueno.nombre : 'N/A'} + ')'">
+                              </option>
+                            </select>
+                            <div class="form-text">Si seleccionas una mascota, este tratamiento quedará vinculado a su expediente clínico.</div>
+                        </div>
+    
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Diagnóstico Principal <span class="text-danger">*</span></label>
+                            <input type="text" name="diagnostico" class="form-control" th:value="${historia?.diagnostico}" required>
+                        </div>
+    
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">Observaciones / Indicaciones</label>
+                            <textarea name="observaciones" class="form-control" rows="3"></textarea>
+                        </div>
+    
+                        <h5 class="fw-bold text-secondary border-top pt-4 mb-3">Medicamentos Aplicados (descuentan stock)</h5>
+    
+                        <div class="bg-light p-3 rounded border mb-3">
+                            <div class="row g-2 align-items-end">
+                                <div class="col-md-8">
+                                    <label class="form-label small">Buscar Producto Clínico</label>
+                                    <select id="select-producto" class="form-select">
+                                        <option value="">-- Seleccionar --</option>
+                                        <option th:each="p : ${productos}" th:value="${p.id}" th:text="${p.nombre}"></option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <button type="button" class="btn btn-success w-100" onclick="agregarMedicamento()">
+                                        <i class="bi bi-plus-circle-fill me-1"></i>Añadir a la lista
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+    
+                        <div class="table-responsive">
+                            <table class="table align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Producto</th>
+                                        <th style="width: 15%;">Cantidad</th>
+                                        <th style="width: 20%;">Lote</th>
+                                        <th style="width: 25%;">Obs.</th>
+                                        <th style="width: 5%;"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabla-medicamentos">
+                                    <!-- Filas de medicamentos se agregarán aquí -->
+                                </tbody>
+                            </table>
+                        </div>
+    
+                        <div class="mt-4 text-end">
+                            <button type="submit" class="btn btn-primary px-4 py-2">
+                                <i class="bi bi-save-fill me-2"></i>Guardar Tratamiento
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </main>
     </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let medIndex = 0;
+        function agregarMedicamento() {
+            const select = document.getElementById('select-producto');
+            const selectedOption = select.options[select.selectedIndex];
+            if (!selectedOption.value) return;
 
-    <div class="d-flex gap-3 justify-content-end mt-4">
-      <a th:href="@{/tratamientos/paciente/{id}(id=${historia?.paciente?.id})}"
-         class="btn btn-outline-secondary rounded-pill px-4">Cancelar</a>
-      <button type="submit" class="btn btn-primary rounded-pill px-5 fw-bold">
-        <i class="bi bi-save me-2"></i>Guardar Tratamiento
-      </button>
-    </div>
-  </form>
-</div>
+            const productoId = selectedOption.value;
+            const productoNombre = selectedOption.text;
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<script th:inline="javascript">
-  const productosData = /*[[${productos}]]*/ [];
-  let filaCount = 1;
-
-  function getProductoOptions() {
-    return `<option value="">-- Seleccionar --</option>` +
-      productosData.map(p =>
-        `<option value="${p.id}" data-stock="${p.stockTotal}">${p.nombre} (Stock: ${p.stockTotal} ${p.tipoUnidad})</option>`
-      ).join('');
-  }
-
-  function agregarDetalle() {
-    const idx = filaCount++;
-    const div = document.createElement('div');
-    div.className = 'detalle-row';
-    div.id = 'fila_' + idx;
-    div.innerHTML = `
-      <button type="button" class="btn btn-sm btn-danger btn-remove rounded-circle" onclick="eliminarFila(${idx})">
-        <i class="bi bi-x"></i>
-      </button>
-      <div class="row g-2">
-        <div class="col-12 col-md-5">
-          <label class="form-label small fw-semibold">Producto / Medicamento</label>
-          <select name="productoId" class="form-select form-select-sm" onchange="actualizarStock(this, ${idx})">
-            ${getProductoOptions()}
-          </select>
-          <small class="text-muted" id="stock_${idx}">Stock disponible: —</small>
-        </div>
-        <div class="col-6 col-md-2">
-          <label class="form-label small fw-semibold">Cantidad</label>
-          <input type="number" name="cantidad" step="0.01" min="0.01" class="form-control form-control-sm" placeholder="0">
-        </div>
-        <div class="col-6 col-md-2">
-          <label class="form-label small fw-semibold">Lote</label>
-          <input type="text" name="lote" maxlength="50" class="form-control form-control-sm" placeholder="Opcional">
-        </div>
-        <div class="col-12 col-md-3">
-          <label class="form-label small fw-semibold">Observación</label>
-          <input type="text" name="obsDetalle" class="form-control form-control-sm" placeholder="Dosis, vía...">
-        </div>
-      </div>`;
-    document.getElementById('detallesContainer').appendChild(div);
-  }
-
-  function eliminarFila(idx) {
-    const el = document.getElementById('fila_' + idx);
-    if (el) el.remove();
-  }
-
-  function actualizarStock(sel, idx) {
-    const opt = sel.options[sel.selectedIndex];
-    const stock = opt ? opt.getAttribute('data-stock') : null;
-    const el = document.getElementById('stock_' + idx);
-    if (el) el.textContent = stock ? 'Stock disponible: ' + stock : 'Stock disponible: —';
-  }
-</script>
+            const tbody = document.getElementById('tabla-medicamentos');
+            const newRow = tbody.insertRow();
+            newRow.innerHTML = `
+                <td>
+                    ${productoNombre}
+                    <input type="hidden" name="productoId" value="${productoId}">
+                </td>
+                <td><input type="number" name="cantidad" class="form-control form-control-sm" step="0.01" min="0.01" required></td>
+                <td><input type="text" name="lote" class="form-control form-control-sm"></td>
+                <td><input type="text" name="obsDetalle" class="form-control form-control-sm"></td>
+                <td>
+                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="this.closest('tr').remove()">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </td>
+            `;
+            medIndex++;
+        }
+    </script>
 </body>
+
 </html>

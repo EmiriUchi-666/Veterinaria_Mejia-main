@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import com.Veterinaria.Mejia.models.Cliente;
 import com.Veterinaria.Mejia.models.Dueno;
 import com.Veterinaria.Mejia.repository.DuenoRepository;
 
@@ -50,6 +51,20 @@ public class DuenoController {
                     }
                 });
             }
+
+            // Sincronizar con la entidad Cliente
+            Cliente clienteAsociado = dueno.getCliente();
+            if (clienteAsociado == null) {
+                clienteAsociado = new Cliente();
+            }
+            clienteAsociado.setNombre(dueno.getNombre());
+            clienteAsociado.setTipoDocumento(dueno.getTipoDocumento());
+            clienteAsociado.setNumeroDocumento(dueno.getDni());
+            clienteAsociado.setTelefono(dueno.getTelefono());
+            clienteAsociado.setEmail(dueno.getEmail());
+            clienteAsociado.setDireccion(dueno.getDireccion());
+            dueno.setCliente(clienteAsociado);
+
             dueno.setEstado(true);
             duenoRepo.save(dueno);
             ra.addFlashAttribute("successMsg", "Dueño '" + dueno.getNombre() + "' registrado correctamente.");

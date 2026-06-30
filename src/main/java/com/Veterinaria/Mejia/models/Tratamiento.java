@@ -1,14 +1,29 @@
 package com.Veterinaria.Mejia.models;
 
-import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.util.List;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
+import lombok.Data;
 
 /**
  * Representa un tratamiento médico aplicado a un paciente dentro de su historia clínica.
  * Permite la trazabilidad completa de los medicamentos utilizados.
  */
 @Entity
+@Data
 @Table(name = "tratamientos")
 public class Tratamiento {
 
@@ -17,8 +32,12 @@ public class Tratamiento {
     private Integer id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "historia_clinica_id", nullable = false)
+    @JoinColumn(name = "historia_clinica_id", nullable = true) // Puede ser nulo para tratamientos generales
     private HistoriaClinica historiaClinica;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "paciente_id", nullable = true)
+    private Paciente pacienteTratado;
 
     @Column(name = "fecha_inicio", nullable = false)
     private LocalDate fechaInicio;
@@ -42,29 +61,4 @@ public class Tratamiento {
     public enum EstadoTratamiento {
         Activo, Completado, Suspendido
     }
-
-    // Getters y Setters
-    public Integer getId() { return id; }
-    public void setId(Integer id) { this.id = id; }
-
-    public HistoriaClinica getHistoriaClinica() { return historiaClinica; }
-    public void setHistoriaClinica(HistoriaClinica historiaClinica) { this.historiaClinica = historiaClinica; }
-
-    public LocalDate getFechaInicio() { return fechaInicio; }
-    public void setFechaInicio(LocalDate fechaInicio) { this.fechaInicio = fechaInicio; }
-
-    public LocalDate getFechaFin() { return fechaFin; }
-    public void setFechaFin(LocalDate fechaFin) { this.fechaFin = fechaFin; }
-
-    public String getDiagnostico() { return diagnostico; }
-    public void setDiagnostico(String diagnostico) { this.diagnostico = diagnostico; }
-
-    public String getObservaciones() { return observaciones; }
-    public void setObservaciones(String observaciones) { this.observaciones = observaciones; }
-
-    public EstadoTratamiento getEstado() { return estado; }
-    public void setEstado(EstadoTratamiento estado) { this.estado = estado; }
-
-    public List<DetalleTratamiento> getDetalles() { return detalles; }
-    public void setDetalles(List<DetalleTratamiento> detalles) { this.detalles = detalles; }
 }

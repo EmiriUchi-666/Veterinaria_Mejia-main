@@ -9,8 +9,11 @@ import org.springframework.data.jpa.repository.Query;
 import com.Veterinaria.Mejia.models.AlertaSistema;
 
 public interface AlertaSistemaRepository extends JpaRepository<AlertaSistema, Long> {
+
     List<AlertaSistema> findByLeidaFalseOrderByFechaGeneradaDesc();
+
     long countByLeidaFalse();
+
     @Modifying
     @Query("DELETE FROM AlertaSistema a WHERE a.leida = false")
     void deleteUnreadAlerts();

@@ -64,40 +64,13 @@ public class CajaController {
     }
 
     @PostMapping("/cerrar")
-    public String cerrar(@RequestParam BigDecimal montoFinal,
-                         @RequestParam(required = false) String observaciones,
-                         RedirectAttributes ra) {
+    public String cerrar(RedirectAttributes ra) {
         try {
-            com.Veterinaria.Mejia.models.AperturaCierreCaja c = cajaService.cerrarCaja(montoFinal, observaciones);
-            BigDecimal dif = c.getDiferencia();
-            String msg = "Caja cerrada. Monto final: S/ " + String.format("%.2f", montoFinal);
-            if (dif != null && dif.abs().compareTo(new BigDecimal("0.01")) > 0) msg += " | Diferencia: S/ " + String.format("%.2f", dif);
+            com.Veterinaria.Mejia.models.AperturaCierreCaja c = cajaService.cerrarCaja();
+            String msg = "Caja cerrada. Saldo esperado: S/ " + String.format("%.2f", c.getSaldoActual());
             ra.addFlashAttribute("successMsg", msg);
         } catch (Exception e) { ra.addFlashAttribute("errorMsg", e.getMessage()); }
         return "redirect:/caja/estado";
     }
 
-    @PostMapping("/ingreso")
-    public String ingreso(@RequestParam BigDecimal monto,
-                          @RequestParam(required = false, defaultValue = "Ingreso manual") String concepto,
-                          Authentication auth, RedirectAttributes ra) {
-        try {
-            Usuario u = usuarioRepo.findByNombreUsuario(auth.getName()).orElse(null);
-            cajaService.registrarIngreso(monto, concepto, u);
-            ra.addFlashAttribute("successMsg", "Ingreso de S/ " + String.format("%.2f", monto) + " registrado.");
-        } catch (Exception e) { ra.addFlashAttribute("errorMsg", e.getMessage()); }
-        return "redirect:/caja/estado";
-    }
-
-    @PostMapping("/egreso")
-    public String egreso(@RequestParam BigDecimal monto,
-                         @RequestParam(required = false, defaultValue = "Egreso manual") String concepto,
-                         Authentication auth, RedirectAttributes ra) {
-        try {
-            Usuario u = usuarioRepo.findByNombreUsuario(auth.getName()).orElse(null);
-            cajaService.registrarEgreso(monto, concepto, u);
-            ra.addFlashAttribute("successMsg", "Egreso de S/ " + String.format("%.2f", monto) + " registrado.");
-        } catch (Exception e) { ra.addFlashAttribute("errorMsg", e.getMessage()); }
-        return "redirect:/caja/estado";
-    }
 }

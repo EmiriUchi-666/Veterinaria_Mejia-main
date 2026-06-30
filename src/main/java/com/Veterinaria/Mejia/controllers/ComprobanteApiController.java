@@ -97,11 +97,13 @@ public class ComprobanteApiController {
         Map<String, Object> respuesta = new HashMap<>();
         
         // Utilizamos el método ya existente en tu ClienteRepository
-        Cliente cliente = clienteRepository.findByDniJPQL(dni).orElse(null);
+        Cliente cliente = clienteRepository.findByNumeroDocumento(dni).orElse(null);
         
         if (cliente != null) {
             respuesta.put("success", true);
             respuesta.put("nombre", cliente.getNombre());
+            respuesta.put("telefono", cliente.getTelefono());
+            respuesta.put("direccion", cliente.getDireccion());
         } else {
             respuesta.put("success", false);
         }

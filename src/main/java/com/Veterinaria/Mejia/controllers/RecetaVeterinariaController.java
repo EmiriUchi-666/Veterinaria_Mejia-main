@@ -16,6 +16,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.Veterinaria.Mejia.models.LineaReceta;
 import com.Veterinaria.Mejia.models.RecetaVeterinaria;
+import com.Veterinaria.Mejia.repository.DuenoRepository;
 import com.Veterinaria.Mejia.repository.PacienteRepository;
 import com.Veterinaria.Mejia.repository.ProductoRepository;
 import com.Veterinaria.Mejia.repository.UsuarioRepository;
@@ -31,6 +32,7 @@ public class RecetaVeterinariaController {
     private final RecetaVeterinariaService recetaService;
     private final PacienteRepository pacienteRepo;
     private final UsuarioRepository usuarioRepo;
+    private final DuenoRepository duenoRepo;
     private final ProductoRepository productoRepo;
 
     @GetMapping
@@ -43,8 +45,9 @@ public class RecetaVeterinariaController {
     public String formNueva(Model model) {
         model.addAttribute("pacientes", pacienteRepo.findByEstadoTrue());
         model.addAttribute("veterinarios", usuarioRepo.findAll());
+        model.addAttribute("duenos", duenoRepo.findByEstadoTrueOrderByNombreAsc());
         model.addAttribute("productos", productoRepo.findAll().stream()
-                .filter(p -> Boolean.TRUE.equals(p.getEstado())).toList());
+                .filter(p -> Boolean.TRUE.equals(p.isEstado())).toList());
         return "recetas/form-receta";
     }
 

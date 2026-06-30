@@ -5,6 +5,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
+import java.time.Period;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,8 +24,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import com.Veterinaria.Mejia.models.Cliente;
+import com.Veterinaria.Mejia.models.Dueno;
 import com.Veterinaria.Mejia.models.HistorialVacuna;
 import com.Veterinaria.Mejia.models.Paciente;
+import com.Veterinaria.Mejia.repository.CitaRepository;
 import com.Veterinaria.Mejia.repository.ClienteRepository;
 import com.Veterinaria.Mejia.repository.DuenoRepository;
 import com.Veterinaria.Mejia.repository.EspecieRepository;
@@ -48,13 +52,33 @@ public class PacienteController {
     private final EspecieRepository especieRepo;
     private final HistoriaClinicaRepository historiaRepo;
     private final HistorialVacunaRepository vacunaRepo;
+    private final CitaRepository citaRepo;
     private final TratamientoService tratamientoService;
     private final RecetaVeterinariaService recetaService;
     private final PdfService pdfService;
 
     @GetMapping
     public String listar(Model model) {
-        model.addAttribute("pacientes", pacienteRepo.findByEstadoTrue());
+        List<Paciente> pacientes = pacienteRepo.findByEstadoTrue();
+        Map<Integer, String> edades = new HashMap<>();
+        
+        for (Paciente p : pacientes) {
+            if (p.getFechaNacimiento() != null) {
+                Period period = Period.between(p.getFechaNacimiento(), LocalDate.now());
+                if (period.getYears() > 0) {
+                    edades.put(p.getId(), period.getYears() + (period.getYears() == 1 ? " año" : " años"));
+                } else if (period.getMonths() > 0) {
+                    edades.put(p.getId(), period.getMonths() + (period.getMonths() == 1 ? " mes" : " meses"));
+                } else {
+                    edades.put(p.getId(), period.getDays() + (period.getDays() == 1 ? " día" : " días"));
+                }
+            } else {
+                edades.put(p.getId(), "—");
+            }
+        }
+
+        model.addAttribute("pacientes", pacientes);
+        model.addAttribute("edades", edades);
         return "pacientes/lista-pacientes";
     }
 
@@ -71,8 +95,7 @@ public class PacienteController {
     public String guardar(
             @RequestParam(required = false) Integer id,
             @RequestParam String nombre,
-            @RequestParam(required = false) Integer duenoId,
-            @RequestParam(required = false) Integer clienteId,
+            @RequestParam(required = false) Integer duenoId, // El clienteId ya no se recibe del form
             @RequestParam(required = false) Integer especieId,
             @RequestParam(required = false) String raza,
             @RequestParam(required = false) String colorPelaje,
@@ -115,15 +138,27 @@ public class PacienteController {
 
             // Dueño (preferido)
             if (duenoId != null) {
-                duenoRepo.findById(duenoId).ifPresent(p::setDueno);
+                Dueno dueno = duenoRepo.findById(duenoId)
+                        .orElseThrow(() -> new IllegalArgumentException("Dueño no encontrado."));
+                p.setDueno(dueno);
+
+                // Lógica para crear/asignar Cliente automáticamente
+                if (dueno.getDni() != null && !dueno.getDni().isBlank()) {
+                    Cliente cliente = clienteRepo.findByNumeroDocumento(dueno.getDni())
+                            .orElseGet(() -> {
+                                Cliente nuevoCliente = new Cliente();
+                                nuevoCliente.setNombre(dueno.getNombre());
+                                nuevoCliente.setNumeroDocumento(dueno.getDni());
+                                nuevoCliente.setTelefono(dueno.getTelefono());
+                                nuevoCliente.setDireccion(dueno.getDireccion());
+                                return clienteRepo.save(nuevoCliente);
+                            });
+                    p.setCliente(cliente);
+                }
             }
             // Especie
             if (especieId != null) {
                 especieRepo.findById(especieId).ifPresent(p::setEspecie);
-            }
-            // Cliente (opcional, para facturación)
-            if (clienteId != null) {
-                clienteRepo.findById(clienteId).ifPresent(p::setCliente);
             }
 
             // Foto (opcional, no bloquea el registro)
@@ -187,6 +222,7 @@ public class PacienteController {
         model.addAttribute("vacunas", vacunas);
         model.addAttribute("tratamientos", tratamientoService.listarPorPaciente(id));
         model.addAttribute("recetas", recetaService.listarPorPaciente(id));
+        model.addAttribute("citas", citaRepo.findByPacienteIdOrderByFechaHoraDesc(id));
 
         return "pacientes/expediente";
     }

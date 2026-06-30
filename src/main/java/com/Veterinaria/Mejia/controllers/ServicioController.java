@@ -55,9 +55,12 @@ public class ServicioController {
             return "mantenimiento/form-servicio";
         }
         
-        // Si el ID es nulo, es nuevo y nacerá activo (gracias a tu ServicioService).
-        // Si tiene ID, es una edición y mantendrá su estado.
-        servicioService.guardarServicioNuevo(servicio);
+        // Si el estado es nulo (al editar y no marcar el check), lo forzamos a false.
+        if (servicio.getEstado() == null) {
+            servicio.setEstado(false);
+        }
+
+        servicioService.guardarServicio(servicio);
         
         redirectAttrs.addFlashAttribute("successMsg", "El servicio ha sido guardado exitosamente en el tarifario.");
         return "redirect:/mantenimiento/servicios";
@@ -68,7 +71,7 @@ public class ServicioController {
     // ==========================================
     @GetMapping("/editar/{id}")
     public String mostrarFormularioEditar(@PathVariable Integer id, Model model, RedirectAttributes redirectAttrs) {
-        try {
+        try { 
             Servicio servicioExistente = servicioService.buscarPorId(id);
             model.addAttribute("servicio", servicioExistente);
             return "mantenimiento/form-servicio"; // Reutilizamos el mismo HTML

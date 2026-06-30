@@ -55,4 +55,11 @@ public interface DetalleVentaRepository extends JpaRepository<DetalleVenta, Inte
            "WHERE d.venta.estado = true AND d.venta.fechaEmision BETWEEN :inicio AND :fin " +
            "GROUP BY p.id, p.nombre, p.precioInversion, d.precioUnitario ORDER BY SUM(d.subtotal) DESC")
     List<com.Veterinaria.Mejia.dto.ProductoRentabilidadDTO> obtenerRentabilidadProductos(java.time.LocalDateTime inicio, java.time.LocalDateTime fin);
+
+    /**
+     * Cuenta cuántos detalles de venta están asociados a un servicio específico.
+     * @param servicioId El ID del servicio.
+     * @return El número de ventas que incluyen ese servicio.
+     */
+    long countByServicioId(Integer servicioId);
 }

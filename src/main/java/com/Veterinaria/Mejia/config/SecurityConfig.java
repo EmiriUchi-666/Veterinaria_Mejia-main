@@ -2,6 +2,7 @@ package com.Veterinaria.Mejia.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -32,24 +33,29 @@ public class SecurityConfig {
 
                 // Solo Administrador
                 .requestMatchers(
-                    "/usuarios/**", "/almacen/proveedores/**",
-                    "/almacen/ingresos/**", "/mantenimiento/categorias/**",
-                    "/reportes/**", "/crm/**", "/contingencia/**"
+                    "/usuarios/**", "/almacen/proveedores/**", "/almacen/ingresos/**",
+                    "/reportes/**", "/crm/**", "/contingencia/**",
+                    "/medicamentos-controlados/**", "/recetas/**", "/tratamientos/**",
+                    "/mantenimiento/**", "/facturacion/**", "/caja/**", "/ia/**"
                 ).hasAuthority("ROLE_Administrador")
 
-                // Administrador o Veterinario
+                // Empleado: Acceso de solo lectura a ciertas áreas
                 .requestMatchers(
-                    "/recetas/**", "/medicamentos-controlados/**",
-                    "/tratamientos/**", "/ia/**", "/pacientes/**", "/duenos/**"
+                    HttpMethod.GET, "/pacientes/**", "/duenos/**", "/almacen/productos/**"
                 ).hasAnyAuthority("ROLE_Administrador", "ROLE_Empleado")
 
-                // Operativos (cajero + admin)
+                // Empleado: Acceso completo a módulos operativos
                 .requestMatchers(
-                    "/ventas/**", "/almacen/productos/**",
-                    "/mantenimiento/servicios/**", "/facturacion/**",
-                    "/caja/**", "/api/utilidades/**", "/api/validacion/**",
-                    "/dashboard"
+                    "/ventas/**", "/citas/**", "/dashboard"
                 ).hasAnyAuthority("ROLE_Administrador", "ROLE_Empleado")
+
+                // Administrador: Acceso completo a lo que el empleado tiene en solo lectura
+                .requestMatchers(
+                    "/pacientes/**", "/duenos/**", "/almacen/productos/**"
+                ).hasAuthority("ROLE_Administrador")
+
+                // API públicas para AJAX
+                .requestMatchers("/api/utilidades/**", "/api/validacion/**").permitAll()
 
                 .anyRequest().authenticated()
             )
@@ -58,7 +64,7 @@ public class SecurityConfig {
                 .loginProcessingUrl("/login")
                 .usernameParameter("usuario")
                 .passwordParameter("pass")
-                .defaultSuccessUrl("/dashboard", true)
+                .defaultSuccessUrl("/", true)
                 .failureUrl("/login?error=true")
                 .permitAll()
             )

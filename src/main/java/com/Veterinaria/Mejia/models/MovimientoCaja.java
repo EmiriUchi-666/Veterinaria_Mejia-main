@@ -14,9 +14,17 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "movimientos_caja")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class MovimientoCaja {
 
     @Id
@@ -29,36 +37,21 @@ public class MovimientoCaja {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private TipoMovimiento tipo; // INGRESO, EGRESO
+    private TipoMovimiento tipo;
 
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal monto;
 
-    @Column(length = 200)
+    @Column(nullable = false)
     private String concepto;
-
-    @Column(name = "fecha_hora")
-    private LocalDateTime fechaHora = LocalDateTime.now();
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "usuario_id")
     private Usuario usuario;
 
-    public enum TipoMovimiento { INGRESO, EGRESO }
+    @Column(name = "fecha_hora", nullable = false)
+    @Builder.Default
+    private LocalDateTime fechaHora = LocalDateTime.now();
 
-    // Getters & Setters
-    public Integer getId() { return id; }
-    public void setId(Integer id) { this.id = id; }
-    public AperturaCierreCaja getCaja() { return caja; }
-    public void setCaja(AperturaCierreCaja caja) { this.caja = caja; }
-    public TipoMovimiento getTipo() { return tipo; }
-    public void setTipo(TipoMovimiento tipo) { this.tipo = tipo; }
-    public BigDecimal getMonto() { return monto; }
-    public void setMonto(BigDecimal monto) { this.monto = monto; }
-    public String getConcepto() { return concepto; }
-    public void setConcepto(String concepto) { this.concepto = concepto; }
-    public LocalDateTime getFechaHora() { return fechaHora; }
-    public void setFechaHora(LocalDateTime f) { this.fechaHora = f; }
-    public Usuario getUsuario() { return usuario; }
-    public void setUsuario(Usuario usuario) { this.usuario = usuario; }
+    public enum TipoMovimiento { INGRESO, EGRESO }
 }

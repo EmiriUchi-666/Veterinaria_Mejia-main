@@ -1,25 +1,35 @@
 package com.Veterinaria.Mejia.services;
 
+import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import com.Veterinaria.Mejia.dto.ItemCarritoDTO;
 import com.Veterinaria.Mejia.dto.VentaRequestDTO;
-import com.Veterinaria.Mejia.models.CotizacionQuirurgica;
+import com.Veterinaria.Mejia.models.FacturacionEstado;
 import com.Veterinaria.Mejia.models.Venta;
+import com.Veterinaria.Mejia.repository.FacturacionEstadoRepository;
 
 import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
 public class VentaFacade {
+    private static final Logger log = LoggerFactory.getLogger(VentaFacade.class);
 
     private final VentaConsultaService ventaConsultaService;
     private final VentaCreacionService ventaCreacionService;
-    private final VentaQuirurgicaService ventaQuirurgicaService;
     private final VentaAnulacionService ventaAnulacionService;
+    private final FacturacionService facturacionService;
+    private final FacturacionEstadoRepository facturacionEstadoRepository;
 
+    @Transactional(readOnly = true)
     public List<Venta> listarUltimas10VentasConDetalles() {
         return ventaConsultaService.listarUltimas10VentasConDetalles();
     }
@@ -29,11 +39,53 @@ public class VentaFacade {
     }
 
     public Venta procesarVentaTransaccional(VentaRequestDTO request, Authentication authentication) {
-        return ventaCreacionService.procesarVentaTransaccional(request, authentication);
-    }
+        // Paso 1: Crear la venta en la base de datos
+        Venta ventaGuardada = ventaCreacionService.procesarVentaTransaccional(request, authentication);
 
-    public Venta procesarPagoEncapsulado(CotizacionQuirurgica cotizacion, Authentication authentication) {
-        return ventaQuirurgicaService.procesarPagoEncapsulado(cotizacion, authentication);
+        // Paso 2: Registrar el intento de facturación en estado PENDIENTE
+        FacturacionEstado estadoFacturacion = FacturacionEstado.builder()
+                .venta(ventaGuardada)
+                .estado(FacturacionEstado.EstadoFacturacion.PENDIENTE)
+                .build();
+        facturacionEstadoRepository.save(estadoFacturacion);
+
+        // Paso 3: Delegar el envío y la actualización de estado al servicio especializado
+        facturacionService.procesarEnvioNubefact(estadoFacturacion);
+        
+        return ventaGuardada;
+    }
+    
+    /**
+     * Nuevo método que encapsula la creación del DTO.
+     * El controlador ahora solo pasa los parámetros del formulario.
+     */
+    public Venta procesarVentaDesdeFormulario(
+            Venta venta, String dni, String nombre,
+            List<String> tipos, List<Integer> ids, List<String> cantidades,
+            List<String> precios, List<String> subtotales,
+            Authentication authentication) {
+        if (tipos == null || tipos.isEmpty()) {
+            throw new IllegalArgumentException("El carrito no puede estar vacío.");
+        }
+
+        VentaRequestDTO request = new VentaRequestDTO();
+        request.setClienteNumDoc(dni);
+        request.setClienteNombre(nombre);
+        request.setTipoPago(venta.getTipoPago());
+        request.setTotal(venta.getTotalVenta());
+
+        List<ItemCarritoDTO> items = new ArrayList<>();
+        for (int i = 0; i < tipos.size(); i++) {
+            ItemCarritoDTO item = new ItemCarritoDTO();
+            item.setTipo(tipos.get(i));
+            item.setIdItem(ids.get(i));
+            item.setCantidad(new BigDecimal(cantidades.get(i)));
+            item.setPrecio(new BigDecimal(precios.get(i)));
+            item.setSubtotal(new BigDecimal(subtotales.get(i)));
+            items.add(item);
+        }
+        request.setItems(items);
+        return this.procesarVentaTransaccional(request, authentication);
     }
 
     public void anularVenta(Integer id) {

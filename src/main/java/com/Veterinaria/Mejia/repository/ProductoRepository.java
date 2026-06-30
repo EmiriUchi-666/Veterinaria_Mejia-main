@@ -35,16 +35,14 @@ public interface ProductoRepository extends JpaRepository<Producto, Integer> {
     List<Producto> buscarProductosStockCriticoJPQL();
 
     /**
-     * Devuelve los productos habilitados para la venta en caja (que no son de uso clínico exclusivo)
+     * Devuelve los productos habilitados para la venta en caja (que no son de uso clínico exclusivo).
      */
-    @Query("SELECT p FROM Producto p WHERE p.estado = true AND p.usoClinico = false")
-    List<Producto> buscarProductosParaVenta();
+    List<Producto> findByEstadoTrueAndUsoClinicoFalse();
 
     /**
-     * Devuelve los productos habilitados exclusivamente para curaciones/recetas (uso clínico)
+     * Devuelve los productos habilitados exclusivamente para curaciones/recetas (uso clínico).
      */
-    @Query("SELECT p FROM Producto p WHERE p.estado = true AND p.usoClinico = true")
-    List<Producto> buscarProductosParaClinica();
+    List<Producto> findByEstadoTrueAndUsoClinicoTrue();
 
        // A6 – Optimistic/Pessimistic locking para evitar stock negativo en concurrencia
     @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)

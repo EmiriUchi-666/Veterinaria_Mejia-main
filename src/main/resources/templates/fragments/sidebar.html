@@ -13,143 +13,45 @@
                 --primary-color: #3b82f6;
             }
             
-            /* Ajuste dinámico del contenido principal */
-            .main-content { 
-                margin-left: var(--sidebar-width); 
-                transition: margin-left 0.3s ease; 
-            }
+            .main-content { margin-left: var(--sidebar-width); transition: margin-left 0.3s ease; }
             body.sidebar-collapsed .main-content { margin-left: 0; }
             
             .sidebar {
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: var(--sidebar-width);
-                height: 100vh;
+                position: fixed; top: 0; left: 0; width: var(--sidebar-width); height: 100vh;
                 background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
-                color: white;
-                z-index: 1000;
-                overflow-y: auto;
+                color: white; z-index: 1000; overflow-y: auto;
                 box-shadow: 4px 0 10px rgba(0, 0, 0, 0.05);
-                transition: all 0.3s ease;
-                transform: translateX(0);
+                transition: all 0.3s ease; transform: translateX(0);
             }
             
-            body.sidebar-collapsed .sidebar {
-                transform: translateX(-100%);
-            }
+            body.sidebar-collapsed .sidebar { transform: translateX(-100%); }
             
             .sidebar::-webkit-scrollbar { width: 6px; }
             .sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
             
-            .sidebar-brand {
-                padding: 1.5rem;
-                border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-                display: flex;
-                align-items: center;
-                gap: 0.75rem;
-            }
+            .sidebar-brand { padding: 1.5rem; border-bottom: 1px solid rgba(255, 255, 255, 0.08); display: flex; align-items: center; gap: 0.75rem; }
+            .sidebar-brand i { font-size: 1.75rem; color: var(--primary-color); }
+            .sidebar-brand h4 { font-weight: 700; margin: 0; font-size: 1.25rem; letter-spacing: 0.5px; }
             
-            .sidebar-brand i { 
-                font-size: 1.75rem; 
-                color: var(--primary-color); 
-            }
+            .sidebar-menu { padding: 1rem 0; list-style: none; margin: 0; }
+            .sidebar-menu li { width: 100%; }
+            .sidebar-menu a { display: flex; align-items: center; gap: 0.75rem; padding: 0.85rem 1.5rem; color: rgba(255, 255, 255, 0.65); text-decoration: none; transition: all 0.2s ease; font-size: 0.925rem; font-weight: 500; }
+            .sidebar-menu a i:first-child { font-size: 1.2rem; }
+            .sidebar-menu a:hover, .sidebar-menu a[aria-expanded="true"] { background: rgba(255, 255, 255, 0.04); color: white; }
             
-            .sidebar-brand h4 { 
-                font-weight: 700; 
-                margin: 0; 
-                font-size: 1.25rem;
-                letter-spacing: 0.5px;
-            }
+            .submenu-list { list-style: none; padding-left: 0; background: rgba(0, 0, 0, 0.2); margin: 0; }
+            .submenu-list a { padding: 0.6rem 1.5rem 0.6rem 3.2rem !important; font-size: 13px !important; color: rgba(255, 255, 255, 0.5) !important; font-weight: 400; }
+            .submenu-list a:hover { color: white !important; background: transparent !important; }
             
-            .sidebar-menu { 
-                padding: 1rem 0; 
-                list-style: none; 
-                margin: 0; 
-            }
+            .border-top-sidebar { border-top: 1px solid rgba(255, 255, 255, 0.08) !important; }
             
-            .sidebar-menu li {
-                width: 100%;
-            }
-            
-            .sidebar-menu a {
-                display: flex; 
-                align-items: center; 
-                gap: 0.75rem; 
-                padding: 0.85rem 1.5rem;
-                color: rgba(255, 255, 255, 0.65); 
-                text-decoration: none; 
-                transition: all 0.2s ease;
-                font-size: 0.925rem;
-                font-weight: 500;
-            }
-            
-            .sidebar-menu a i:first-child {
-                font-size: 1.2rem;
-            }
-            
-            .sidebar-menu a:hover, 
-            .sidebar-menu a[aria-expanded="true"] { 
-                background: rgba(255, 255, 255, 0.04); 
-                color: white; 
-            }
-            
-            .submenu-list { 
-                list-style: none; 
-                padding-left: 0; 
-                background: rgba(0, 0, 0, 0.2); 
-                margin: 0; 
-            }
-            
-            .submenu-list a { 
-                padding: 0.6rem 1.5rem 0.6rem 3.2rem !important; 
-                font-size: 13px !important; 
-                color: rgba(255, 255, 255, 0.5) !important; 
-                font-weight: 400;
-            }
-            
-            .submenu-list a:hover {
-                color: white !important;
-                background: transparent !important;
-            }
-            
-            .border-top-sidebar {
-                border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
-            }
-            
-        /* Estilos base y posicionamiento del botón hamburguesa */
-        .btn-toggle-sidebar {
-            position: fixed;
-            top: 20px;
-            left: var(--sidebar-width);
-            background: var(--primary-color);
-            color: white;
-            border: none;
-            width: 42px;
-            height: 42px;
-            border-radius: 0 8px 8px 0;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 4px 0 8px rgba(0,0,0,0.2);
-            transition: left 0.3s ease, background 0.3s ease;
-            z-index: 1050;
-        }
-        body.sidebar-collapsed .btn-toggle-sidebar {
-            left: 0;
-        }
-        
-        /* Efecto de resplandor (glow) y sombra al pasar el cursor */
-        .btn-toggle-sidebar:hover {
-            background: #2563eb !important;
-            box-shadow: 4px 0 18px rgba(59, 130, 246, 0.8) !important;
-        }
+            .btn-toggle-sidebar { position: fixed; top: 20px; left: var(--sidebar-width); background: var(--primary-color); color: white; border: none; width: 42px; height: 42px; border-radius: 0 8px 8px 0; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 4px 0 8px rgba(0,0,0,0.2); transition: left 0.3s ease; z-index: 1050; }
+            body.sidebar-collapsed .btn-toggle-sidebar { left: 0; }
         </style>
 
-    <button id="sidebarToggleBtn" class="btn-toggle-sidebar" aria-label="Alternar Menú" data-bs-toggle="tooltip" data-bs-placement="right" title="Ocultar Menú">
-        <i class="bi bi-list fs-4"></i>
-    </button>
+        <button id="sidebarToggleBtn" class="btn-toggle-sidebar" aria-label="Alternar Menú" data-bs-toggle="tooltip" data-bs-placement="right" title="Ocultar Menú">
+            <i class="bi bi-list fs-4"></i>
+        </button>
 
         <div class="sidebar-brand">
             <i class="bi bi-heart-pulse-fill"></i>
@@ -157,54 +59,30 @@
         </div>
         
         <ul class="sidebar-menu">
+            <li><a th:href="@{/dashboard}"><i class="bi bi-speedometer2"></i><span>Dashboard</span></a></li>
+            
             <li>
-                <a th:href="@{/dashboard}">
-                    <i class="bi bi-speedometer2"></i><span>Dashboard</span>
-                </a>
-            </li>
-
-            <!-- IA: menú desplegable -->
-            <li>
-                <a class="d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#menuIA" role="button" aria-expanded="false">
-                    <span><i class="bi bi-robot text-info"></i> Inteligencia Artificial</span>
+                <a class="d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#menuClinico" role="button" aria-expanded="false">
+                    <span><i class="bi bi-journal-medical text-danger"></i> Gestión Clínica</span>
                     <i class="bi bi-chevron-down small text-white-50"></i>
                 </a>
-                <div class="collapse" id="menuIA">
-                    <ul class="sub-menu">
-                        <li><a th:href="@{/ia}"><i class="bi bi-cpu me-1"></i>Diagnóstico Heurístico</a></li>
-            <li><a th:href="@{/recetas}"><i class="bi bi-prescription2 text-success"></i><span>Recetas Digitales</span></a></li>
-            <li><a th:href="@{/medicamentos-controlados}"><i class="bi bi-capsule text-danger"></i><span>Medicamentos DIGEMID</span></a></li>
-                        <li><a th:href="@{/ia/dashboard}"><i class="bi bi-speedometer2 me-1"></i>Dashboard IA</a></li>
-            <li><a th:href="@{/recetas}"><i class="bi bi-prescription2 text-success"></i><span>Recetas Digitales</span></a></li>
-            <li><a th:href="@{/medicamentos-controlados}"><i class="bi bi-capsule text-danger"></i><span>Medicamentos DIGEMID</span></a></li>
+                <div class="collapse" id="menuClinico">
+                    <ul class="submenu-list">
+                        <li><a th:href="@{/tratamientos}">Lista de Tratamientos</a></li>
+                        <li><a th:href="@{/recetas}">Recetas Digitales</a></li>
                     </ul>
                 </div>
             </li>
 
-            <!-- Control de Caja -->
             <li>
-                <a th:href="@{/facturacion}">
-                    <i class="bi bi-receipt text-warning"></i><span>Facturación Electrónica</span>
-                </a>
-            </li>
-
-            <li>
-                <a th:href="@{/caja/estado}">
-                    <i class="bi bi-cash-register text-success"></i><span>Control de Caja</span>
-                </a>
-            </li>
-
-            <!-- CRM -->
-            <li>
-                <a class="d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#menuCRM" role="button" aria-expanded="false" sec:authorize="hasAuthority('ROLE_Administrador')">
-                    <span><i class="bi bi-people text-warning"></i> CRM Clientes</span>
+                <a class="d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#menuPacientes" role="button" aria-expanded="false">
+                    <span><i class="bi bi-clipboard2-pulse"></i> Pacientes</span>
                     <i class="bi bi-chevron-down small text-white-50"></i>
                 </a>
-                <div class="collapse" id="menuCRM" sec:authorize="hasAuthority('ROLE_Administrador')">
-                    <ul class="sub-menu">
-                        <li><a th:href="@{/crm/dashboard}">Dashboard CRM</a></li>
-                        <li><a th:href="@{/crm/clientes/top}">Top Clientes</a></li>
-                        <li><a th:href="@{/crm/clientes/inactivos}">Clientes Inactivos</a></li>
+                <div class="collapse" id="menuPacientes">
+                    <ul class="submenu-list">
+                        <li><a th:href="@{/pacientes}">Directorio de Pacientes</a></li>
+                        <li><a th:href="@{/duenos}">Dueños / Tutores</a></li>
                     </ul>
                 </div>
             </li>
@@ -223,82 +101,27 @@
             </li>
 
             <li>
-                <a class="d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#menuPacientes" role="button" aria-expanded="false">
-                    <span><i class="bi bi-clipboard2-pulse"></i> Pacientes</span>
-                    <i class="bi bi-chevron-down small text-white-50"></i>
-                </a>
-                <div class="collapse" id="menuPacientes">
-                    <ul class="submenu-list">
-                        <li><a th:href="@{/pacientes}">Lista de Pacientes</a></li>
-                        <li><a th:href="@{/duenos}"><i class="bi bi-person-badge me-1"></i>Dueños / Tutores</a></li>
-                        <li><a th:href="@{/duenos/nuevo}">Registrar Dueño</a></li>
-                        <li><a th:href="@{/pacientes/nuevo}">Registrar Paciente</a></li>
-                    </ul>
-                </div>
-            </li>
-
-            <li>
                 <a class="d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#menuVentas" role="button" aria-expanded="false">
                     <span><i class="bi bi-calculator"></i> Ventas y Caja</span>
                     <i class="bi bi-chevron-down small text-white-50"></i>
                 </a>
                 <div class="collapse" id="menuVentas">
                     <ul class="submenu-list">
-                        <li><a th:href="@{/ventas/nuevo}">Abrir Panel Caja</a></li>
-                        <li><a th:href="@{/ventas}">Historial de Ventas</a></li> 
+                        <li><a th:href="@{/ventas/nuevo}">Punto de Venta</a></li>
+                        <li><a th:href="@{/ventas}">Historial de Ventas</a></li>
+                        <li><a th:href="@{/caja/estado}">Control de Caja</a></li>
                     </ul>
                 </div>
             </li>
 
-            <li sec:authorize="hasAnyAuthority('ROLE_Administrador', 'ROLE_Empleado')">
-                <a class="d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#menuAlmacen" role="button" aria-expanded="false">
-                    <span><i class="bi bi-box-seam"></i> Almacén e Inventario</span>
-                    <i class="bi bi-chevron-down small text-white-50"></i>
-                </a>
-                <div class="collapse" id="menuAlmacen">
-                    <ul class="submenu-list">
-                        <li><a th:href="@{/almacen/productos}">Catálogo de Productos</a></li>
-                        <th:block sec:authorize="hasAuthority('ROLE_Administrador')">
-                            <li><a th:href="@{/almacen/proveedores}">Lista de Proveedores</a></li>
-                            <li><a th:href="@{/almacen/ingresos/nuevo}">Ingresar Mercadería</a></li>
-                            <li><a th:href="@{/almacen/ingresos}">Historial de Ingresos</a></li>
-                            <li><a th:href="@{/almacen/stock}">Actualizar Stock</a></li>
-                        </th:block>
-                    </ul>
-                </div>
-            </li>
+            <li><a th:href="@{/almacen/productos}"><i class="bi bi-box-seam"></i><span>Catálogo Productos</span></a></li>
 
             <th:block sec:authorize="hasAuthority('ROLE_Administrador')">
-                <li>
-                    <a class="d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#menuMantenimiento" role="button" aria-expanded="false">
-                        <span><i class="bi bi-gear"></i> Mantenimiento Base</span>
-                        <i class="bi bi-chevron-down small text-white-50"></i>
-                    </a>
-                    <div class="collapse" id="menuMantenimiento">
-                        <ul class="submenu-list">
-                            <li><a th:href="@{/mantenimiento/categorias}">Gestión Categorías</a></li>
-                            <li><a th:href="@{/mantenimiento/servicios}">Tarifario Servicios</a></li>
-                        </ul>
-                    </div>
-                </li>
-
-                <li>
-                    <a th:href="@{/reportes}">
-                        <i class="bi bi-bar-chart-fill"></i><span>Reportes Financieros</span>
-                    </a>
-                </li>
-
-                <li>
-                    <a class="d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#menuUsuarios" role="button" aria-expanded="false">
-                        <span><i class="bi bi-shield-lock"></i> Seguridad y Accesos</span>
-                        <i class="bi bi-chevron-down small text-white-50"></i>
-                    </a>
-                    <div class="collapse" id="menuUsuarios">
-                        <ul class="submenu-list">
-                            <li><a th:href="@{/usuarios}">Gestión de Usuarios</a></li>
-                        </ul>
-                    </div>
-                </li>
+                <li><a th:href="@{/facturacion}"><i class="bi bi-receipt text-warning"></i><span>Facturación Electrónica</span></a></li>
+                <li><a th:href="@{/almacen/ingresos}"><i class="bi bi-truck"></i><span>Ingreso Mercadería</span></a></li>
+                <li><a th:href="@{/mantenimiento/servicios}"><i class="bi bi-gear"></i><span>Tarifario Servicios</span></a></li>
+                <li><a th:href="@{/reportes}"><i class="bi bi-bar-chart-fill"></i><span>Reportes Financieros</span></a></li>
+                <li><a th:href="@{/usuarios}"><i class="bi bi-shield-lock"></i><span>Seguridad y Accesos</span></a></li>
             </th:block>
 
             <li class="mt-4 pt-3 border-top-sidebar">
@@ -308,39 +131,23 @@
             </li>
         </ul>
 
-    <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            const toggleBtn = document.getElementById('sidebarToggleBtn');
-            const body = document.body;
-            
-            // Inicializar el Tooltip de Bootstrap
-            const bsTooltip = new bootstrap.Tooltip(toggleBtn);
-            
-            // Función auxiliar para actualizar el texto del tooltip en Bootstrap
-            const actualizarTooltip = (estaOculto) => {
-                toggleBtn.setAttribute('data-bs-original-title', estaOculto ? 'Mostrar Menú' : 'Ocultar Menú');
-            };
-            
-            // 1. Recuperar la preferencia del usuario en localStorage
-            const isCollapsed = localStorage.getItem('sidebar-collapsed') === 'true';
-            if (isCollapsed) {
-                body.classList.add('sidebar-collapsed');
-            }
-            actualizarTooltip(isCollapsed);
-
-            // 2. Alternar estado al hacer clic
-            toggleBtn.addEventListener('click', function() {
-                const estaOcultoAhora = body.classList.toggle('sidebar-collapsed');
-                localStorage.setItem('sidebar-collapsed', estaOcultoAhora);
-                actualizarTooltip(estaOcultoAhora);
-                
-                // Ocultar el tooltip momentáneamente al hacer clic para que no se quede "pegado"
-                // de forma molesta mientras ocurre la animación de ocultar/mostrar
-                bsTooltip.hide();
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const toggleBtn = document.getElementById('sidebarToggleBtn');
+                const body = document.body;
+                const bsTooltip = new bootstrap.Tooltip(toggleBtn);
+                const actualizarTooltip = (estaOculto) => { toggleBtn.setAttribute('data-bs-original-title', estaOculto ? 'Mostrar Menú' : 'Ocultar Menú'); };
+                const isCollapsed = localStorage.getItem('sidebar-collapsed') === 'true';
+                if (isCollapsed) body.classList.add('sidebar-collapsed');
+                actualizarTooltip(isCollapsed);
+                toggleBtn.addEventListener('click', function() {
+                    const estaOcultoAhora = body.classList.toggle('sidebar-collapsed');
+                    localStorage.setItem('sidebar-collapsed', estaOcultoAhora);
+                    actualizarTooltip(estaOcultoAhora);
+                    bsTooltip.hide();
+                });
             });
-        });
-    </script>
+        </script>
     </nav>
-
 </body>
 </html>

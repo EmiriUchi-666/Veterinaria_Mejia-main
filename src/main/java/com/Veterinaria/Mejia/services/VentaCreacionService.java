@@ -16,11 +16,13 @@ import com.Veterinaria.Mejia.dto.ItemCarritoDTO;
 import com.Veterinaria.Mejia.dto.VentaRequestDTO;
 import com.Veterinaria.Mejia.models.Cliente;
 import com.Veterinaria.Mejia.models.DetalleVenta;
+import com.Veterinaria.Mejia.models.Dueno;
 import com.Veterinaria.Mejia.models.Producto;
 import com.Veterinaria.Mejia.models.Servicio;
 import com.Veterinaria.Mejia.models.Usuario;
 import com.Veterinaria.Mejia.models.Venta;
 import com.Veterinaria.Mejia.repository.ClienteRepository;
+import com.Veterinaria.Mejia.repository.DuenoRepository;
 import com.Veterinaria.Mejia.repository.ServicioRepository;
 import com.Veterinaria.Mejia.repository.UsuarioRepository;
 import com.Veterinaria.Mejia.repository.VentaRepository;
@@ -35,6 +37,7 @@ public class VentaCreacionService {
 
     private final VentaRepository ventaRepository;
     private final ClienteRepository clienteRepository;
+    private final DuenoRepository duenoRepository;
     private final ServicioRepository servicioRepository;
     private final UsuarioRepository usuarioRepository;
     private final InventarioService inventarioService;
@@ -67,18 +70,35 @@ public class VentaCreacionService {
         String nombreIngresado = request.getClienteNombre();
 
         if (numDocIngresado != null && !numDocIngresado.trim().isEmpty()) {
-            Optional<Cliente> clienteExistente = clienteRepository.findByNumeroDocumento(numDocIngresado);
-            if (clienteExistente.isPresent()) {
-                venta.setCliente(clienteExistente.get());
+            // Buscar primero en Dueños
+            Optional<Dueno> duenoExistente = duenoRepository.findByDni(numDocIngresado);
+            Cliente clienteParaVenta;
+            if (duenoExistente.isPresent()) {
+                Dueno dueno = duenoExistente.get();
+                // Usar el cliente asociado al dueño o crearlo si no existe
+                clienteParaVenta = Optional.ofNullable(dueno.getCliente())
+                    .orElseGet(() -> {
+                        Cliente nuevoClienteDesdeDueno = new Cliente();
+                        nuevoClienteDesdeDueno.setNombre(dueno.getNombre());
+                        nuevoClienteDesdeDueno.setNumeroDocumento(dueno.getDni());
+                        nuevoClienteDesdeDueno.setTipoDocumento(dueno.getTipoDocumento());
+                        nuevoClienteDesdeDueno.setTelefono(dueno.getTelefono());
+                        nuevoClienteDesdeDueno.setEmail(dueno.getEmail());
+                        nuevoClienteDesdeDueno.setDireccion(dueno.getDireccion());
+                        dueno.setCliente(nuevoClienteDesdeDueno); // Asocia el nuevo cliente al dueño
+                        duenoRepository.save(dueno); // Guarda el dueño con la nueva asociación
+                        return nuevoClienteDesdeDueno;
+                    });
             } else {
-                Cliente nuevoCliente = Cliente.builder()
-                        .numeroDocumento(numDocIngresado)
-                        .tipoDocumento(tipoDocIngresado)
-                        .nombre(nombreIngresado != null && !nombreIngresado.trim().isEmpty()
-                                ? nombreIngresado : "Cliente sin nombre")
-                        .build();
-                venta.setCliente(clienteRepository.save(nuevoCliente));
+                // Si no es un dueño, buscar o crear en Clientes
+                clienteParaVenta = clienteRepository.findByNumeroDocumento(numDocIngresado)
+                    .orElseGet(() -> clienteRepository.save(Cliente.builder()
+                            .numeroDocumento(numDocIngresado)
+                            .tipoDocumento(tipoDocIngresado)
+                            .nombre(nombreIngresado != null && !nombreIngresado.isBlank() ? nombreIngresado : "Cliente sin nombre")
+                            .build()));
             }
+            venta.setCliente(clienteParaVenta);
         } else {
             Cliente publicoGeneral = clienteRepository.findByNumeroDocumento("00000000")
                     .orElseGet(() -> clienteRepository.save(Cliente.builder()

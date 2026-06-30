@@ -8,15 +8,13 @@ import java.net.http.HttpResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import com.Veterinaria.Mejia.facturacion.NubefactRequestDTO;
-import com.Veterinaria.Mejia.facturacion.NubefactResponseDTO;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Cliente HTTP para comunicarse con la API de Nubefact.
  * Encapsula la lógica de construcción y envío de la petición.
  */
-@Component
+@Component("nubefactHttpClient")
 public class NubefactClient {
 
     @Value("${nubefact.api.url}")

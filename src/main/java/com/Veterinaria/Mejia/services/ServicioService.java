@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.Veterinaria.Mejia.models.Servicio;
+import com.Veterinaria.Mejia.repository.DetalleVentaRepository;
 import com.Veterinaria.Mejia.repository.ServicioRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -16,50 +17,68 @@ import lombok.RequiredArgsConstructor;
 public class ServicioService {
 
     private final ServicioRepository servicioRepository;
+    private final DetalleVentaRepository detalleVentaRepository;
 
-    // 1. BUSCADOR INTELIGENTE (Para tu panel de Gestión de Servicios)
-    // Reemplaza a listarTodos() para no sobrecargar la memoria cargando todo de golpe
-    public List<Servicio> buscarServicios(String nombre) {
-        return servicioRepository.buscarYFiltrarServiciosJPQL(nombre);
-    }
-
-    // 2. LISTAR SOLO ACTIVOS (Para el selector en tu Punto de Venta - POS)
-    // Garantiza que el cajero solo pueda vender servicios habilitados
-    public List<Servicio> listarActivosPOS() {
-        return servicioRepository.listarServiciosActivosJPQL();
-    }
-
-    public Servicio buscarPorId(Integer id) {
-        return servicioRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("El servicio solicitado no existe."));
-    }
-
-    // REGISTRO DE NUEVO SERVICIO
+    /**
+     * Guarda un servicio, ya sea para crearlo o actualizarlo.
+     * @param servicio El servicio a guardar.
+     * @return El servicio guardado.
+     */
     @Transactional
-    public Servicio guardarServicioNuevo(Servicio servicio) {
-        servicio.setEstado(true); // Forzamos a que nazca siempre activo
+    public Servicio guardarServicio(Servicio servicio) {
+        // Lógica para manejar tanto creación como edición
         return servicioRepository.save(servicio);
     }
 
-    // =========================================================================
-    // BORRADO LÓGICO: Solo cambia el estado, NUNCA borra de la base de datos
-    // =========================================================================
+    /**
+     * Busca un servicio por su ID.
+     * @param id El ID del servicio.
+     * @return El servicio encontrado.
+     * @throws RuntimeException si el servicio no existe.
+     */
+    public Servicio buscarPorId(Integer id) {
+        return servicioRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Servicio no encontrado con ID: " + id));
+    }
+
+    /**
+     * Busca servicios por nombre. Si el nombre es nulo, devuelve todos.
+     * @param nombre El nombre a buscar (puede ser parcial).
+     * @return Una lista de servicios.
+     */
+    public List<Servicio> buscarServicios(String nombre) {
+        if (nombre == null || nombre.isBlank()) {
+            return servicioRepository.findAll();
+        }
+        return servicioRepository.findByNombreServicioContainingIgnoreCase(nombre);
+    }
+
+    /**
+     * Modifica el estado (activo/inactivo) de un servicio.
+     * @param id El ID del servicio.
+     * @param nuevoEstado El nuevo estado (true para activo, false para inactivo).
+     */
     @Transactional
-    public void modificarEstado(Integer idServicio, boolean nuevoEstado) {
-        Servicio servicio = buscarPorId(idServicio);
-        
-        // Al pasar a inactivo (false), desaparece del POS pero sigue existiendo para reportes pasados
+    public void modificarEstado(Integer id, boolean nuevoEstado) {
+        Servicio servicio = buscarPorId(id);
         servicio.setEstado(nuevoEstado);
         servicioRepository.save(servicio);
     }
 
+    /**
+     * Elimina un servicio físicamente de la base de datos.
+     * @param id El ID del servicio a eliminar.
+     * @throws RuntimeException si el servicio está asociado a una venta.
+     */
     @Transactional
     public void eliminarFisicamente(Integer id) {
-        try {
-            servicioRepository.deleteById(id);
-        } catch (DataIntegrityViolationException e) {
-            // Si MySQL arroja error de llave foránea (Foreign Key constraint)
-            throw new RuntimeException("No se puede eliminar el servicio porque ya forma parte del historial de ventas. Por favor, utilice la opción de desactivar.");
+        if (detalleVentaRepository.countByServicioId(id) > 0) {
+            throw new DataIntegrityViolationException("No se puede eliminar el servicio porque ya ha sido vendido al menos una vez.");
         }
+        servicioRepository.deleteById(id);
+    }
+
+    public List<Servicio> listarActivosPOS() {
+        return servicioRepository.findByEstadoTrue();
     }
 }

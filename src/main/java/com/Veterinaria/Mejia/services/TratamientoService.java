@@ -10,10 +10,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.Veterinaria.Mejia.models.DetalleTratamiento;
 import com.Veterinaria.Mejia.models.HistoriaClinica;
+import com.Veterinaria.Mejia.models.Paciente;
 import com.Veterinaria.Mejia.models.Producto;
 import com.Veterinaria.Mejia.models.Tratamiento;
 import com.Veterinaria.Mejia.repository.DetalleTratamientoRepository;
 import com.Veterinaria.Mejia.repository.HistoriaClinicaRepository;
+import com.Veterinaria.Mejia.repository.PacienteRepository;
 import com.Veterinaria.Mejia.repository.ProductoRepository;
 import com.Veterinaria.Mejia.repository.TratamientoRepository;
 
@@ -30,6 +32,7 @@ public class TratamientoService {
     private final TratamientoRepository tratamientoRepo;
     private final DetalleTratamientoRepository detalleTratamientoRepo;
     private final HistoriaClinicaRepository historiaClinicaRepo;
+    private final PacienteRepository pacienteRepo;
     private final ProductoRepository productoRepo;
 
     /**
@@ -114,6 +117,75 @@ public class TratamientoService {
     }
 
     /**
+     * Registra un nuevo tratamiento general no asociado a una historia clínica específica.
+     *
+     * @param pacienteId ID del paciente al que se asocia el tratamiento (opcional)
+     * @param diagnostico Descripción del diagnóstico
+     * @param observaciones Observaciones adicionales
+     * @param detalles Lista de detalles (producto + cantidad)
+     * @return El tratamiento guardado
+     * @throws IllegalArgumentException si algún producto no tiene stock suficiente
+     */
+    @Transactional
+    public Tratamiento registrarTratamientoGeneral(Integer pacienteId,
+                                                   String diagnostico,
+                                                   String observaciones,
+                                                   List<DetalleTratamiento> detalles) {
+
+        // 1. Validar stock de todos los productos ANTES de guardar nada
+        for (DetalleTratamiento detalle : detalles) {
+            Producto producto = productoRepo.findById(detalle.getProducto().getId())
+                    .orElseThrow(() -> new RuntimeException("Producto no encontrado: " + detalle.getProducto().getId()));
+
+            if (producto.getStockTotal() == null || producto.getStockTotal().compareTo(detalle.getCantidadUsada()) < 0) {
+                throw new IllegalArgumentException(
+                        "Stock insuficiente para '" + producto.getNombre() + "'. " +
+                        "Stock disponible: " + producto.getStockTotal() + " | Requerido: " + detalle.getCantidadUsada()
+                );
+            }
+        }
+
+        // 2. Crear el tratamiento
+        Tratamiento tratamiento = new Tratamiento();
+        if (pacienteId != null) {
+            Paciente paciente = pacienteRepo.findById(pacienteId)
+                    .orElseThrow(() -> new RuntimeException("Paciente no encontrado con ID: " + pacienteId));
+            tratamiento.setPacienteTratado(paciente);
+        }
+        tratamiento.setFechaInicio(LocalDate.now());
+        tratamiento.setDiagnostico(diagnostico);
+        tratamiento.setObservaciones(observaciones);
+        tratamiento.setEstado(Tratamiento.EstadoTratamiento.Activo);
+        Tratamiento tratamientoGuardado = tratamientoRepo.save(tratamiento);
+
+        // 3. Procesar cada detalle: guardar + descontar stock
+        for (DetalleTratamiento detalle : detalles) {
+            Producto producto = productoRepo.findById(detalle.getProducto().getId()).get();
+
+            if (Boolean.TRUE.equals(producto.getPermiteFraccionamiento())) {
+                BigDecimal cantidadRequerida = detalle.getCantidadUsada();
+                while (producto.getStockAbierto().compareTo(cantidadRequerida) < 0) {
+                    if (producto.getStockCerrado() == null || producto.getStockCerrado() <= 0) {
+                        throw new RuntimeException("Stock insuficiente para fraccionar: " + producto.getNombre());
+                    }
+                    producto.setStockCerrado(producto.getStockCerrado() - 1);
+                    producto.setStockAbierto(producto.getStockAbierto().add(producto.getContenidoPorEnvase()));
+                }
+                producto.setStockAbierto(producto.getStockAbierto().subtract(cantidadRequerida));
+            } else {
+                int cantidadEntera = detalle.getCantidadUsada().intValue();
+                producto.setStockCerrado(producto.getStockCerrado() - cantidadEntera);
+            }
+            productoRepo.save(producto);
+
+            detalle.setTratamiento(tratamientoGuardado);
+            detalle.setFechaAplicacion(LocalDateTime.now());
+            detalleTratamientoRepo.save(detalle);
+        }
+        return tratamientoGuardado;
+    }
+
+    /**
      * Cambia el estado de un tratamiento (Activo → Completado o Suspendido).
      */
     @Transactional
@@ -145,5 +217,9 @@ public class TratamientoService {
     public Tratamiento obtenerPorId(Integer id) {
         return tratamientoRepo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Tratamiento no encontrado"));
+    }
+
+    public List<Tratamiento> listarTodos() {
+        return tratamientoRepo.findAllByOrderByFechaInicioDesc();
     }
 }

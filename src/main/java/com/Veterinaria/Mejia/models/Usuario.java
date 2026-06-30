@@ -1,5 +1,12 @@
 package com.Veterinaria.Mejia.models;
 
+import java.util.Collection;
+import java.util.List;
+
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -24,7 +31,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Usuario {
+public class Usuario implements UserDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -56,4 +63,45 @@ public class Usuario {
 
     @Column(name = "respuesta_secreta", nullable = false, length = 255)
     private String respuestaSecreta;
+
+    // --- UserDetails Implementation ---
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        // The role name should be prefixed with "ROLE_" for Spring Security conventions
+        if (role == null || role.getNombreRol() == null) {
+            return List.of();
+        }
+        return List.of(new SimpleGrantedAuthority("ROLE_" + role.getNombreRol().trim()));
+    }
+
+    @Override
+    public String getPassword() {
+        return this.contrasena;
+    }
+
+    @Override
+    public String getUsername() {
+        return this.nombreUsuario;
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {
+        return true; // Or add logic for this
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return this.estado; // Use the 'estado' field
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true; // Or add logic for this
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return this.estado; // Use the 'estado' field
+    }
 }

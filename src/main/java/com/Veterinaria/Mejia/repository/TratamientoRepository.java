@@ -9,6 +9,7 @@ import com.Veterinaria.Mejia.models.Tratamiento;
 
 public interface TratamientoRepository extends JpaRepository<Tratamiento, Integer> {
     List<Tratamiento> findByHistoriaClinicaPacienteIdOrderByFechaInicioDesc(Integer pacienteId);
+    List<Tratamiento> findAllByOrderByFechaInicioDesc();
     List<Tratamiento> findByEstado(Tratamiento.EstadoTratamiento estado);
 
     @Query("SELECT COUNT(t) FROM Tratamiento t WHERE t.estado = 'Activo'")

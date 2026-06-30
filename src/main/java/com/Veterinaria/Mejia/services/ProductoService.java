@@ -34,6 +34,16 @@ public class ProductoService {
         return productoRepository.buscarProductosStockCriticoJPQL();
     }
 
+    /**
+     * Devuelve los productos habilitados para la venta en caja (que no son de uso clínico exclusivo).
+     */
+    public List<Producto> findByEstadoTrueAndUsoClinicoFalse() {
+        return productoRepository.findByEstadoTrueAndUsoClinicoFalse();
+    }
+
+    public List<Producto> findByEstadoTrueAndUsoClinicoTrue() {
+        return productoRepository.findByEstadoTrueAndUsoClinicoTrue();
+    }
     @Transactional
     public Producto guardarProductoNuevo(Producto producto) {
         producto.setEstado(true);
@@ -107,5 +117,12 @@ public class ProductoService {
     /** Retorna la lista de productos con stock por debajo del mínimo. */
     public java.util.List<com.Veterinaria.Mejia.models.Producto> obtenerStockBajo() {
         return productoRepository.buscarProductosStockCriticoJPQL();
+    }
+
+    @Transactional
+    public void actualizarPrecioVenta(Integer id, BigDecimal nuevoPrecio) {
+        Producto p = productoRepository.findById(id).orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+        p.setPrecioVentaActual(nuevoPrecio);
+        productoRepository.save(p);
     }
 }

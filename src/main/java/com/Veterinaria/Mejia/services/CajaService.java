@@ -5,6 +5,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,62 +22,98 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class CajaService {
 
+    private static final Logger log = LoggerFactory.getLogger(CajaService.class);
+
     private final AperturaCierreCajaRepository cajaRepo;
-    private final MovimientoCajaRepository movRepo;
+    private final MovimientoCajaRepository movimientoRepo;
 
-    @Transactional
-    public AperturaCierreCaja abrirCaja(Usuario usuario, BigDecimal montoInicial) {
-        if (hayCajaAbierta()) throw new IllegalStateException("Ya existe una caja abierta.");
-        AperturaCierreCaja c = new AperturaCierreCaja();
-        c.setUsuario(usuario);
-        c.setMontoInicial(montoInicial != null ? montoInicial : BigDecimal.ZERO);
-        c.setFechaApertura(LocalDateTime.now());
-        c.setEstado(AperturaCierreCaja.EstadoCaja.Abierta);
-        c.setTotalIngresos(BigDecimal.ZERO);
-        c.setTotalEgresos(BigDecimal.ZERO);
-        return cajaRepo.save(c);
-    }
-
-    @Transactional
-    public AperturaCierreCaja cerrarCaja(BigDecimal montoFinal, String observaciones) {
-        AperturaCierreCaja c = getCajaAbierta()
-                .orElseThrow(() -> new IllegalStateException("No hay caja abierta."));
-        c.setMontoFinal(montoFinal);
-        c.setFechaCierre(LocalDateTime.now());
-        c.setEstado(AperturaCierreCaja.EstadoCaja.Cerrada);
-        c.setObservaciones(observaciones);
-        return cajaRepo.save(c);
-    }
-
-    @Transactional
-    public void registrarIngreso(BigDecimal monto, String concepto, Usuario usuario) {
-        AperturaCierreCaja c = getCajaAbierta().orElseThrow(() -> new IllegalStateException("No hay caja abierta."));
-        c.setTotalIngresos(c.getTotalIngresos().add(monto));
-        cajaRepo.save(c);
-        // Log individual
-        MovimientoCaja mov = new MovimientoCaja();
-        mov.setCaja(c); mov.setTipo(MovimientoCaja.TipoMovimiento.INGRESO);
-        mov.setMonto(monto); mov.setConcepto(concepto); mov.setUsuario(usuario);
-        movRepo.save(mov);
-    }
-
-    @Transactional
-    public void registrarEgreso(BigDecimal monto, String concepto, Usuario usuario) {
-        AperturaCierreCaja c = getCajaAbierta().orElseThrow(() -> new IllegalStateException("No hay caja abierta."));
-        BigDecimal saldo = c.getSaldoActual();
-        if (monto.compareTo(saldo) > 0) throw new IllegalArgumentException("El egreso (S/ " + monto + ") supera el saldo disponible (S/ " + String.format("%.2f", saldo) + ").");
-        c.setTotalEgresos(c.getTotalEgresos().add(monto));
-        cajaRepo.save(c);
-        MovimientoCaja mov = new MovimientoCaja();
-        mov.setCaja(c); mov.setTipo(MovimientoCaja.TipoMovimiento.EGRESO);
-        mov.setMonto(monto); mov.setConcepto(concepto); mov.setUsuario(usuario);
-        movRepo.save(mov);
+    public boolean hayCajaAbierta() {
+        return cajaRepo.findFirstByEstado(AperturaCierreCaja.EstadoCaja.Abierta).isPresent();
     }
 
     public Optional<AperturaCierreCaja> getCajaAbierta() {
         return cajaRepo.findFirstByEstado(AperturaCierreCaja.EstadoCaja.Abierta);
     }
-    public boolean hayCajaAbierta() { return getCajaAbierta().isPresent(); }
-    public List<AperturaCierreCaja> obtenerHistorial() { return cajaRepo.findTop10ByOrderByFechaAperturaDesc(); }
-    public List<MovimientoCaja> obtenerMovimientos(Integer cajaId) { return movRepo.findByCajaIdOrderByFechaHoraDesc(cajaId); }
+
+    @Transactional
+    public AperturaCierreCaja abrirCaja(Usuario usuario, BigDecimal montoInicial) {
+        if (hayCajaAbierta()) {
+            throw new IllegalStateException("Ya existe una caja abierta. No se puede abrir otra.");
+        }
+        AperturaCierreCaja nuevaCaja = AperturaCierreCaja.builder()
+                .usuario(usuario)
+                .fechaApertura(LocalDateTime.now())
+                .montoInicial(montoInicial)
+                .totalIngresos(BigDecimal.ZERO)
+                .totalEgresos(BigDecimal.ZERO)
+                .estado(AperturaCierreCaja.EstadoCaja.Abierta)
+                .build();
+        log.info("Abriendo caja para usuario {} con monto inicial S/ {}", usuario.getNombreUsuario(), montoInicial);
+        return cajaRepo.save(nuevaCaja);
+    }
+
+    public List<AperturaCierreCaja> obtenerHistorial() {
+        return cajaRepo.findTop10ByOrderByFechaAperturaDesc();
+    }
+
+    /**
+     * Cierra la caja actualmente abierta. Calcula automáticamente el saldo final
+     * basándose en los movimientos registrados.
+     * @return La entidad de caja actualizada y cerrada.
+     */
+    @Transactional
+    public AperturaCierreCaja cerrarCaja() {
+        AperturaCierreCaja caja = getCajaAbierta()
+                .orElseThrow(() -> new IllegalStateException("No hay ninguna caja abierta para cerrar."));
+
+        caja.setFechaCierre(LocalDateTime.now());
+        caja.setEstado(AperturaCierreCaja.EstadoCaja.Cerrada);
+        
+        // El monto final ahora es el saldo calculado automáticamente.
+        caja.setMontoFinal(caja.getSaldoActual());
+        log.info("Cerrando caja #{}. Monto inicial: {}, Saldo final calculado: {}",
+                caja.getId(), caja.getMontoInicial(), caja.getMontoFinal());
+
+        return cajaRepo.save(caja);
+    }
+
+    @Transactional
+    public void registrarIngreso(BigDecimal monto, String concepto, Usuario usuario) {
+        AperturaCierreCaja caja = getCajaAbierta()
+                .orElseThrow(() -> new IllegalStateException("No hay caja abierta para registrar el ingreso."));
+
+        caja.setTotalIngresos(caja.getTotalIngresos().add(monto));
+        cajaRepo.save(caja);
+
+        MovimientoCaja mov = MovimientoCaja.builder()
+                .caja(caja)
+                .tipo(MovimientoCaja.TipoMovimiento.INGRESO)
+                .monto(monto)
+                .concepto(concepto)
+                .usuario(usuario)
+                .build();
+        movimientoRepo.save(mov);
+    }
+
+    @Transactional
+    public void registrarEgreso(BigDecimal monto, String concepto, Usuario usuario) {
+        AperturaCierreCaja caja = getCajaAbierta()
+                .orElseThrow(() -> new IllegalStateException("No hay caja abierta para registrar el egreso."));
+
+        caja.setTotalEgresos(caja.getTotalEgresos().add(monto));
+        cajaRepo.save(caja);
+
+        MovimientoCaja mov = MovimientoCaja.builder()
+                .caja(caja)
+                .tipo(MovimientoCaja.TipoMovimiento.EGRESO)
+                .monto(monto)
+                .concepto(concepto)
+                .usuario(usuario)
+                .build();
+        movimientoRepo.save(mov);
+    }
+
+    public List<MovimientoCaja> obtenerMovimientos(Integer cajaId) {
+        return movimientoRepo.findByCajaIdOrderByFechaHoraDesc(cajaId);
+    }
 }

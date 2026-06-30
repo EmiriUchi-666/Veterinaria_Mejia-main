@@ -28,13 +28,15 @@
                     <table class="table table-hover align-middle mb-0">
                         <thead class="table-light" style="border-bottom: 2px solid #e2e8f0;">
                             <tr>
-                                <th class="ps-4 py-3 text-secondary fw-600">Foto</th>
-                                <th class="py-3 text-secondary fw-600">Paciente</th>
-                                <th class="py-3 text-secondary fw-600">Especie / Raza</th>
-                                <th class="py-3 text-secondary fw-600">Tutor</th>
-                                <th class="py-3 text-secondary fw-600 text-center">Sexo</th>
-                                <th class="py-3 text-secondary fw-600">N° Historia</th>
-                                <th class="py-3 text-secondary fw-600 text-center pe-4">Acciones</th>
+                                <th class="ps-4 py-3 text-secondary fw-600" style="width: 5%;">Foto</th>
+                                <th class="py-3 text-secondary fw-600" style="width: 18%;">Paciente</th>
+                                <th class="py-3 text-secondary fw-600" style="width: 18%;">Especie / Raza / Sangre</th>
+                                <th class="py-3 text-secondary fw-600" style="width: 18%;">Tutor y Contacto</th>
+                                <th class="py-3 text-secondary fw-600 text-center" style="width: 8%;">Sexo</th>
+                                <th class="py-3 text-secondary fw-600" style="width: 8%;">Edad</th>
+                                <th class="py-3 text-secondary fw-600" style="width: 8%;">Peso</th>
+                                <th class="py-3 text-secondary fw-600" style="width: 10%;">N° Historia</th>
+                                <th class="py-3 text-secondary fw-600 text-center pe-4" style="width: 12%;">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -61,13 +63,15 @@
                                 </td>
                                 <td>
                                     <div class="fw-500" th:text="${p.especie.nombreEspecie}">Canino</div>
-                                    <small class="text-muted" th:text="${p.raza}">Labrador</small>
+                                    <small class="text-muted" th:text="${p.raza}"></small><br>
+                                    <small class="text-muted" th:if="${p.sangre != null and p.sangre != 'Desconocido'}" th:text="'Sangre: ' + ${p.sangre}"></small>
                                 </td>
                                 <td>
                                     <!-- FASE 6: Acceso seguro a datos relacionados. Se muestra 'N/A' si el cliente es nulo. -->
-                                    <div class="fw-500" th:text="${p.cliente != null ? p.cliente.nombre : 'N/A'}">Juan Pérez</div>
-                                    <small class="text-muted" th:if="${p.cliente != null and p.cliente.telefono != null}">
-                                        <i class="bi bi-telephone me-1"></i><span th:text="${p.cliente.telefono}">999888777</span>
+                                    <div class="fw-500" th:text="${p.dueno != null ? p.dueno.nombre : 'N/A'}">Juan Pérez</div>
+                                    <small class="text-muted d-flex align-items-center" th:if="${p.dueno != null and p.dueno.telefono != null}">
+                                        <i class="bi bi-telephone me-1"></i>
+                                        <span th:text="${p.dueno.telefono}">999888777</span>
                                     </small>
                                 </td>
                                 <td class="text-center">
@@ -75,14 +79,20 @@
                                           th:classappend="${p.sexo.name() == 'Macho'} ? 'bg-info bg-opacity-10 text-info border border-info border-opacity-25' : 'bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25'"
                                           th:text="${p.sexo.name()}">Macho</span>
                                 </td>
+                                <td th:text="${edades[p.id]}"></td>
+                                <td>
+                                    <span th:if="${p.pesoHistorico != null}" th:text="${p.pesoHistorico} + ' kg'"></span>
+                                    <span th:unless="${p.pesoHistorico != null}">—</span>
+                                </td>
                                 <td>
                                     <span class="font-monospace small bg-light px-2 py-1 rounded border" th:text="${p.numeroHistoria}">HC-123</span>
                                 </td>
                                 <td class="text-center pe-4">
-                                    <a th:href="@{/pacientes/{id}/expediente(id=${p.id})}" 
-                                       class="btn btn-sm btn-primary"
-                                       title="Ver Expediente Completo">
-                                        <i class="bi bi-folder2-open"></i> Expediente
+                                    <a th:href="@{/pacientes/{id}/expediente(id=${p.id})}" class="btn btn-sm btn-outline-primary" title="Ver Expediente">
+                                        <i class="bi bi-file-earmark-medical-fill"></i>
+                                    </a>
+                                    <a th:href="@{/pacientes/editar/{id}(id=${p.id})}" class="btn btn-sm btn-outline-secondary" title="Editar Ficha">
+                                        <i class="bi bi-pencil-fill"></i>
                                     </a>
                                     <a th:href="@{/pacientes/eliminar/{id}(id=${p.id})}" 
                                        class="btn btn-sm btn-outline-danger ms-1"

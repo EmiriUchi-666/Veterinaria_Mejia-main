@@ -35,7 +35,7 @@ public class DashboardController {
     private final CitaRepository citaRepo;
     private final AlertaSistemaRepository alertaSistemaRepo;
 
-    @GetMapping("/dashboard")
+    @GetMapping("/")
     public String mostrarInicio(Model model) {
         // ── Métricas del día ───────────────────────────────────────────────
         LocalDateTime inicioHoy = LocalDate.now().atStartOfDay();

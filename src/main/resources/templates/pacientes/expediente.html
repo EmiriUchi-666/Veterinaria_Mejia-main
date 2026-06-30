@@ -36,13 +36,27 @@
                                 <span th:text="${paciente.especie.nombreEspecie}"></span> / 
                                 <span th:text="${paciente.raza}"></span>
                             </p>
-                            <div class="d-flex align-items-center text-secondary small">
+                            <div class="d-flex align-items-center text-secondary small mb-2">
                                 <i class="bi bi-person-fill me-2"></i>
-                                <span>Tutor: <strong th:text="${paciente.cliente.nombre}"></strong></span>
+                                <span>Tutor: <strong th:text="${paciente.dueno != null ? paciente.dueno.nombre : (paciente.cliente != null ? paciente.cliente.nombre : 'Sin tutor registrado')}"></strong></span>
+                            </div>
+                            <div class="d-flex flex-wrap gap-3 small text-muted">
+                                <span><strong>Nacimiento:</strong> <span th:text="${paciente.fechaNacimiento != null ? #temporals.format(paciente.fechaNacimiento, 'dd/MM/yyyy') : 'N/A'}"></span></span>
+                                <span><strong>Peso:</strong> <span th:text="${paciente.pesoHistorico != null ? paciente.pesoHistorico + ' kg' : 'N/A'}"></span></span>
+                                <span><strong>Sexo:</strong> <span th:text="${paciente.sexo}"></span></span>
+                                <span><strong>Pelaje:</strong> <span th:text="${paciente.colorPelaje}"></span></span>
+                                <span th:if="${paciente.microchip != null}"><strong>Microchip:</strong> <span th:text="${paciente.microchip}"></span></span>
+                                <span th:if="${paciente.sangre != null}"><strong>Sangre:</strong> <span th:text="${paciente.sangre}"></span></span>
                             </div>
                         </div>
-                        <div class="ms-auto">
-                            <a th:href="@{/pacientes}" class="btn btn-outline-secondary fw-600">
+                        <div class="ms-auto d-flex flex-column gap-2">
+                            <a th:href="@{/citas/nuevo}" class="btn btn-outline-primary me-2">
+                                <i class="bi bi-calendar-plus me-1"></i>Nueva Cita
+                            </a>
+                            <a th:href="@{/tratamientos/paciente/{id}(id=${paciente.id})}" class="btn btn-outline-success me-2">
+                                <i class="bi bi-clipboard2-pulse me-1"></i>Ver Tratamientos
+                            </a>
+                            <a th:href="@{/pacientes}" class="btn btn-outline-secondary fw-600 mt-2">
                                 <i class="bi bi-arrow-left me-1"></i>Volver al Directorio
                             </a>
                         </div>
@@ -74,6 +88,11 @@
                 <li class="nav-item" role="presentation">
                     <button class="nav-link" id="recetas-tab" data-bs-toggle="tab" data-bs-target="#recetas" type="button" role="tab">
                         <i class="bi bi-prescription2 me-2"></i>Recetas
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="citas-tab" data-bs-toggle="tab" data-bs-target="#citas" type="button" role="tab">
+                        <i class="bi bi-calendar-check me-2"></i>Citas
                     </button>
                 </li>
             </ul>
@@ -182,6 +201,33 @@
                             <p class="mb-1"><strong>Diagnóstico:</strong> <span th:text="${r.diagnostico}"></span></p>
                             <small>Emitida por: <span th:text="${r.veterinario.nombreUsuario}"></span></small>
                         </a>
+                    </div>
+                </div>
+
+                <!-- Pestaña de Citas -->
+                <div class="tab-pane fade p-4" id="citas" role="tabpanel">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold text-dark">Historial de Citas</h5>
+                        <a th:href="@{/citas/nuevo}" class="btn btn-primary btn-sm fw-600">
+                            <i class="bi bi-plus-lg me-1"></i>Nueva Cita
+                        </a>
+                    </div>
+                    <div th:if="${citas.isEmpty()}" class="text-center text-muted py-4">
+                        No hay citas programadas para este paciente.
+                    </div>
+                    <div class="list-group" th:unless="${citas.isEmpty()}">
+                        <div th:each="c : ${citas}" class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1 fw-bold text-primary" th:text="${c.servicio != null ? c.servicio.nombreServicio : 'Cita General'}"></h6>
+                                <span class="badge" th:classappend="${c.estado.name() == 'Pendiente'} ? 'bg-warning text-dark' : (${c.estado.name() == 'Confirmada'} ? 'bg-success' : 'bg-secondary')" th:text="${c.estado.name()}"></span>
+                            </div>
+                            <p class="mb-1">
+                                <strong>Fecha:</strong> <span th:text="${#temporals.format(c.fechaHora, 'dd/MM/yyyy HH:mm')}"></span>
+                            </p>
+                            <small>
+                                <strong>Veterinario:</strong> <span th:text="${c.veterinario.nombreUsuario}"></span>
+                            </small>
+                        </div>
                     </div>
                 </div>
 

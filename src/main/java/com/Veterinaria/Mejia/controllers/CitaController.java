@@ -18,6 +18,7 @@ import com.Veterinaria.Mejia.models.Paciente;
 import com.Veterinaria.Mejia.models.Servicio;
 import com.Veterinaria.Mejia.models.Usuario;
 import com.Veterinaria.Mejia.repository.CitaRepository;
+import com.Veterinaria.Mejia.repository.DuenoRepository;
 import com.Veterinaria.Mejia.repository.PacienteRepository;
 import com.Veterinaria.Mejia.repository.ServicioRepository;
 import com.Veterinaria.Mejia.repository.UsuarioRepository;
@@ -32,6 +33,7 @@ public class CitaController {
     private final CitaRepository citaRepo;
     private final PacienteRepository pacienteRepo;
     private final UsuarioRepository usuarioRepo;
+    private final DuenoRepository duenoRepo;
     private final ServicioRepository servicioRepo;
 
     @GetMapping
@@ -50,6 +52,7 @@ public class CitaController {
         List<Usuario> veterinarios = usuarioRepo.findAll();
         List<Servicio> servicios = servicioRepo.findAll();
         model.addAttribute("pacientes", pacientes);
+        model.addAttribute("duenos", duenoRepo.findByEstadoTrueOrderByNombreAsc());
         model.addAttribute("veterinarios", veterinarios);
         model.addAttribute("servicios", servicios);
         return "citas/form-cita";

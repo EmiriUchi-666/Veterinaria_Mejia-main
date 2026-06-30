@@ -3,6 +3,9 @@ package com.Veterinaria.Mejia.controllers;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
@@ -16,6 +19,8 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.Veterinaria.Mejia.models.ComprobanteElectronico;
+import com.Veterinaria.Mejia.models.FacturacionEstado;
+import com.Veterinaria.Mejia.repository.FacturacionEstadoRepository;
 import com.Veterinaria.Mejia.repository.VentaRepository;
 import com.Veterinaria.Mejia.services.FacturacionElectronicaService;
 
@@ -26,21 +31,29 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class FacturacionElectronicaController {
 
-    private final FacturacionElectronicaService facService;
+    private final FacturacionElectronicaService facturacionService;
+    private final FacturacionEstadoRepository facturacionEstadoRepository;
     private final VentaRepository ventaRepo;
 
     @Value("${nubefact.modo.prueba:true}") private boolean modoPrueba;
     @Value("${nubefact.ruc:20600000001}") private String rucEmisor;
     @Value("${nubefact.razon.social:VETERINARIA MEJIA E.I.R.L.}") private String razonSocial;
 
-    /** GET /facturacion — Historial de comprobantes */
+    /** GET /facturacion/historial — Historial de comprobantes */
     @GetMapping
-    public String historial(Model model) {
-        model.addAttribute("comprobantes", facService.obtenerHistorial());
-        model.addAttribute("modoPrueba", modoPrueba);
+    public String mostrarHistorial(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "25") int size,
+            Model model) {
+
+        Page<FacturacionEstado> paginaEstados = facturacionEstadoRepository.findAll(
+                PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"))
+        );
+        model.addAttribute("paginaEstados", paginaEstados);
         model.addAttribute("rucEmisor", rucEmisor);
         return "facturacion/historial";
     }
+
 
     /** GET /facturacion/emitir/{ventaId} — Formulario de emisión */
     @SuppressWarnings("null")
@@ -73,7 +86,7 @@ public class FacturacionElectronicaController {
             Authentication auth,
             RedirectAttributes ra) {
         try {
-            ComprobanteElectronico comp = facService.emitirBoleta(
+            ComprobanteElectronico comp = facturacionService.emitirBoleta(
                     ventaId,
                     dniReceptor,
                     nombreReceptor,
@@ -103,7 +116,7 @@ public class FacturacionElectronicaController {
             Authentication auth,
             RedirectAttributes ra) {
         try {
-            ComprobanteElectronico comp = facService.emitirFactura(
+            ComprobanteElectronico comp = facturacionService.emitirFactura(
                     ventaId, rucReceptor, razonSocialReceptor, emailReceptor, auth.getName(), medioPago);
             ra.addFlashAttribute("successMsg",
                     "✅ " + comp.getNumeroCompleto() + " emitida correctamente. Estado: " + comp.getEstado());
@@ -118,10 +131,22 @@ public class FacturacionElectronicaController {
     @PostMapping("/reenviar/{id}")
     public String reenviar(@PathVariable Integer id, RedirectAttributes ra) {
         try {
-            var comp = facService.reenviar(id);
+            var comp = facturacionService.reenviar(id);
             ra.addFlashAttribute("successMsg", "Comprobante " + comp.getNumeroCompleto() + " reenviado. Estado: " + comp.getEstado());
         } catch (Exception e) {
             ra.addFlashAttribute("errorMsg", "Error al reenviar: " + e.getMessage());
+        }
+        return "redirect:/facturacion";
+    }
+
+    /** POST /facturacion/reenviar-email/{id} — Reenvía el comprobante por correo. */
+    @PostMapping("/reenviar-email/{id}")
+    public String reenviarEmail(@PathVariable Integer id, RedirectAttributes ra) {
+        try {
+            facturacionService.reenviarPorEmail(id);
+            ra.addFlashAttribute("successMsg", "El comprobante ha sido reenviado por correo electrónico.");
+        } catch (Exception e) {
+            ra.addFlashAttribute("errorMsg", "Error al reenviar por correo: " + e.getMessage());
         }
         return "redirect:/facturacion";
     }
@@ -130,7 +155,7 @@ public class FacturacionElectronicaController {
     @GetMapping("/api/detalle/{id}")
     @ResponseBody
     public ResponseEntity<?> detalleApi(@PathVariable Integer id) {
-        return facService.obtenerHistorial().stream()
+        return facturacionService.obtenerHistorial().stream()
                 .filter(c -> c.getId().equals(id))
                 .findFirst()
                 .map(c -> ResponseEntity.ok(Map.of(

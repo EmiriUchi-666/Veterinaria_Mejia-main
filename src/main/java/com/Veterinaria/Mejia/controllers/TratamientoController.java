@@ -2,8 +2,13 @@ package com.Veterinaria.Mejia.controllers;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -22,6 +27,7 @@ import com.Veterinaria.Mejia.models.Tratamiento;
 import com.Veterinaria.Mejia.repository.HistoriaClinicaRepository;
 import com.Veterinaria.Mejia.repository.PacienteRepository;
 import com.Veterinaria.Mejia.repository.ProductoRepository;
+import com.Veterinaria.Mejia.services.PdfService;
 import com.Veterinaria.Mejia.services.TratamientoService;
 
 import lombok.RequiredArgsConstructor;
@@ -40,7 +46,15 @@ public class TratamientoController {
     private final HistoriaClinicaRepository historiaClinicaRepo;
     private final PacienteRepository pacienteRepo;
     private final ProductoRepository productoRepo;
+    private final PdfService pdfService;
 
+    @GetMapping({"", "/"})
+    public String listarTodosTratamientos(Model model) {
+        // Listar todos los tratamientos ordenados por fecha descendente
+        List<Tratamiento> todos = tratamientoService.listarTodos(); // crear este método en el service si no existe
+        model.addAttribute("tratamientos", todos);
+        return "tratamiento/lista-tratamientos";
+    }
     /**
      * Lista los tratamientos de un paciente específico.
      */
@@ -58,16 +72,20 @@ public class TratamientoController {
      * Muestra el formulario para registrar un nuevo tratamiento.
      * Requiere el ID de la historia clínica asociada.
      */
-    @GetMapping("/nuevo/{historiaClinicaId}")
+    @GetMapping("/nuevo")
     @PreAuthorize("hasAnyAuthority('ROLE_Veterinario', 'ROLE_Administrador')")
-    public String formNuevoTratamiento(@PathVariable Integer historiaClinicaId, Model model) {
-        HistoriaClinica historia = historiaClinicaRepo.findById(historiaClinicaId)
-                .orElseThrow(() -> new RuntimeException("Historia clínica no encontrada"));
+    public String formNuevoTratamiento(@RequestParam(name = "historiaClinicaId", required = false) Integer historiaClinicaId, Model model) {
+        
+        if (historiaClinicaId != null) {
+            HistoriaClinica historia = historiaClinicaRepo.findById(historiaClinicaId)
+                    .orElseThrow(() -> new RuntimeException("Historia clínica no encontrada"));
+            model.addAttribute("historia", historia);
+        }
+        
+        model.addAttribute("pacientes", pacienteRepo.findByEstadoTrue());
 
-        model.addAttribute("historia", historia);
-        model.addAttribute("productos", productoRepo.findAll()
+        model.addAttribute("productos", productoRepo.findByEstadoTrueAndUsoClinicoTrue()
                 .stream()
-                .filter(p -> p.getEstado() && p.getStockTotal().compareTo(BigDecimal.ZERO) > 0)
                 .toList());
         return "tratamiento/form-tratamiento";
     }
@@ -78,7 +96,8 @@ public class TratamientoController {
     @PostMapping("/guardar")
     @PreAuthorize("hasAnyAuthority('ROLE_Veterinario', 'ROLE_Administrador')")
     public String guardarTratamiento(
-            @RequestParam Integer historiaClinicaId,
+            @RequestParam(required = false) Integer historiaClinicaId,
+            @RequestParam(required = false) Integer pacienteId,
             @RequestParam String diagnostico,
             @RequestParam(required = false) String observaciones,
             @RequestParam(value = "productoId", required = false) List<Integer> productoIds,
@@ -105,18 +124,25 @@ public class TratamientoController {
         }
 
         try {
-            HistoriaClinica historia = historiaClinicaRepo.findById(historiaClinicaId)
-                    .orElseThrow(() -> new RuntimeException("Historia no encontrada"));
-            tratamientoService.registrarTratamiento(historiaClinicaId, diagnostico, observaciones, detalles);
+            Integer redirectId;
+            if (historiaClinicaId != null) {
+                HistoriaClinica historia = historiaClinicaRepo.findById(historiaClinicaId)
+                        .orElseThrow(() -> new RuntimeException("Historia no encontrada"));
+                tratamientoService.registrarTratamiento(historiaClinicaId, diagnostico, observaciones, detalles);
+                redirectId = historia.getPaciente().getId();
+            } else {
+                tratamientoService.registrarTratamientoGeneral(pacienteId, diagnostico, observaciones, detalles);
+                redirectId = pacienteId;
+            }
             ra.addFlashAttribute("successMsg", "Tratamiento registrado con trazabilidad de medicamentos.");
-            return "redirect:/tratamientos/paciente/" + historia.getPaciente().getId();
+            return "redirect:/pacientes/" + redirectId + "/expediente";
 
         } catch (IllegalArgumentException e) {
             ra.addFlashAttribute("errorMsg", e.getMessage());
-            return "redirect:/tratamientos/nuevo/" + historiaClinicaId;
+            return "redirect:/tratamientos/nuevo" + (historiaClinicaId != null ? "?historiaClinicaId=" + historiaClinicaId : "");
         } catch (Exception e) {
             ra.addFlashAttribute("errorMsg", "Error al registrar: " + e.getMessage());
-            return "redirect:/tratamientos/nuevo/" + historiaClinicaId;
+            return "redirect:/tratamientos/nuevo" + (historiaClinicaId != null ? "?historiaClinicaId=" + historiaClinicaId : "");
         }
     }
 
@@ -147,5 +173,25 @@ public class TratamientoController {
         model.addAttribute("tratamiento", t);
         model.addAttribute("detalles", tratamientoService.obtenerDetalles(id));
         return "tratamiento/detalle-tratamiento";
+    }
+
+    @GetMapping("/detalle/{id}/pdf")
+    public ResponseEntity<byte[]> generarPdfTratamiento(@PathVariable Integer id) {
+        Tratamiento tratamiento = tratamientoService.obtenerPorId(id);
+        List<DetalleTratamiento> detalles = tratamientoService.obtenerDetalles(id);
+
+        Map<String, Object> variables = new HashMap<>();
+        variables.put("tratamiento", tratamiento);
+        variables.put("detalles", detalles);
+
+        byte[] pdfBytes = pdfService.generarPdfDesdeHtml("pdf/tratamiento-pdf", variables);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        String filename = "tratamiento-" + tratamiento.getId() + ".pdf";
+        headers.setContentDispositionFormData("attachment", filename);
+        headers.setCacheControl("must-revalidate, post-check=0, pre-check=0");
+
+        return ResponseEntity.ok().headers(headers).body(pdfBytes);
     }
 }

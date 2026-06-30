@@ -32,6 +32,10 @@ public class ProveedorService {
                 .orElseThrow(() -> new RuntimeException("No se encontró ningún proveedor con el RUC indicado."));
     }
 
+    public Optional<Proveedor> buscarPorRucOptional(String ruc) {
+        return proveedorRepository.buscarPorRucJPQL(ruc);
+    }
+
     // REGISTRO DE NUEVO PROVEEDOR
     @Transactional
     public Proveedor guardar(Proveedor proveedor) {

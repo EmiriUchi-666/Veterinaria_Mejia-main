@@ -46,16 +46,6 @@
               </select>
               <div class="form-text">¿No está registrado? <a href="/duenos/nuevo" target="_blank">Registrar nuevo dueño</a></div>
             </div>
-            <div class="col-md-4">
-              <label class="form-label fw-bold">Cliente para Facturación <span class="text-muted fw-normal">(opcional)</span></label>
-              <select name="clienteId" class="form-select">
-                <option value="">-- Sin cliente asignado --</option>
-                <option th:each="c : ${clientes}" th:value="${c.id}"
-                        th:text="${c.nombre} + (${c.dni != null ? ' — ' + c.dni : ''})"
-                        th:selected="${paciente.cliente != null && paciente.cliente.id == c.id}">
-                </option>
-              </select>
-            </div>
           </div>
 
           <!-- SECCIÓN 2: Identificación -->
@@ -70,7 +60,7 @@
             </div>
             <div class="col-md-6">
               <label class="form-label fw-bold">Especie <span class="text-danger">*</span></label>
-              <select name="especieId" class="form-select">
+              <select name="especieId" id="especieSelect" class="form-select" onchange="actualizarCamposDinamicos()">
                 <option value="">-- Seleccionar especie --</option>
                 <option th:each="e : ${especies}" th:value="${e.id}"
                         th:text="${e.nombreEspecie}"
@@ -80,7 +70,11 @@
             </div>
             <div class="col-md-6">
               <label class="form-label fw-bold">Raza</label>
-              <input type="text" name="raza" class="form-control" th:value="${paciente.raza}" placeholder="Ej: Labrador, Siamés">
+              <select name="raza" id="razaSelect" class="form-select"></select>
+            </div>
+            <div class="col-md-6" id="otraRazaContainer" style="display: none;">
+              <label class="form-label fw-bold">Otra raza...</label>
+              <input type="text" name="razaPersonalizada" id="otraRazaInput" class="form-control" placeholder="Especifique la raza">
             </div>
             <div class="col-md-6">
               <label class="form-label fw-bold">Color del Pelaje</label>
@@ -112,11 +106,15 @@
           <div class="row g-3 mb-4">
             <div class="col-md-4">
               <label class="form-label fw-bold">Microchip</label>
-              <input type="text" name="microchip" class="form-control" th:value="${paciente.microchip}" placeholder="Código único">
+              <input type="text" name="microchip" id="microchipInput" class="form-control" th:value="${paciente.microchip}" placeholder="Código único">
+              <div class="form-text mt-1">
+                <input type="checkbox" id="sinMicrochip" class="form-check-input me-1">
+                <label for="sinMicrochip" class="form-check-label small text-muted">Sin microchip</label>
+              </div>
             </div>
             <div class="col-md-4">
               <label class="form-label fw-bold">Tipo de Sangre</label>
-              <input type="text" name="sangre" class="form-control" th:value="${paciente.sangre}" placeholder="Ej: DEA 1.1">
+              <select name="sangre" id="sangreSelect" class="form-select"></select>
             </div>
             <div class="col-md-4 d-flex align-items-end">
               <div class="form-check form-switch mb-1">
@@ -166,4 +164,117 @@
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
+<script th:inline="javascript">
+/*<![CDATA[*/
+document.addEventListener('DOMContentLoaded', function() {
+    
+    const razasPorEspecie = {
+      "Canino": ["Labrador Retriever","Golden Retriever","Pastor Alemán","Bulldog","Beagle",
+                 "Poodle","Chihuahua","Rottweiler","Yorkshire Terrier","Shih Tzu",
+                 "Schnauzer","Dachshund","Boxer","Mestizo / Sin raza definida","Otra"],
+      "Felino": ["Doméstico de pelo corto","Doméstico de pelo largo","Siamés","Persa",
+                 "Maine Coon","Ragdoll","Bengalí","British Shorthair","Mestizo","Otra"],
+      "Ave":    ["Periquito australiano","Cacatúa","Loro amazónico","Canario","Agaporni",
+                 "Ninfa","Otra"],
+      "Reptil": ["Iguana verde","Tortuga de tierra","Tortuga acuática","Gecko leopardo",
+                 "Camaleón","Otra"],
+      "Roedor": ["Cobayo / Cuy","Hámster sirio","Hámster enano","Conejo","Chinchilla",
+                 "Rata doméstica","Ratón doméstico","Otra"],
+      "Pez":    ["Goldfish","Betta","Koi","Otro"],
+      "Otro":   ["No aplica","Otra"]
+    };
+
+    const sangrePorEspecie = {
+      "Canino": ["Desconocido","DEA 1.1+","DEA 1.1-","DEA 1.2+","DEA 1.2-","DEA 3","DEA 4","DEA 5","DEA 7","Dal"],
+      "Felino": ["Desconocido","A","B","AB"],
+      "Ave":    ["Desconocido","No aplica"],
+      "Reptil": ["Desconocido","No aplica"],
+      "Roedor": ["Desconocido","No aplica"],
+      "Pez":    ["Desconocido","No aplica"],
+      "Otro":   ["Desconocido","No aplica"]
+    };
+
+    window.actualizarCamposDinamicos = function() {
+        const especieSelect = document.getElementById('especieSelect');
+        const especieTexto = especieSelect.options[especieSelect.selectedIndex].text;
+        
+        // Actualizar Razas
+        const razaSelect = document.getElementById('razaSelect');
+        const otraRazaContainer = document.getElementById('otraRazaContainer');
+        const otraRazaInput = document.getElementById('otraRazaInput');
+        
+        razaSelect.innerHTML = ''; // Limpiar opciones
+        const razas = razasPorEspecie[especieTexto] || [];
+        razas.forEach(r => {
+            const option = new Option(r, r);
+            razaSelect.add(option);
+        });
+        
+        razaSelect.onchange = () => {
+            otraRazaContainer.style.display = (razaSelect.value === 'Otra') ? 'block' : 'none';
+        };
+        razaSelect.dispatchEvent(new Event('change'));
+
+        // Actualizar Tipo de Sangre
+        const sangreSelect = document.getElementById('sangreSelect');
+        sangreSelect.innerHTML = ''; // Limpiar
+        const tiposSangre = sangrePorEspecie[especieTexto] || ['Desconocido'];
+        tiposSangre.forEach(s => {
+            const option = new Option(s, s);
+            sangreSelect.add(option);
+        });
+    }
+
+    // Lógica para el modo edición (pre-seleccionar valores)
+    function inicializarFormularioEdicion() {
+        const especieSelect = document.getElementById('especieSelect');
+        if (especieSelect.value) {
+            actualizarCamposDinamicos();
+
+            // Pre-seleccionar raza
+            const razaGuardada = /*[[${paciente.raza}]]*/ null;
+            const razaSelect = document.getElementById('razaSelect');
+            const otraRazaInput = document.getElementById('otraRazaInput');
+            const otraRazaContainer = document.getElementById('otraRazaContainer');
+            
+            let razaEncontrada = false;
+            for (let opt of razaSelect.options) {
+                if (opt.value === razaGuardada) {
+                    opt.selected = true;
+                    razaEncontrada = true;
+                    break;
+                }
+            }
+            if (!razaEncontrada && razaGuardada) {
+                razaSelect.value = 'Otra';
+                otraRazaInput.value = razaGuardada;
+                otraRazaContainer.style.display = 'block';
+            }
+
+            // Pre-seleccionar tipo de sangre
+            const sangreGuardada = /*[[${paciente.sangre}]]*/ null;
+            if (sangreGuardada) {
+                document.getElementById('sangreSelect').value = sangreGuardada;
+            }
+        }
+    }
+
+    // Lógica del checkbox de microchip
+    const microchipInput = document.getElementById('microchipInput');
+    const sinMicrochipCheck = document.getElementById('sinMicrochip');
+    
+    sinMicrochipCheck.addEventListener('change', function() {
+        if (this.checked) {
+            microchipInput.value = '';
+            microchipInput.disabled = true;
+        } else {
+            microchipInput.disabled = false;
+        }
+    });
+
+    // Ejecutar al cargar la página
+    inicializarFormularioEdicion();
+});
+/*]]>*/
+</script>
 </html>

@@ -1,44 +1,55 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security6" lang="es">
+<head>
+    <meta charset="UTF-8">
+</head>
 <body>
 
-    <header th:fragment="topbar" class="bg-white shadow-sm d-flex align-items-center justify-content-between" 
-            style="height: var(--header-height); padding: 0 2rem; position: sticky; top: 0; z-index: 999;">
+    <header th:fragment="topbar" class="topbar d-flex justify-content-between align-items-center w-100 px-4 py-2 bg-white shadow-sm border-bottom">
         
-        <div class="d-flex align-items-center">
+        <div class="flex-grow-1">
             <h5 class="mb-0 fw-bold text-secondary d-none d-md-block">Sistema Integral VetMejía</h5>
         </div>
 
-        <div class="header-right d-flex align-items-center" th:if="${#authentication != null and #authentication.name != 'anonymousUser'}">
+        <div class="d-flex align-items-center gap-3" th:if="${#authentication != null and #authentication.name != 'anonymousUser'}">
             
-            <!-- Contador de Sesión -->
-            <div class="d-flex align-items-center me-3 px-3 py-1 rounded bg-light border" title="Tiempo restante de sesión">
+            <div class="d-none d-lg-flex align-items-center px-3 py-1 rounded bg-light border" title="Tiempo restante de sesión">
                 <i class="bi bi-clock-history text-secondary me-2"></i>
                 <span class="fw-bold text-secondary font-monospace" id="sessionTimer" style="font-size: 14px;">30:00</span>
             </div>
 
+            <div class="dropdown notification-dropdown">
+                <a href="#" class="text-secondary position-relative" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-bell-fill fs-4"></i>
+                    <span id="notification-badge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger notification-badge" style="display: none;">
+                        0
+                    </span>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2">
+                    <li><h6 class="dropdown-header">Notificaciones del Sistema</h6></li>
+                    <li><hr class="dropdown-divider my-0"></li>
+                    <div id="notification-list">
+                        <div class="p-3 text-center text-muted small">Cargando...</div>
+                    </div>
+                    <li><a class="dropdown-item text-center small text-muted py-2" href="/reportes">Ver todas las alertas</a></li>
+                </ul>
+            </div>
+
             <div class="dropdown">
-                <div class="d-flex align-items-center gap-2 p-1 pe-3 rounded-pill" 
-                     style="background: #f8fafc; border: 1px solid #e2e8f0; cursor: pointer; transition: all 0.2s;" 
-                     data-bs-toggle="dropdown" aria-expanded="false" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='#f8fafc'">
-                    
+                <a href="#" class="d-flex align-items-center gap-2 text-dark text-decoration-none dropdown-toggle border-0" data-bs-toggle="dropdown" aria-expanded="false">
                     <div class="bg-primary text-white d-flex align-items-center justify-content-center rounded-circle text-uppercase" 
                          style="width: 35px; height: 35px; font-weight: 600;" 
-                         th:text="${#strings.substring(#authentication.name, 0, 1)}">U</div>
-                    
-                    <div class="text-start d-none d-sm-block">
-                        <div class="fw-bold small lh-1 text-dark" th:text="${#authentication.name}">Usuario</div>
-                        <small class="text-muted" style="font-size: 11px;" 
-                               th:text="${#authorization.expression('hasAuthority(''ROLE_Administrador'')') ? 'Administrador' : 'Empleado'}">
-                            Rol
-                        </small>
+                         th:text="${#strings.substring(#authentication.name, 0, 1)}">
                     </div>
-                    
-                    <i class="bi bi-chevron-down text-muted small ms-1"></i>
-                </div>
-                
-                <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2 rounded-3">
+                    <div class="text-start d-none d-sm-block">
+                        <div class="fw-bold small lh-1 text-dark" sec:authentication="name">Usuario</div>
+                        <small class="text-muted" style="font-size: 11px;" sec:authentication="principal.authorities[0]"></small>
+                    </div>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-3 rounded-3">
                     <li><h6 class="dropdown-header">Opciones de Cuenta</h6></li>
+                    <li><a class="dropdown-item d-flex align-items-center gap-2 py-2" href="#"><i class="bi bi-person-fill"></i>Mi Perfil</a></li>
+                    <li><hr class="dropdown-divider"></li>
                     <li>
                         <a class="dropdown-item text-danger d-flex align-items-center gap-2 py-2" href="/logout">
                             <i class="bi bi-box-arrow-right"></i> Cerrar Sesión
@@ -46,8 +57,78 @@
                     </li>
                 </ul>
             </div>
-            
         </div>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', async function() {
+                const badge = document.getElementById('notification-badge');
+                const list = document.getElementById('notification-list');
+                const sessionTimerEl = document.getElementById('sessionTimer');
+
+                // Función para cargar notificaciones
+                async function cargarNotificaciones() {
+                    try {
+                        const response = await fetch('/api/alertas/no-leidas');
+                        const alertas = await response.json();
+
+                        if (alertas.length > 0) {
+                            badge.textContent = alertas.length;
+                            badge.style.display = 'flex';
+                        } else {
+                            badge.style.display = 'none';
+                        }
+
+                        list.innerHTML = ''; // Limpiar
+                        if (alertas.length === 0) {
+                            list.innerHTML = '<div class="p-3 text-center text-muted small">No hay notificaciones nuevas.</div>';
+                            return;
+                        }
+
+                        alertas.forEach(alerta => {
+                            const item = document.createElement('a');
+                            const url = alerta.entidadTipo === 'Paciente' ? `/pacientes/${alerta.entidadId}/expediente` : `/almacen/productos`;
+                            item.href = url;
+                            item.className = 'notification-item dropdown-item d-flex align-items-center gap-2 py-2';
+                            item.innerHTML = `
+                                <div><i class="bi bi-exclamation-triangle-fill text-warning"></i></div>
+                                <div class="text-wrap small" style="width: 200px;">${alerta.mensaje}</div>
+                            `;
+                            item.onclick = async (e) => {
+                                e.preventDefault();
+                                await fetch('/api/alertas/marcar-leida/' + alerta.id, { method: 'POST' });
+                                window.location.href = url;
+                            };
+                            list.appendChild(item);
+                        });
+
+                    } catch (error) {
+                        console.error('Error al cargar notificaciones:', error);
+                        list.innerHTML = '<div class="p-3 text-center text-danger small">Error al cargar.</div>';
+                    }
+                }
+
+                // Función para el temporizador de sesión
+                function iniciarContadorSesion() {
+                    if (!sessionTimerEl) return;
+                    let tiempoRestante = 30 * 60; // 30 minutos en segundos
+                    setInterval(() => {
+                        if (tiempoRestante <= 0) {
+                            sessionTimerEl.textContent = "Expirado";
+                            window.location.href = '/logout';
+                            return;
+                        }
+                        tiempoRestante--;
+                        const minutos = Math.floor(tiempoRestante / 60).toString().padStart(2, '0');
+                        const segundos = (tiempoRestante % 60).toString().padStart(2, '0');
+                        sessionTimerEl.textContent = `${minutos}:${segundos}`;
+                    }, 1000);
+                }
+
+                // Iniciar ambas funciones
+                cargarNotificaciones();
+                iniciarContadorSesion();
+            });
+        </script>
     </header>
 
 </body>

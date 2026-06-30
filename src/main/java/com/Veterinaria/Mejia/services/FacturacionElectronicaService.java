@@ -1,7 +1,9 @@
 package com.Veterinaria.Mejia.services;
 
+import java.io.InputStream;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.net.URL;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -42,6 +44,7 @@ public class FacturacionElectronicaService {
     private final UsuarioRepository usuarioRepo;
     private final NubefactMapper nubefactMapper;
     private final NubefactClient nubefactClient;
+    private final EmailService emailService; // Inyectamos el nuevo servicio
 
     /**
      * Emite una boleta de venta electrónica para la venta indicada.
@@ -213,12 +216,34 @@ public class FacturacionElectronicaService {
             comp.setCodigoHash(response.codigoHash);
             comp.setUrlPdf(response.enlaceDelPdf);
             comp.setUrlXml(response.enlaceDelXml);
-            comp.setEstado(response.esExitoso() ? ComprobanteElectronico.EstadoComprobante.ACEPTADO : ComprobanteElectronico.EstadoComprobante.RECHAZADO);
+
+            if (response.esExitoso()) {
+                comp.setEstado(ComprobanteElectronico.EstadoComprobante.ACEPTADO);
+                // Si el comprobante fue aceptado y hay un email, enviarlo.
+                if (comp.getReceptorEmail() != null && !comp.getReceptorEmail().isBlank() && response.enlaceDelPdf != null) {
+                    enviarComprobantePorEmail(comp);
+                }
+            } else {
+                comp.setEstado(ComprobanteElectronico.EstadoComprobante.RECHAZADO);
+            }
+
         } catch (Exception e) {
             comp.setEstado(ComprobanteElectronico.EstadoComprobante.ERROR);
             comp.setDescripcionRespuesta("Error al procesar con Nubefact: " + e.getMessage());
         }
         comprobanteRepo.save(comp);
+    }
+
+    private void enviarComprobantePorEmail(ComprobanteElectronico comp) {
+        try (InputStream in = new URL(comp.getUrlPdf()).openStream()) {
+            byte[] pdfBytes = in.readAllBytes();
+            String nombreArchivo = comp.getNumeroCompleto() + ".pdf";
+            String cuerpoEmail = "Estimado(a) " + comp.getReceptorDenominacion() + ",<br><br>Adjuntamos su comprobante electrónico " + comp.getNumeroCompleto() + ".<br><br>Gracias por su preferencia,<br>Veterinaria Mejía.";
+            emailService.enviarEmailConAdjunto(comp.getReceptorEmail(), "Comprobante Electrónico: " + comp.getNumeroCompleto(), cuerpoEmail, pdfBytes, nombreArchivo);
+        } catch (Exception e) {
+            // Loguear el error pero no detener el flujo principal
+            System.err.println("Error al descargar o enviar el PDF por correo: " + e.getMessage());
+        }
     }
 
     /** Reintenta el envío de un comprobante que falló. */
@@ -234,5 +259,24 @@ public class FacturacionElectronicaService {
     /** Obtiene el historial de comprobantes emitidos. */
     public List<ComprobanteElectronico> obtenerHistorial() {
         return comprobanteRepo.findTop50ByOrderByFechaRegistroDesc();
+    }
+
+    /**
+     * Reenvía un comprobante por correo electrónico a la dirección registrada.
+     * @param comprobanteId ID del comprobante a reenviar.
+     */
+    @Transactional(readOnly = true) // Es de solo lectura porque no modifica el estado del comprobante.
+    public void reenviarPorEmail(Integer comprobanteId) {
+        ComprobanteElectronico comp = comprobanteRepo.findById(comprobanteId)
+                .orElseThrow(() -> new RuntimeException("Comprobante no encontrado con ID: " + comprobanteId));
+
+        if (comp.getReceptorEmail() == null || comp.getReceptorEmail().isBlank()) {
+            throw new IllegalArgumentException("El comprobante no tiene una dirección de correo electrónico registrada.");
+        }
+        if (comp.getUrlPdf() == null || comp.getUrlPdf().isBlank()) {
+            throw new IllegalArgumentException("El comprobante no tiene un PDF generado para poder enviar.");
+        }
+
+        enviarComprobantePorEmail(comp);
     }
 }

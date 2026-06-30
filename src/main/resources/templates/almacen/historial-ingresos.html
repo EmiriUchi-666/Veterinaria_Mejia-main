@@ -62,9 +62,10 @@
                                     <th class="ps-4 py-3 text-secondary fw-600">ID Lote</th>
                                     <th class="py-3 text-secondary fw-600">Fecha y Hora</th>
                                     <th class="py-3 text-secondary fw-600">Distribuidora</th>
-                                    <th class="py-3 text-secondary fw-600">Items</th>
-                                    <th class="py-3 text-secondary fw-600">Total Invertido</th>
-                                    <th class="py-3 text-secondary fw-600 text-center pe-4">Acciones</th>
+                                    <th class="py-3 text-secondary fw-600 text-center">Items</th>
+                                    <th class="py-3 text-secondary fw-600 text-end">Total Invertido</th>
+                                    <th class="py-3 text-secondary fw-600">Registrado Por</th>
+                                    <th class="py-3 text-secondary fw-600 text-center pe-4" style="width: 15%;">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -87,7 +88,7 @@
                                     <!-- Fecha -->
                                     <td>
                                         <div class="d-flex align-items-center text-secondary">
-                                            <i class="bi bi-calendar-event me-2"></i>
+                                            <i class="bi bi-calendar-event me-2 text-primary"></i>
                                             <!-- Formateo de fecha con Thymeleaf -->
                                             <span th:text="${#dates.format(ingreso.fechaIngreso, 'dd/MM/yyyy HH:mm')}">01/01/2026</span>
                                         </div>
@@ -100,7 +101,7 @@
                                     </td>
                                     
                                     <!-- Items -->
-                                    <td>
+                                    <td class="text-center">
                                         <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle">
                                             <i class="bi bi-box-seam me-1"></i>
                                             <span th:text="${#lists.size(ingreso.detallesIngreso)}"></span> Productos
@@ -108,8 +109,14 @@
                                     </td>
                                     
                                     <!-- Total Invertido -->
-                                    <td class="fw-bold text-success">
+                                    <td class="fw-bold text-success text-end">
                                         S/. <span th:text="${#numbers.formatDecimal(ingreso.totalInvertido, 1, 'COMMA', 2, 'POINT')}">0.00</span>
+                                    </td>
+
+                                    <!-- Usuario que registró -->
+                                    <td>
+                                        <span class="badge bg-light text-dark border" th:if="${ingreso.usuario != null}" th:text="${ingreso.usuario.nombreUsuario}"></span>
+                                        <span class="badge bg-light text-muted border" th:unless="${ingreso.usuario != null}">N/A</span>
                                     </td>
                                     
                                     <!-- Acciones -->

@@ -1,142 +1,171 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="es">
-<head th:replace="~{fragments/head :: head('Facturación Electrónica')}"></head>
+<head th:replace="~{fragments/head :: head('Historial de Facturación')}"></head>
 <style>
-  .estado-ACEPTADO{background:#dcfce7;color:#166534;}
-  .estado-RECHAZADO{background:#fee2e2;color:#991b1b;}
-  .estado-PENDIENTE{background:#fef9c3;color:#92400e;}
-  .estado-ENVIADO{background:#dbeafe;color:#1e40af;}
-  .estado-ERROR{background:#fee2e2;color:#7f1d1d;}
-  .badge-estado{padding:.35rem .75rem;border-radius:50px;font-size:.78rem;font-weight:700;}
-  .demo-bar{background:linear-gradient(90deg,#f59e0b,#fbbf24);border-radius:12px;}
+    .estado-ACEPTADO{background:#dcfce7;color:#166534;border:1px solid #bbf7d0;}
+    .estado-RECHAZADO{background:#fee2e2;color:#991b1b;border:1px solid #fecaca;}
+    .estado-PENDIENTE{background:#fef9c3;color:#92400e;border:1px solid #fde68a;}
+    .estado-ENVIADO{background:#dbeafe;color:#1e40af;border:1px solid #bfdbfe;}
+    .estado-ERROR{background:#fee2e2;color:#7f1d1d;border:1px solid #fecaca;}
+    .badge-estado{padding:.35rem .75rem;border-radius:50px;font-size:.78rem;font-weight:700;}
+    .demo-bar{background:linear-gradient(90deg,#f59e0b,#fbbf24);border-radius:12px;}
+    .table-responsive { overflow-x: auto; }
+    .btn-reintentar:disabled { cursor: not-allowed; }
 </style>
 <body>
 <div th:replace="~{fragments/sidebar :: menuLateral}"></div>
 <div class="main-content p-4">
 
-  <!-- Alertas -->
-  <div th:if="${modoPrueba}" class="demo-bar text-dark p-3 mb-4 d-flex align-items-center gap-3">
-    <i class="bi bi-exclamation-triangle-fill fs-4"></i>
-    <div>
-      <strong>Modo DEMO activo.</strong> Los comprobantes no se envían a SUNAT.
-      Configure <code>nubefact.api.token</code> y <code>nubefact.modo.prueba=false</code> en
-      <code>application.properties</code> para activar el envío real.
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-0"><i class="bi bi-receipt me-2 text-primary"></i>Historial de Facturación</h2>
+            <p class="text-muted mb-0">RUC Emisor: <strong th:text="${rucEmisor}"></strong></p>
+        </div>
+        <a href="/ventas" class="btn btn-outline-secondary rounded-pill">
+            <i class="bi bi-arrow-left me-1"></i>Ir a Ventas
+        </a>
     </div>
-  </div>
 
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-      <h2 class="fw-bold mb-0"><i class="bi bi-receipt me-2 text-primary"></i>Facturación Electrónica</h2>
-      <p class="text-muted mb-0">RUC Emisor: <strong th:text="${rucEmisor}"></strong> — Boletas B001 y Facturas F001</p>
+    <!-- Tabla historial -->
+    <div class="card border-0 shadow-sm" style="border-radius:16px;">
+        <div class="card-header bg-white border-0 pt-4 px-4">
+            <h6 class="fw-bold mb-0">Últimos Comprobantes Procesados</h6>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                <tr>
+                    <th>Venta ID</th>
+                    <th>Comprobante</th>
+                    <th>Cliente</th>
+                    <th class="text-end">Total</th>
+                    <th>Fecha Intento</th>
+                    <th class="text-center">Estado</th>
+                    <th>Respuesta API</th>
+                    <th class="text-center">Acciones</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:if="${paginaEstados.empty}">
+                    <td colspan="8" class="text-center text-muted py-5">
+                        <i class="bi bi-receipt" style="font-size:3rem;opacity:.3;"></i>
+                        <p class="mt-2">Aún no se han procesado comprobantes.</p>
+                    </td>
+                </tr>
+                <tr th:each="estado : ${paginaEstados.content}" th:id="'fila-estado-' + ${estado.id}">
+                    <td th:text="${estado.venta.id}"></td>
+                    <td>
+                        <strong th:text="${estado.venta.serie + '-' + estado.venta.correlativo}"></strong>
+                    </td>
+                    <td th:text="${estado.venta.cliente.nombre}"></td>
+                    <td class="text-end fw-bold" th:text="'S/ ' + ${#numbers.formatDecimal(estado.venta.totalVenta,1,2)}"></td>
+                    <td th:text="${#temporals.format(estado.fechaIntento,'dd/MM/yy HH:mm')}"></td>
+                    <td class="text-center">
+                        <span class="badge-estado"
+                              th:classappend="'estado-' + ${estado.estado?.name()}"
+                              th:text="${estado.estado}"></span>
+                    </td>
+                    <td class="small text-muted" style="max-width: 250px; white-space: normal;" th:text="${estado.respuestaApi}"></td>
+                    <td class="text-center">
+                        <!-- Botón de Reintento -->
+                        <button th:if="${estado.estado?.name() == 'ERROR' || estado.estado?.name() == 'RECHAZADO'}"
+                                th:data-id="${estado.id}"
+                                onclick="reintentar(this)"
+                                class="btn btn-sm btn-warning rounded-pill btn-reintentar" title="Reenviar a SUNAT">
+                            <i class="bi bi-arrow-repeat"></i> Reintentar
+                        </button>
+                        <!-- Enlace a PDF -->
+                        <a th:if="${estado.urlPdf != null}" th:href="${estado.urlPdf}" target="_blank"
+                           class="btn btn-sm btn-outline-danger rounded-pill" title="Ver PDF">
+                            <i class="bi bi-file-pdf"></i>
+                        </a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <!-- Paginación (si aplica) -->
     </div>
-    <a href="/ventas" class="btn btn-outline-secondary rounded-pill">
-      <i class="bi bi-arrow-left me-1"></i>Ir a Ventas
-    </a>
-  </div>
-
-  <div th:if="${successMsg}" class="alert alert-success alert-dismissible fade show rounded-3 mb-3">
-    <i class="bi bi-check-circle me-2"></i><span th:text="${successMsg}"></span>
-    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    <div th:if="${urlPdf}" class="mt-2">
-      <a th:href="${urlPdf}" target="_blank" class="btn btn-sm btn-success rounded-pill">
-        <i class="bi bi-file-pdf me-1"></i>Descargar PDF del comprobante
-      </a>
-    </div>
-  </div>
-  <div th:if="${errorMsg}" class="alert alert-danger alert-dismissible fade show rounded-3 mb-3">
-    <i class="bi bi-exclamation-triangle me-2"></i><span th:text="${errorMsg}"></span>
-    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-  </div>
-
-  <!-- Guía rápida -->
-  <div class="row g-3 mb-4">
-    <div class="col-12 col-md-4">
-      <div class="card border-0 shadow-sm p-3" style="border-radius:14px;border-top:3px solid #3b82f6!important;">
-        <div class="fw-bold mb-1"><i class="bi bi-file-earmark-text text-primary me-2"></i>Boleta de Venta</div>
-        <p class="text-muted small mb-0">Para clientes con DNI (personas naturales). Serie <strong>B001</strong>. El receptor puede ser "Consumidor Final" con DNI 00000000.</p>
-      </div>
-    </div>
-    <div class="col-12 col-md-4">
-      <div class="card border-0 shadow-sm p-3" style="border-radius:14px;border-top:3px solid #f59e0b!important;">
-        <div class="fw-bold mb-1"><i class="bi bi-file-earmark-richtext text-warning me-2"></i>Factura</div>
-        <p class="text-muted small mb-0">Para empresas con RUC. Serie <strong>F001</strong>. Permite crédito fiscal al receptor. Requiere RUC de 11 dígitos.</p>
-      </div>
-    </div>
-    <div class="col-12 col-md-4">
-      <div class="card border-0 shadow-sm p-3" style="border-radius:14px;border-top:3px solid #10b981!important;">
-        <div class="fw-bold mb-1"><i class="bi bi-send-check text-success me-2"></i>Nubefact → SUNAT</div>
-        <p class="text-muted small mb-0">Los comprobantes se envían al PSE Nubefact que los transmite a SUNAT y retorna el CDR con código hash.</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- Tabla historial -->
-  <div class="card border-0 shadow-sm" style="border-radius:16px;">
-    <div class="card-header bg-white border-0 pt-4 px-4">
-      <h6 class="fw-bold mb-0">Últimos 50 Comprobantes Emitidos</h6>
-    </div>
-    <div class="table-responsive">
-      <table class="table table-hover align-middle mb-0">
-        <thead class="table-light">
-          <tr>
-            <th>Número</th><th>Tipo</th><th>Receptor</th><th>Doc.</th>
-            <th class="text-end">Base Imp.</th><th class="text-end">IGV</th><th class="text-end">Total</th>
-            <th>Fecha</th><th class="text-center">Estado</th><th class="text-center">Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr th:if="${#lists.isEmpty(comprobantes)}">
-            <td colspan="10" class="text-center text-muted py-5">
-              <i class="bi bi-receipt" style="font-size:3rem;opacity:.3;"></i>
-              <p class="mt-2">Sin comprobantes emitidos. Emite uno desde el historial de ventas.</p>
-            </td>
-          </tr>
-          <tr th:each="c : ${comprobantes}">
-            <td>
-              <strong th:text="${c.numeroCompleto}"></strong>
-              <br><small class="text-muted" th:text="${c.medioPago}"></small>
-            </td>
-            <td>
-              <span class="badge rounded-pill"
-                    th:classappend="${c.tipoComprobante?.name() == 'BOLETA' ? 'bg-primary' : 'bg-warning text-dark'}"
-                    th:text="${c.tipoComprobante?.label}"></span>
-            </td>
-            <td th:text="${c.receptorDenominacion}"></td>
-            <td class="text-muted" th:text="${c.receptorNumDoc}"></td>
-            <td class="text-end" th:text="'S/ ' + ${#numbers.formatDecimal(c.totalGravada,1,2)}"></td>
-            <td class="text-end text-muted" th:text="'S/ ' + ${#numbers.formatDecimal(c.totalIgv,1,2)}"></td>
-            <td class="text-end fw-bold" th:text="'S/ ' + ${#numbers.formatDecimal(c.total,1,2)}"></td>
-            <td th:text="${#temporals.format(c.fechaEmision,'dd/MM/yy')}"></td>
-            <td class="text-center">
-              <span class="badge-estado"
-                    th:classappend="'estado-' + ${c.estado?.name()}"
-                    th:text="${c.estado}"></span>
-            </td>
-            <td class="text-center">
-              <!-- PDF si hay URL -->
-              <a th:if="${c.urlPdf != null}" th:href="${c.urlPdf}" target="_blank"
-                 class="btn btn-sm btn-outline-danger rounded-pill me-1" title="Ver PDF">
-                <i class="bi bi-file-pdf"></i>
-              </a>
-              <!-- Reenviar si falló -->
-              <form th:if="${c.estado?.name() == 'ERROR' || c.estado?.name() == 'RECHAZADO'}"
-                    th:action="@{/facturacion/reenviar/{id}(id=${c.id})}" method="post" class="d-inline">
-                <button type="submit" class="btn btn-sm btn-outline-warning rounded-pill" title="Reenviar a SUNAT">
-                  <i class="bi bi-arrow-repeat"></i>
-                </button>
-              </form>
-              <!-- Hash CDR -->
-              <span th:if="${c.codigoHash != null}"
-                    class="badge bg-success ms-1" title="CDR aceptado por SUNAT">
-                <i class="bi bi-shield-check"></i>
-              </span>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    async function reintentar(button) {
+        const estadoId = button.getAttribute('data-id');
+        const fila = document.getElementById('fila-estado-' + estadoId);
+        const celdaEstado = fila.querySelector('.badge-estado');
+        const celdaRespuesta = fila.querySelector('.small.text-muted');
+
+        // Deshabilitar botón y mostrar estado de carga
+        button.disabled = true;
+        button.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Enviando...';
+        celdaEstado.className = 'badge-estado estado-PENDIENTE';
+        celdaEstado.textContent = 'PENDIENTE';
+        celdaRespuesta.textContent = 'Reintentando envío a Nubefact...';
+
+        try {
+            const response = await fetch(`/api/v1/facturacion/estados/${estadoId}/reintentar`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    // Añadir cabecera CSRF si está habilitado en Spring Security
+                }
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                // Si la API devuelve un error (4xx, 5xx)
+                throw new Error(data.message || 'Error en el servidor');
+            }
+
+            // Actualizar la fila con la nueva información
+            actualizarFila(fila, data);
+
+        } catch (error) {
+            console.error('Error en el reintento:', error);
+            celdaEstado.className = 'badge-estado estado-ERROR';
+            celdaEstado.textContent = 'ERROR';
+            celdaRespuesta.textContent = 'Fallo en la comunicación con el servidor: ' + error.message;
+            button.disabled = false;
+            button.innerHTML = '<i class="bi bi-arrow-repeat"></i> Reintentar';
+        }
+    }
+
+    function actualizarFila(fila, data) {
+        const celdaEstado = fila.querySelector('.badge-estado');
+        const celdaRespuesta = fila.querySelector('.small.text-muted');
+        const celdaAcciones = fila.querySelector('.text-center:last-child');
+
+        // Actualizar estado y respuesta
+        celdaEstado.className = `badge-estado estado-${data.estado}`;
+        celdaEstado.textContent = data.estado;
+        celdaRespuesta.textContent = data.respuestaApi;
+
+        // Limpiar acciones y reconstruir
+        celdaAcciones.innerHTML = '';
+
+        if (data.estado === 'ERROR' || data.estado === 'RECHAZADO') {
+            const btn = document.createElement('button');
+            btn.className = 'btn btn-sm btn-warning rounded-pill btn-reintentar';
+            btn.title = 'Reenviar a SUNAT';
+            btn.dataset.id = data.id;
+            btn.onclick = () => reintentar(btn);
+            btn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Reintentar';
+            celdaAcciones.appendChild(btn);
+        }
+
+        if (data.urlPdf) {
+            const link = document.createElement('a');
+            link.href = data.urlPdf;
+            link.target = '_blank';
+            link.className = 'btn btn-sm btn-outline-danger rounded-pill';
+            link.title = 'Ver PDF';
+            link.innerHTML = '<i class="bi bi-file-pdf"></i>';
+            celdaAcciones.appendChild(link);
+        }
+    }
+</script>
+
+<div th:replace="~{fragments/scripts :: scripts}"></div>
 </body>
 </html>
