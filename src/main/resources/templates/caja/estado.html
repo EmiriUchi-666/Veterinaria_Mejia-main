@@ -56,6 +56,9 @@
               <span class="badge bg-success fs-6 mb-2">🟢 CAJA ABIERTA</span>
               <p class="mb-0 text-muted">Cajero: <strong th:text="${cajaAbierta?.usuario?.nombreUsuario}"></strong></p>
               <p class="mb-0 text-muted small">Apertura: <span th:text="${#temporals.format(cajaAbierta?.fechaApertura,'dd/MM/yyyy HH:mm')}"></span></p>
+              <p class="mb-0 text-muted small" th:if="${cajaAbierta?.horaCierreProgramada != null}">
+                <i class="bi bi-alarm me-1"></i>Cierre automático programado: <strong th:text="${cajaAbierta?.horaCierreProgramada}"></strong>
+              </p>
             </div>
           </div>
           <div class="row g-3 text-center">
@@ -67,13 +70,13 @@
             </div>
             <div class="col-6 col-md-3">
               <div class="p-3 rounded-3" style="background:#f0fdf4;">
-                <div class="text-muted small">INGRESOS</div>
+                <div class="text-muted small">INGRESOS (ventas efectivo)</div>
                 <div class="fw-bold text-success" th:text="'+ S/ ' + ${#numbers.formatDecimal(cajaAbierta?.totalIngresos,1,2)}"></div>
               </div>
             </div>
             <div class="col-6 col-md-3">
               <div class="p-3 rounded-3" style="background:#fef2f2;">
-                <div class="text-muted small">EGRESOS</div>
+                <div class="text-muted small">EGRESOS (compras contado)</div>
                 <div class="fw-bold text-danger" th:text="'- S/ ' + ${#numbers.formatDecimal(cajaAbierta?.totalEgresos,1,2)}"></div>
               </div>
             </div>
@@ -138,6 +141,9 @@
             <td class="text-center">
               <span th:if="${c.estado?.name() == 'Abierta'}" class="badge bg-success rounded-pill">Abierta</span>
               <span th:if="${c.estado?.name() == 'Cerrada'}" class="badge bg-secondary rounded-pill">Cerrada</span>
+              <span th:if="${c.estado?.name() == 'Cerrada' and c.cierreAutomatico}" class="badge bg-info rounded-pill ms-1">
+                <i class="bi bi-alarm"></i> Auto
+              </span>
             </td>
           </tr>
         </tbody>

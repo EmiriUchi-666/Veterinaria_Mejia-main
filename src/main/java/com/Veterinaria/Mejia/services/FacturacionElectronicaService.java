@@ -7,6 +7,7 @@ import java.net.URL;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -139,9 +140,7 @@ public class FacturacionElectronicaService {
         List<DetalleComprobante> detalles = new ArrayList<>();
 
         // Intentar obtener detalles de la venta
-        var detallesVenta = detalleVentaRepo.findAll().stream()
-                .filter(d -> d.getVenta() != null && d.getVenta().getId().equals(venta.getId()))
-                .toList();
+        var detallesVenta = detalleVentaRepo.buscarDetallesPorVentaJPQL(venta.getId());
 
         if (detallesVenta.isEmpty()) {
             // Si no hay detalles, crear una línea genérica con el total
@@ -207,6 +206,17 @@ public class FacturacionElectronicaService {
             // 1. Mapear nuestro comprobante al DTO de Nubefact
             NubefactRequestDTO requestPayload = nubefactMapper.toNubefactRequest(comp);
 
+            // 2. Ajustar el tipo_de_afectacion_igv para cada item en el payload
+            // Esto es crucial para evitar el error "Debe indicar el tipo de impuesto en el ITEM"
+            for (Map<String, Object> item : requestPayload.getItems()) {
+                BigDecimal itemIgv = (BigDecimal) item.get("igv"); // Asumimos que el mapper ya puso el IGV
+                if (itemIgv != null && itemIgv.compareTo(BigDecimal.ZERO) > 0) {
+                    item.put("tipo_de_afectacion_igv", 10); // 10: Gravado - Operación Onerosa
+                } else {
+                    item.put("tipo_de_afectacion_igv", 20); // 20: Exonerado - Operación Onerosa (o 30 Inafecto)
+                }
+            }
+
             // 2. Enviar la petición a través del cliente HTTP
             NubefactResponseDTO response = nubefactClient.enviarComprobante(requestPayload);
 
@@ -228,8 +238,14 @@ public class FacturacionElectronicaService {
             }
 
         } catch (Exception e) {
+            // Mejorar el manejo de errores para capturar detalles de la respuesta HTTP
+            if (e instanceof org.springframework.web.client.HttpStatusCodeException) {
+                String responseBody = ((org.springframework.web.client.HttpStatusCodeException) e).getResponseBodyAsString();
+                comp.setDescripcionRespuesta("Error del servidor Nubefact: " + responseBody);
+            } else {
             comp.setEstado(ComprobanteElectronico.EstadoComprobante.ERROR);
             comp.setDescripcionRespuesta("Error al procesar con Nubefact: " + e.getMessage());
+            }
         }
         comprobanteRepo.save(comp);
     }

@@ -10,7 +10,7 @@ import com.Veterinaria.Mejia.models.Categoria;
 
 public interface CategoriaRepository extends JpaRepository<Categoria, Integer> {
 
-    @Query("SELECT c FROM Categoria c WHERE c.nombre LIKE %:nombre%")
+    @Query("SELECT c FROM Categoria c WHERE LOWER(c.nombre) LIKE LOWER(CONCAT('%', :nombre, '%'))")
     List<Categoria> buscarPorNombreJPQL(@Param("nombre") String nombre);
 
     boolean existsByNombre(String nombre);

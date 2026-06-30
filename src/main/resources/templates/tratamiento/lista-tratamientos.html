@@ -8,16 +8,8 @@
   <style>
     body{background:#f0f9ff;font-family:'Segoe UI',sans-serif;}
     .main-content{margin-left:260px;padding:2rem;}
-    .list-card{border:none;border-radius:16px;box-shadow:0 4px 12px rgba(0,0,0,.06);}
-    .estado-activo{background:#dcfce7;color:#166534;}
-    .estado-completado{background:#dbeafe;color:#1e40af;}
-    .estado-suspendido{background:#fee2e2;color:#991b1b;}
-    .tratamiento-item{border-left:4px solid #3b82f6;border-radius:0 12px 12px 0;
-                      background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.04);
-                      padding:1rem 1.25rem;margin-bottom:.75rem;transition:all .2s;}
-    .tratamiento-item:hover{box-shadow:0 4px 12px rgba(0,0,0,.1);}
-    .tratamiento-item.estado-Completado{border-color:#10b981;}
-    .tratamiento-item.estado-Suspendido{border-color:#ef4444;}
+    .card-table{border:none;border-radius:16px;box-shadow:0 4px 12px rgba(0,0,0,.06);}
+    .badge-estado{padding:.3rem .6rem; border-radius: 6px; font-size: 0.75rem; font-weight: 600;}
   </style>
 </head>
 <body>
@@ -32,7 +24,7 @@
       </h2>
       <p class="text-muted mb-0" th:if="${paciente != null}">
         Paciente: <strong th:text="${paciente?.nombre}"></strong>
-        &nbsp;|&nbsp; <span th:text="${paciente?.especie?.nombre}"></span>
+        &nbsp;|&nbsp; <span th:text="${paciente?.especie?.nombreEspecie}"></span>
         &nbsp;—&nbsp; Historia: <span th:text="${paciente?.numeroHistoria}"></span>
       </p>
     </div>
@@ -40,6 +32,29 @@
       <a th:href="${paciente != null ? '/pacientes/' + paciente.id + '/expediente' : '/pacientes'}" class="btn btn-outline-secondary rounded-pill btn-sm">
         <i class="bi bi-arrow-left me-1"></i>Pacientes
       </a>
+      <!-- FIX: no existía ninguna forma de registrar un tratamiento desde
+           esta pantalla. Si venimos filtrados por un paciente, el botón
+           ya lo trae preseleccionado; si es la lista general, abre el
+           formulario para elegir la mascota (o dejarla en blanco). -->
+      <a th:href="${paciente != null ? '/tratamientos/nuevo?pacienteId=' + paciente.id : '/tratamientos/nuevo'}"
+         class="btn btn-primary rounded-pill btn-sm">
+        <i class="bi bi-plus-circle me-1"></i>Registrar Tratamiento
+      </a>
+    </div>
+  </div>
+
+  <!-- FIX: el controller ya enviaba 'pacientes' para este filtro, pero
+       nunca se usaba en el HTML. Solo se muestra en la vista general
+       (no cuando ya estamos viendo un paciente específico). -->
+  <div th:if="${paciente == null and pacientes != null}" class="card card-table p-3 mb-4">
+    <div class="d-flex align-items-end gap-2 flex-wrap">
+      <div class="flex-grow-1" style="max-width:360px;">
+        <label class="form-label small text-muted mb-1">Filtrar por paciente</label>
+        <select id="filtroPacienteTratamientos" class="form-select form-select-sm">
+          <option value="">-- Ver todos los tratamientos --</option>
+          <option th:each="p : ${pacientes}" th:value="${p.id}" th:text="${p.nombre}"></option>
+        </select>
+      </div>
     </div>
   </div>
 
@@ -56,7 +71,14 @@
   <div th:if="${#lists.isEmpty(tratamientos)}" class="text-center py-5">
     <i class="bi bi-prescription2 text-muted" style="font-size:4rem;opacity:.3;"></i>
     <h5 class="text-muted mt-3">Sin tratamientos registrados</h5>
-    <p class="text-muted">Este paciente no tiene tratamientos activos aún.</p>
+    <p class="text-muted">
+      <span th:if="${paciente != null}">Este paciente no tiene tratamientos activos aún.</span>
+      <span th:if="${paciente == null}">No se encontró ningún tratamiento con ese filtro.</span>
+    </p>
+    <a th:href="${paciente != null ? '/tratamientos/nuevo?pacienteId=' + paciente.id : '/tratamientos/nuevo'}"
+       class="btn btn-primary rounded-pill mt-2">
+      <i class="bi bi-plus-circle me-1"></i>Registrar el tratamiento ahora
+    </a>
   </div>
 
   <!-- Lista de tratamientos -->
@@ -105,5 +127,13 @@
 
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  const filtroSelect = document.getElementById('filtroPacienteTratamientos');
+  if (filtroSelect) {
+    filtroSelect.addEventListener('change', function () {
+      window.location.href = this.value ? `/tratamientos/paciente/${this.value}` : '/tratamientos';
+    });
+  }
+</script>
 </body>
 </html>

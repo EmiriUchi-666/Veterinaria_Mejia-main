@@ -46,9 +46,7 @@ public class FacturacionElectronicaController {
             @RequestParam(defaultValue = "25") int size,
             Model model) {
 
-        Page<FacturacionEstado> paginaEstados = facturacionEstadoRepository.findAll(
-                PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"))
-        );
+        Page<FacturacionEstado> paginaEstados = facturacionEstadoRepository.findAll(PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id")));
         model.addAttribute("paginaEstados", paginaEstados);
         model.addAttribute("rucEmisor", rucEmisor);
         return "facturacion/historial";

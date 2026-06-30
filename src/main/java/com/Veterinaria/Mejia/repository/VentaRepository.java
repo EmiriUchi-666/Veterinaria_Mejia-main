@@ -38,7 +38,13 @@ public interface VentaRepository extends JpaRepository<Venta, Integer> {
      * FASE 5: Solución al problema N+1.
      * Carga las ventas y sus colecciones asociadas (detalles, productos, servicios) en una sola consulta.
      */
-    @Query("SELECT v FROM Venta v LEFT JOIN FETCH v.detallesVentas d LEFT JOIN FETCH d.producto LEFT JOIN FETCH d.servicio ORDER BY v.fechaEmision DESC")
+    @Query("SELECT DISTINCT v FROM Venta v " +
+           "LEFT JOIN FETCH v.cliente c " +
+           "LEFT JOIN FETCH v.usuario u " +
+           "LEFT JOIN FETCH v.detallesVentas dv " +
+           "LEFT JOIN FETCH dv.producto " +
+           "LEFT JOIN FETCH dv.servicio " +
+           "ORDER BY v.fechaEmision DESC")
     List<Venta> findTop10WithDetails(Pageable pageable);
 
     // Suma total de ingresos en un rango de fechas
@@ -68,16 +74,18 @@ public interface VentaRepository extends JpaRepository<Venta, Integer> {
     @Query("SELECT COALESCE(SUM(v.totalVenta), 0) FROM Venta v WHERE v.fechaEmision >= :inicio AND v.estado = true")
     BigDecimal sumarTotalVentasPorFecha(java.time.LocalDateTime inicio);
 
-    // GRÁFICO: Agrupar por HORA (Para el reporte dinámico de "Hoy")
+    // GRÁFICO: Agrupar por HORA
+    // Solución: Agrupamos por el mismo DATE_FORMAT que usamos en el SELECT
     @Query(value = "SELECT DATE_FORMAT(fecha_emision, '%H:00') AS fecha, SUM(total_venta) AS totalMonto " +
                    "FROM ventas WHERE fecha_emision >= :inicio AND estado = 1 " +
-                   "GROUP BY HOUR(fecha_emision) ORDER BY HOUR(fecha_emision)", nativeQuery = true)
+                   "GROUP BY DATE_FORMAT(fecha_emision, '%H:00') ORDER BY fecha ASC", nativeQuery = true)
     List<VentasDiaDTO> obtenerVentasPorHora(java.time.LocalDateTime inicio);
 
-    // GRÁFICO: Agrupar por DÍA (Para el reporte dinámico de "Semana" o "Mes")
+    // GRÁFICO: Agrupar por DÍA
+    // Solución: Agrupamos por el mismo DATE_FORMAT que usamos en el SELECT
     @Query(value = "SELECT DATE_FORMAT(fecha_emision, '%Y-%m-%d') AS fecha, SUM(total_venta) AS totalMonto " +
                    "FROM ventas WHERE fecha_emision >= :inicio AND estado = 1 " +
-                   "GROUP BY DATE(fecha_emision) ORDER BY DATE(fecha_emision)", nativeQuery = true)
+                   "GROUP BY DATE_FORMAT(fecha_emision, '%Y-%m-%d') ORDER BY fecha ASC", nativeQuery = true)
     List<VentasDiaDTO> obtenerVentasPorDia(java.time.LocalDateTime inicio);
 
     // =========================================================================

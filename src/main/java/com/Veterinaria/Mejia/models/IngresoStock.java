@@ -39,6 +39,15 @@ public class IngresoStock {
     @JoinColumn(name = "proveedor_id", nullable = false)
     private Proveedor proveedor;
 
+    /**
+     * FASE 7: cómo se le pagó al proveedor. "Efectivo" descuenta físicamente
+     * de la caja abierta (con barrera anti-negativos). Cualquier otro valor
+     * ("Credito", "Transferencia") no toca el saldo de caja.
+     */
+    @Column(name = "metodo_pago", nullable = false, length = 20)
+    @Builder.Default
+    private String metodoPago = "Credito";
+
     // LA SOLUCIÓN AL ERROR: La lista de detalles (el carrito)
     // cascade = CascadeType.ALL hace que si guardas la cabecera, se guarden los detalles solos
     @OneToMany(mappedBy = "ingresoStock", cascade = CascadeType.ALL, orphanRemoval = true)

@@ -70,7 +70,7 @@
                             </thead>
                             <tbody>
                                 <!-- Mensaje si la lista está vacía -->
-                                <tr th:if="${ingresos == null or ingresos.empty}">
+                                <tr th:if="${ingresosPage == null or ingresosPage.empty}">
                                     <td colspan="7" class="text-center py-5 text-muted">
                                         <i class="bi bi-inbox fs-1 d-block mb-2 text-black-50"></i>
                                         No hay registros de ingresos de mercadería aún.
@@ -115,8 +115,8 @@
 
                                     <!-- Usuario que registró -->
                                     <td>
-                                        <span class="badge bg-light text-dark border" th:if="${ingreso.usuario != null}" th:text="${ingreso.usuario.nombreUsuario}"></span>
-                                        <span class="badge bg-light text-muted border" th:unless="${ingreso.usuario != null}">N/A</span>
+                                        <span class="badge bg-light text-dark border" th:if="${ingreso.usuario != null and ingreso.usuario.nombreUsuario != null}" th:text="${ingreso.usuario.nombreUsuario}"></span>
+                                        <span class="badge bg-light text-muted border" th:unless="${ingreso.usuario != null and ingreso.usuario.nombreUsuario != null}">N/A</span>
                                     </td>
                                     
                                     <!-- Acciones -->

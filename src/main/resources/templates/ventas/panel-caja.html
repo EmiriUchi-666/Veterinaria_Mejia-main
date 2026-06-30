@@ -58,6 +58,33 @@
                     border-color: #dc3545 !important;
                     box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.25) !important;
                 }
+
+                /* Tabla del catálogo (modal) */
+                .table-catalogo {
+                    margin-bottom: 0;
+                }
+                .table-catalogo thead th {
+                    position: sticky;
+                    top: 0;
+                    background: #f8f9fa;
+                    text-transform: uppercase;
+                    font-size: 0.72rem;
+                    color: #6c757d;
+                    z-index: 1;
+                }
+                .table-catalogo tbody tr:hover {
+                    background-color: #f0fdf4;
+                }
+                .badge-stock-bajo {
+                    color: #dc3545 !important;
+                    font-weight: 700;
+                }
+                #catalogo-sin-resultados {
+                    display: none;
+                }
+                #catalogo-cargando {
+                    display: none;
+                }
             </style>
 
             <div th:if="${errorMsg}" class="alert alert-danger alert-dismissible fade show mb-4 border-0 shadow-sm" role="alert">
@@ -112,7 +139,7 @@
                             <div class="row g-3 mb-4">
                                 <div class="col-md-5">
                                     <label class="form-label text-muted small fw-semibold">DNI/RUC (Opcional)</label>
-                                    <input type="text" name="dniIngresado" id="dniIngresado" oninput="buscarClientePorDNI(this.value); this.classList.remove('is-invalid-custom');" class="form-control" placeholder="Nro Documento" maxlength="15"/>
+                                    <input type="text" name="dniIngresado" id="dniIngresado" oninput="this.classList.remove('is-invalid-custom');" class="form-control" placeholder="Nro Documento" maxlength="15"/>
                                 </div>
                                 <div class="col-md-7 position-relative">
                                     <label class="form-label text-muted small fw-semibold">Nombre Cliente (Opcional)</label>
@@ -187,74 +214,49 @@
                             <div class="row mb-4 g-3">
                                 <div class="col-md-4">
                                     <label class="form-label text-muted small fw-semibold">Especie</label>
-                                    <select id="filtro-especie" onchange="aplicarFiltros()" class="form-select shadow-sm">
+                                    <select id="filtro-especie" onchange="cargarCatalogo()" class="form-select shadow-sm">
                                         <option value="">Todas las especies</option>
-                                        <option th:each="e : ${especies}" th:value="${e.nombreEspecie}" th:text="${e.nombreEspecie}"></option>
+                                        <option th:each="e : ${especies}" th:value="${e.id}" th:text="${e.nombreEspecie}"></option>
                                     </select>
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label text-muted small fw-semibold">Categoría</label>
-                                    <select id="filtro-categoria" onchange="aplicarFiltros()" class="form-select shadow-sm">
+                                    <select id="filtro-categoria" onchange="cargarCatalogo()" class="form-select shadow-sm">
                                         <option value="">Todas las categorías</option>
-                                        <option th:each="cat : ${categorias}" th:value="${cat.nombre}" th:text="${cat.nombre}"></option>
+                                        <option th:each="cat : ${categorias}" th:value="${cat.id}" th:text="${cat.nombre}"></option>
                                     </select>
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label text-muted small fw-semibold">Búsqueda directa</label>
                                     <div class="input-group shadow-sm">
                                         <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
-                                        <input type="text" id="busqueda-nombre" onkeyup="aplicarFiltros()" class="form-control border-start-0 ps-0" placeholder="Nombre del producto..." />
+                                        <input type="text" id="busqueda-nombre" class="form-control border-start-0 ps-0" placeholder="Nombre del producto o servicio..." />
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="resultados-busqueda shadow-sm" id="contenedor-productos">
-                                
-                                <div class="item-resultado" th:each="p : ${productos}" 
-                                     th:if="${p.estado}"
-                                     th:data-id="${p.id}" th:data-nombre="${p.nombre}" 
-                                     th:data-precio="${p.precioVentaActual}" 
-                                     th:data-precio-fraccion="${p.precioPorFraccion != null ? p.precioPorFraccion : 0}"
-                                     th:data-stock-cerrado="${p.stockCerrado != null ? p.stockCerrado : 0}" 
-                                     th:data-permite-fraccion="${p.permiteFraccionamiento != null ? p.permiteFraccionamiento : false}"
-                                     th:data-categoria="${p.categoria.nombre}" 
-                                     th:data-especie="${p.especie != null ? p.especie.nombreEspecie : 'General'}">
-                                    <div>
-                                        <div class="fw-bold text-dark mb-1" th:text="${p.nombre}"></div>
-                                        <div class="text-muted small">
-                                            <span class="badge bg-light text-dark border badge-tipo me-1">P</span>
-                                            Stock: <span th:text="${p.stockCerrado != null ? p.stockCerrado : 0}"></span> sacos
-                                            <span th:if="${p.permiteFraccionamiento != null and p.permiteFraccionamiento}" class="ms-1 text-primary fw-semibold">
-                                                (Abierto: <span th:text="${p.stockAbierto != null ? p.stockAbierto : 0}"></span> u/kg)
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <div class="text-end d-flex flex-column gap-2">
-                                        <button type="button" class="btn btn-sm btn-success py-0 px-2 fw-bold" onclick="agregarAlCarrito(this.closest('.item-resultado'), 'producto_entero')">
-                                            + Entero (S/. <span th:text="${#numbers.formatDecimal(p.precioVentaActual, 1, 'COMMA', 2, 'POINT')}"></span>) 
-                                        </button>
-                                        <button type="button" class="btn btn-sm btn-primary py-0 px-2 fw-bold" th:if="${p.permiteFraccionamiento != null and p.permiteFraccionamiento}" onclick="agregarAlCarrito(this.closest('.item-resultado'), 'producto_fraccionado')">
-                                            + Suelto (S/. <span th:text="${#numbers.formatDecimal(p.precioPorFraccion, 1, 'COMMA', 2, 'POINT')}"></span>) 
-                                        </button>
-                                    </div>
+                            <div class="resultados-busqueda shadow-sm" style="overflow-x: auto;">
+                                <div id="catalogo-cargando" class="text-center text-muted py-5">
+                                    <div class="spinner-border text-primary mb-2" role="status"></div>
+                                    <div>Cargando catálogo...</div>
                                 </div>
-                                
-                                <div class="item-resultado" th:each="s : ${servicios}" 
-                                     th:data-id="${s.id}" th:data-nombre="${s.nombreServicio}" th:data-precio="${s.precioServicio}" 
-                                     th:data-stock="9999" th:data-categoria="Servicio" th:data-especie="General"
-                                     onclick="agregarAlCarrito(this, 'servicio')">
-                                    <div>
-                                        <div class="fw-bold text-dark mb-1" th:text="${s.nombreServicio}"></div>
-                                        <div class="text-muted small">
-                                            <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 badge-tipo me-1">S</span>
-                                            Servicio Clínico
-                                        </div>
-                                    </div>
-                                    <div class="text-end">
-                                        <span class="fw-bold text-primary">S/. <span th:text="${#numbers.formatDecimal(s.precioServicio, 1, 'COMMA', 2, 'POINT')}"></span></span>
-                                    </div>
+                                <div id="catalogo-sin-resultados" class="text-center text-muted py-5">
+                                    <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                                    No se encontraron productos ni servicios con los filtros seleccionados.
                                 </div>
-
+                                <table class="table table-hover table-catalogo align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th>Tipo</th>
+                                            <th>Nombre</th>
+                                            <th>Categoría / Especie</th>
+                                            <th class="text-center">Stock</th>
+                                            <th class="text-end">Precio</th>
+                                            <th class="text-center">Acción</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="contenedor-productos"></tbody>
+                                </table>
                             </div>
                         </div>
                         <div class="modal-footer border-top-0 p-4">
@@ -270,29 +272,121 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         // =========================================================================
-        // FILTROS DEL CATÁLOGO (EN EL MODAL)
+        // CATÁLOGO DEL MODAL: TABLA CARGADA DESDE EL SERVIDOR (PRODUCTOS + SERVICIOS)
         // =========================================================================
-        function aplicarFiltros() {
-            const esp = document.getElementById("filtro-especie").value.toLowerCase();
-            const cat = document.getElementById("filtro-categoria").value.toLowerCase();
-            const nom = document.getElementById("busqueda-nombre").value.toLowerCase();
-            
-            document.querySelectorAll(".item-resultado").forEach(item => {
-                const itemEspecie = item.dataset.especie.toLowerCase();
-                const itemCategoria = item.dataset.categoria.toLowerCase();
-                const itemNombre = item.dataset.nombre.toLowerCase();
-                
-                const coincideEspecie = (esp === "" || itemEspecie.includes(esp) || itemCategoria === "servicio");
-                const coincideCategoria = (cat === "" || itemCategoria.includes(cat));
-                const coincideNombre = (nom === "" || itemNombre.includes(nom));
-                
-                if (coincideEspecie && coincideCategoria && coincideNombre) {
-                    item.style.display = "flex";
-                } else {
-                    item.style.display = "none";
-                }
+        let debounceBusqueda = null;
+
+        function cargarCatalogo() {
+            const especieId = document.getElementById("filtro-especie").value;
+            const categoriaId = document.getElementById("filtro-categoria").value;
+            const nombre = document.getElementById("busqueda-nombre").value.trim();
+
+            const params = new URLSearchParams();
+            if (nombre) params.set("q", nombre);
+            if (categoriaId) params.set("categoriaId", categoriaId);
+            if (especieId) params.set("especieId", especieId);
+
+            const tbody = document.getElementById("contenedor-productos");
+            const cargando = document.getElementById("catalogo-cargando");
+            const sinResultados = document.getElementById("catalogo-sin-resultados");
+
+            tbody.innerHTML = "";
+            sinResultados.style.display = "none";
+            cargando.style.display = "block";
+
+            fetch(`/api/utilidades/catalogo-pos?${params.toString()}`)
+                .then(resp => {
+                    if (!resp.ok) throw new Error("Error al consultar el catálogo");
+                    return resp.json();
+                })
+                .then(data => {
+                    cargando.style.display = "none";
+                    pintarFilasCatalogo(data.productos || [], data.servicios || []);
+                })
+                .catch(err => {
+                    console.error("Error al cargar el catálogo:", err);
+                    cargando.style.display = "none";
+                    sinResultados.style.display = "block";
+                    sinResultados.innerHTML = '<i class="bi bi-exclamation-triangle fs-1 d-block mb-2 text-danger"></i>No se pudo cargar el catálogo. Intenta nuevamente.';
+                });
+        }
+
+        function pintarFilasCatalogo(productos, servicios) {
+            const tbody = document.getElementById("contenedor-productos");
+            const sinResultados = document.getElementById("catalogo-sin-resultados");
+            tbody.innerHTML = "";
+
+            if (productos.length === 0 && servicios.length === 0) {
+                sinResultados.style.display = "block";
+                return;
+            }
+            sinResultados.style.display = "none";
+
+            productos.forEach(p => {
+                const tr = document.createElement("tr");
+                tr.dataset.id = p.id;
+                tr.dataset.nombre = p.nombre;
+                tr.dataset.precio = p.precioVentaActual;
+                tr.dataset.precioFraccion = p.precioPorFraccion != null ? p.precioPorFraccion : 0;
+                tr.dataset.stockCerrado = p.stockCerrado != null ? p.stockCerrado : 0;
+                tr.dataset.permiteFraccion = p.permiteFraccionamiento ? "true" : "false";
+                tr.dataset.categoria = p.categoria;
+                tr.dataset.especie = p.especie;
+
+                const stockBajoClass = (p.stockCerrado != null && p.stockCerrado <= 0) ? "badge-stock-bajo" : "";
+                const botonSuelto = p.permiteFraccionamiento
+                    ? `<button type="button" class="btn btn-sm btn-outline-primary fw-bold ms-1" onclick="agregarAlCarrito(this.closest('tr'), 'producto_fraccionado')">
+                            <i class="bi bi-droplet-half"></i> Suelto S/. ${Number(p.precioPorFraccion || 0).toFixed(2)}
+                       </button>`
+                    : "";
+
+                tr.innerHTML = `
+                    <td><span class="badge bg-light text-dark border badge-tipo">Producto</span></td>
+                    <td class="fw-semibold text-dark">${p.nombre}</td>
+                    <td class="text-muted small">${p.categoria} / ${p.especie}</td>
+                    <td class="text-center ${stockBajoClass}">${p.stockCerrado}${p.permiteFraccionamiento ? ` <span class="text-primary small">(+${Number(p.stockAbierto || 0).toFixed(2)} suelto)</span>` : ''}</td>
+                    <td class="text-end fw-bold">S/. ${Number(p.precioVentaActual).toFixed(2)}</td>
+                    <td class="text-center text-nowrap">
+                        <button type="button" class="btn btn-sm btn-success fw-bold" ${p.stockCerrado <= 0 ? 'disabled' : ''} onclick="agregarAlCarrito(this.closest('tr'), 'producto_entero')">
+                            <i class="bi bi-plus-lg"></i> Entero
+                        </button>
+                        ${botonSuelto}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            servicios.forEach(s => {
+                const tr = document.createElement("tr");
+                tr.dataset.id = s.id;
+                tr.dataset.nombre = s.nombre;
+                tr.dataset.precio = s.precio;
+                tr.dataset.stockCerrado = 9999;
+                tr.dataset.categoria = "Servicio";
+                tr.dataset.especie = "General";
+
+                tr.innerHTML = `
+                    <td><span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 badge-tipo">Servicio</span></td>
+                    <td class="fw-semibold text-dark">${s.nombre}</td>
+                    <td class="text-muted small">Servicio Clínico</td>
+                    <td class="text-center text-muted">&mdash;</td>
+                    <td class="text-end fw-bold text-primary">S/. ${Number(s.precio).toFixed(2)}</td>
+                    <td class="text-center">
+                        <button type="button" class="btn btn-sm btn-primary fw-bold" onclick="agregarAlCarrito(this.closest('tr'), 'servicio')">
+                            <i class="bi bi-plus-lg"></i> Agregar
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
             });
         }
+
+        document.getElementById("busqueda-nombre").addEventListener("keyup", function () {
+            clearTimeout(debounceBusqueda);
+            debounceBusqueda = setTimeout(cargarCatalogo, 350);
+        });
+
+        document.getElementById("modalCatalogo").addEventListener("show.bs.modal", cargarCatalogo);
 
         // =========================================================================
         // LÓGICA DEL CARRITO DE COMPRAS
@@ -408,7 +502,7 @@
         }
 
         // =========================================================================
-        // BÚSQUEDA DE CLIENTE POR API
+        // BÚSQUEDA DE CLIENTE / DUEÑO POR DNI/RUC
         // =========================================================================
         async function buscarClientePorDNI() {
             const dniInput = document.getElementById("dniIngresado");
@@ -417,7 +511,7 @@
             const inputDireccion = document.getElementById("direccionIngresado");
             const spinner = document.getElementById("spinnerBusqueda");
             const dni = dniInput.value.trim();
-            
+
             const limpiarCampos = () => {
                 inputNombre.value = '';
                 inputTelefono.value = '';
@@ -428,55 +522,65 @@
                 inputNombre.placeholder = 'Público General si está vacío';
             };
 
-            if (dni.length < 8) {
+            // Solo consultamos con DNI (8) o RUC (11) completos. Cualquier otra
+            // longitud limpia los campos y deja todo editable manualmente —
+            // la venta nunca se bloquea por esto, el documento es opcional.
+            if (dni.length !== 8 && dni.length !== 11) {
                 limpiarCampos();
                 return;
             }
 
             try {
                 spinner.classList.remove("d-none");
-                const response = await fetch(`/api/clientes/${dni}`);
+                const response = await fetch(`/api/utilidades/cliente/${encodeURIComponent(dni)}`);
+                const data = await response.json();
 
-                if (!response.ok) { 
+                // Protección contra respuestas fuera de orden: si el cajero ya
+                // siguió escribiendo y el DNI cambió mientras esta petición
+                // estaba en vuelo, descartamos la respuesta vieja.
+                if (dniInput.value.trim() !== dni) return;
+
+                if (!response.ok || !data.success) {
+                    // No se encontró ni como dueño ni como cliente registrado.
+                    // Se permite continuar: el cajero puede escribir el nombre manualmente
+                    // y la venta/boleta se registra igual a nombre de ese DNI.
                     limpiarCampos();
                     return;
                 }
 
-                const cliente = await response.json();
-                inputNombre.value = cliente.nombre;
-                inputTelefono.value = cliente.telefono || '';
-                inputDireccion.value = cliente.direccion || '';
+                inputNombre.value = data.nombre || '';
+                inputTelefono.value = data.telefono || '';
+                inputDireccion.value = data.direccion || '';
                 inputNombre.readOnly = true;
                 inputTelefono.readOnly = true;
                 inputDireccion.readOnly = true;
 
             } catch (error) {
                 console.error("Error al buscar cliente:", error);
-                limpiarCampos();
+                if (dniInput.value.trim() === dni) limpiarCampos();
             } finally {
-                spinner.classList.add("d-none");
+                if (dniInput.value.trim() === dni) spinner.classList.add("d-none");
             }
         }
+
+        // Debounce real: espera 400ms desde la última tecla antes de consultar,
+        // para no disparar un fetch por cada carácter tipeado.
+        let debounceDNI = null;
+        document.getElementById("dniIngresado").addEventListener("input", function () {
+            this.classList.remove('is-invalid-custom');
+            clearTimeout(debounceDNI);
+            debounceDNI = setTimeout(buscarClientePorDNI, 400);
+        });
+        document.getElementById("dniIngresado").addEventListener("blur", function () {
+            clearTimeout(debounceDNI);
+            buscarClientePorDNI();
+        });
 
         // =========================================================================
         // EVENT LISTENERS DE DELEGACIÓN
         // =========================================================================
         document.addEventListener('DOMContentLoaded', function() {
-            const contenedorProductos = document.getElementById('contenedor-productos');
             const cuerpoCarrito = document.getElementById('cuerpo-carrito');
-
-            contenedorProductos.addEventListener('click', function(e) {
-                const itemResultado = e.target.closest('.item-resultado');
-                if (!itemResultado) return;
-
-                if (e.target.closest('button')) {
-                    const tipo = e.target.textContent.includes('Entero') ? 'producto_entero' : 'producto_fraccionado';
-                    agregarAlCarrito(itemResultado, tipo);
-                } 
-                else if (itemResultado.dataset.categoria === 'Servicio') {
-                    agregarAlCarrito(itemResultado, 'servicio');
-                }
-            });
 
             cuerpoCarrito.addEventListener('click', function(e) {
                 if (e.target.closest('.btn-outline-danger')) {

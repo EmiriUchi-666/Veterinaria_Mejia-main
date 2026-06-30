@@ -35,21 +35,31 @@
             <div class="card card-custom border-0 shadow-sm">
                 <div class="card-body p-4">
                     <form th:action="@{/tratamientos/guardar}" method="post" id="form-tratamiento">
-                        <input type="hidden" name="historiaClinicaId" th:if="${historia != null}" th:value="${historia.id}">
-    
+                        <!-- Si venimos de una historia, el ID se pasa. Si no, se buscará por pacienteId. -->
+                        <input type="hidden" name="historiaClinicaId" th:if="${historia != null}" th:value="${historia.id}" />
+
                         <div class="mb-3" th:if="${historia == null}">
-                            <label class="form-label fw-semibold">
-                              <i class="bi bi-paw me-1 text-primary"></i>
-                              Mascota atendida <span class="text-muted fw-normal">(opcional — se registrará en su historial)</span>
-                            </label>
-                            <select name="pacienteId" class="form-select">
-                              <option value="">-- Sin mascota específica / Consulta general --</option>
-                              <option th:each="p : ${pacientes}" 
-                                      th:value="${p.id}"
-                                      th:text="${p.nombre} + ' (' + ${p.especie.nombreEspecie} + ' — Tutor: ' + ${p.dueno != null ? p.dueno.nombre : 'N/A'} + ')'">
-                              </option>
-                            </select>
-                            <div class="form-text">Si seleccionas una mascota, este tratamiento quedará vinculado a su expediente clínico.</div>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Dueño / Tutor <span class="text-danger">*</span></label>
+                                    <select id="selectDueno" class="form-select" onchange="filtrarMascotasPorDueno()">
+                                        <option value="">-- Primero seleccione un dueño --</option>
+                                        <option th:each="d : ${duenos}" th:value="${d.id}" th:text="${d.nombre} + ' — DNI: ' + ${d.dni}"
+                                                th:selected="${pacienteSeleccionado != null and pacienteSeleccionado.dueno != null and d.id == pacienteSeleccionado.dueno.id}"></option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Mascota (Paciente) <span class="text-danger">*</span></label>
+                                    <select name="pacienteId" id="selectMascota" class="form-select" required>
+                                        <option value="">-- Esperando selección de dueño --</option>
+                                        <option th:each="p : ${pacientes}" th:value="${p.id}"
+                                                th:text="${p.nombre} + ' (' + ${p.especie.nombreEspecie} + ')'"
+                                                th:attr="data-dueno-id=${p.dueno.id}"
+                                                th:selected="${pacienteSeleccionado != null and p.id == pacienteSeleccionado.id}"
+                                                style="display: none;"></option>
+                                    </select>
+                                </div>
+                            </div>
                         </div>
     
                         <div class="mb-3">
@@ -111,6 +121,29 @@
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        function filtrarMascotasPorDueno() {
+            const duenoId = document.getElementById('selectDueno').value;
+            const selectMascota = document.getElementById('selectMascota');
+            selectMascota.value = ''; // Reset selection
+
+            for (const option of selectMascota.options) {
+                if (option.value === '') continue; // Skip placeholder
+                const mascotaDuenoId = option.getAttribute('data-dueno-id');
+                if (duenoId === '' || mascotaDuenoId === duenoId) {
+                    option.style.display = 'block';
+                } else {
+                    option.style.display = 'none';
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Si hay un dueño preseleccionado al cargar la página, filtra las mascotas inmediatamente.
+            if (document.getElementById('selectDueno').value) {
+                filtrarMascotasPorDueno();
+            }
+        });
+
         let medIndex = 0;
         function agregarMedicamento() {
             const select = document.getElementById('select-producto');

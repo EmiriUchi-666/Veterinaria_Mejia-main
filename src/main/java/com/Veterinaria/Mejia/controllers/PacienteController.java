@@ -95,7 +95,7 @@ public class PacienteController {
     public String guardar(
             @RequestParam(required = false) Integer id,
             @RequestParam String nombre,
-            @RequestParam(required = false) Integer duenoId, // El clienteId ya no se recibe del form
+            @RequestParam(required = false) Integer duenoId,
             @RequestParam(required = false) Integer especieId,
             @RequestParam(required = false) String raza,
             @RequestParam(required = false) String colorPelaje,

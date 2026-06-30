@@ -72,6 +72,8 @@ public class VentaController {
             @ModelAttribute("venta") Venta venta,
             @RequestParam(value = "dniIngresado", required = false) String dniIngresado,
             @RequestParam(value = "nombreIngresado", required = false) String nombreIngresado,
+            @RequestParam(value = "telefonoIngresado", required = false) String telefonoIngresado,
+            @RequestParam(value = "direccionIngresado", required = false) String direccionIngresado,
             @RequestParam(value = "itemTipo", required = false) List<String> itemTipos,
             @RequestParam(value = "itemId", required = false) List<Integer> itemIds,
             @RequestParam(value = "itemCantidad", required = false) List<String> itemCantidades,
@@ -89,8 +91,8 @@ public class VentaController {
 
             // El Facade ahora se encarga de construir el DTO y procesar la venta.
             Venta ventaProcesada = ventaFacade.procesarVentaDesdeFormulario(
-                venta, dniIngresado, nombreIngresado, 
-                itemTipos, itemIds, itemCantidades, itemPrecios, itemSubtotales, 
+                venta, dniIngresado, nombreIngresado, telefonoIngresado, direccionIngresado,
+                itemTipos, itemIds, itemCantidades, itemPrecios,
                 authentication
             );
             
@@ -146,7 +148,7 @@ public class VentaController {
      */
     private void cargarElementosInterfaz(Model model) {
         // FASE 11: Cargar solo productos de venta al público, no de uso clínico.
-        model.addAttribute("productos", productoService.findByEstadoTrueAndUsoClinicoFalse());
+        model.addAttribute("productos", productoService.findByEstadoTrue());
         model.addAttribute("servicios", servicioService.listarActivosPOS());
         model.addAttribute("categorias", categoriaService.listarTodas());
         model.addAttribute("especies", especieService.listarTodas());

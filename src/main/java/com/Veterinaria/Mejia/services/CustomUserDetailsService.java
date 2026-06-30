@@ -40,7 +40,7 @@ public class CustomUserDetailsService implements UserDetailsService {
         return new User(
                 usuario.getNombreUsuario(),
                 usuario.getContrasena(),
-                usuario.getEstado() != null && usuario.getEstado(), // isEnabled
+                usuario.isEstado(), // isEnabled
                 true, // accountNonExpired
                 true, // credentialsNonExpired
                 true, // accountNonLocked

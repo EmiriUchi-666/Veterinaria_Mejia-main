@@ -13,6 +13,11 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotBlank;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * Dueño/Tutor de la mascota. Entidad independiente de Cliente (facturación).
@@ -20,12 +25,17 @@ import jakarta.persistence.Table;
  */
 @Entity
 @Table(name = "duenos")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Dueno {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
+    @NotBlank(message = "El nombre del dueño es obligatorio.")
     @Column(nullable = false, length = 100)
     private String nombre;
 
@@ -48,7 +58,8 @@ public class Dueno {
     private String observaciones;
 
     @Column(nullable = false)
-    private Boolean estado = true;
+    @Builder.Default
+    private boolean estado = true;
 
     @OneToMany(mappedBy = "dueno", fetch = FetchType.LAZY)
     private List<Paciente> mascotas;
@@ -57,28 +68,4 @@ public class Dueno {
     @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JoinColumn(name = "cliente_id", referencedColumnName = "id")
     private Cliente cliente;
-
-    // Getters y Setters
-    public Integer getId() { return id; }
-    public void setId(Integer id) { this.id = id; }
-    public String getNombre() { return nombre; }
-    public void setNombre(String nombre) { this.nombre = nombre; }
-    public String getDni() { return dni; }
-    public void setDni(String dni) { this.dni = dni; }
-    public String getTelefono() { return telefono; }
-    public void setTelefono(String telefono) { this.telefono = telefono; }
-    public String getEmail() { return email; }
-    public void setEmail(String email) { this.email = email; }
-    public String getDireccion() { return direccion; }
-    public void setDireccion(String direccion) { this.direccion = direccion; }
-    public String getTipoDocumento() { return tipoDocumento; }
-    public void setTipoDocumento(String tipoDocumento) { this.tipoDocumento = tipoDocumento; }
-    public String getObservaciones() { return observaciones; }
-    public void setObservaciones(String observaciones) { this.observaciones = observaciones; }
-    public Boolean getEstado() { return estado; }
-    public void setEstado(Boolean estado) { this.estado = estado; }
-    public List<Paciente> getMascotas() { return mascotas; }
-    public void setMascotas(List<Paciente> mascotas) { this.mascotas = mascotas; }
-    public Cliente getCliente() { return cliente; }
-    public void setCliente(Cliente cliente) { this.cliente = cliente; }
 }

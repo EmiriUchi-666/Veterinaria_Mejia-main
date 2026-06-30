@@ -56,6 +56,21 @@
         </div>
       </div>
 
+      <!-- FASE 7: hora de cierre automático -->
+      <div class="mb-4">
+        <label class="form-label fw-semibold">
+          <i class="bi bi-alarm me-1 text-primary"></i>Hora de cierre automático
+          <span class="text-muted fw-normal">(opcional)</span>
+        </label>
+        <input type="time" name="horaCierre" class="form-control form-control-lg">
+        <div class="form-text">
+          Si la dejas en blanco, la caja solo se cerrará cuando tú lo hagas
+          manualmente. Si elige una hora, el sistema cerrará la caja
+          automáticamente al llegar esa hora, calculando el saldo a partir de
+          las ventas en efectivo y compras al contado del día.
+        </div>
+      </div>
+
       <div class="alert alert-info rounded-3 small mb-4">
         <i class="bi bi-info-circle me-2"></i>
         Esta apertura quedará registrada con tu usuario. Solo puede haber <strong>una caja abierta</strong> a la vez.

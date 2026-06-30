@@ -76,12 +76,12 @@
                                     </td>
                                     
                                     <td class="fw-500 text-dark">
-                                        <span th:if="${v.cliente != null && v.cliente.nombre != null}">
+                                        <span th:if="${v.cliente != null and v.cliente.nombre != null and v.cliente.numeroDocumento != '00000000'}">
                                             <i class="bi bi-person-fill text-primary me-1"></i> 
                                             <span th:text="${v.cliente.nombre}"></span>
                                             <br><small class="text-muted" th:text="'DNI/RUC: ' + ${v.cliente.numeroDocumento}"></small>
                                         </span>
-                                        <span th:unless="${v.cliente != null}" class="text-muted">
+                                        <span th:unless="${v.cliente != null and v.cliente.nombre != null and v.cliente.numeroDocumento != '00000000'}" class="text-muted">
                                             <i class="bi bi-people text-secondary me-1"></i> Público General
                                         </span>
                                     </td>

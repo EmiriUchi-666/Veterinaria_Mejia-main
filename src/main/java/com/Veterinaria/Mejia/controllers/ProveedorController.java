@@ -65,7 +65,7 @@ public class ProveedorController {
         }
 
         // Si el estado es nulo (porque el checkbox no se envió), lo ponemos en true por defecto
-        if (proveedor.getEstado() == null) {
+        if (proveedor.getId() != null && proveedor.getEstado() == null) {
             proveedor.setEstado(true);
         }
 

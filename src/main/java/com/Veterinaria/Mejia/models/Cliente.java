@@ -24,8 +24,15 @@ public class Cliente {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @NotBlank(message = "La Razón Social o Nombre Completo es obligatorio")
-    @Column(name = "razon_social", nullable = false, length = 200)
+    // FIX: el campo se mapeaba a la columna "razon_social", pero la tabla
+    // real "clientes" tiene la restricción NOT NULL sobre la columna
+    // "nombre" (no sobre "razon_social"). Por eso cada venta fallaba con
+    // "Field 'nombre' doesn't have a default value": Hibernate escribía en
+    // razon_social y dejaba la columna nombre completamente sin tocar.
+    // Revertido para que el campo apunte a la columna que de verdad existe
+    // y tiene la restricción.
+    @NotBlank(message = "El nombre o razón social es obligatorio")
+    @Column(name = "nombre", nullable = false, length = 200)
     private String nombre;
 
     @Pattern(regexp = "^(DNI|RUC)$", message = "El tipo de documento debe ser DNI o RUC")

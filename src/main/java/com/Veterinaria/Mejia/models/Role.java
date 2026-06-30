@@ -2,6 +2,8 @@ package com.Veterinaria.Mejia.models;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -31,5 +33,6 @@ public class Role {
     private String nombreRol;
     
     @OneToMany(mappedBy = "role", fetch = FetchType.LAZY)
+    @JsonIgnore
     private List<Usuario> usuarios;
 }

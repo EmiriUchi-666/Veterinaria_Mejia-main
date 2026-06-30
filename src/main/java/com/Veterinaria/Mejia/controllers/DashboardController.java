@@ -37,6 +37,21 @@ public class DashboardController {
 
     @GetMapping("/")
     public String mostrarInicio(Model model) {
+        return construirPaginaPrincipal(model);
+    }
+
+    /**
+     * FASE 1: el sidebar (y el resto del sistema, incluido SecurityConfig)
+     * siempre apuntó a "/dashboard", pero esa ruta nunca existió — solo
+     * existía "/". Por eso el click en "Página Principal" daba
+     * Whitelabel Error Page (404). Ahora ambas rutas muestran lo mismo.
+     */
+    @GetMapping("/dashboard")
+    public String mostrarInicioAlias(Model model) {
+        return construirPaginaPrincipal(model);
+    }
+
+    private String construirPaginaPrincipal(Model model) {
         // ── Métricas del día ───────────────────────────────────────────────
         LocalDateTime inicioHoy = LocalDate.now().atStartOfDay();
         Map<String, Object> metricas = reporteService.generarReporteDashboard("hoy", inicioHoy, LocalDateTime.now());

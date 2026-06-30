@@ -116,16 +116,14 @@
                                     
                                     <td>
                                         <!-- Si permite fraccionamiento (Doble Stock) -->
-                                        <span th:if="${p.permiteFraccionamiento}">
-                                            <span th:text="${p.stockCerrado}"></span> env.
-                                            + <span th:text="${p.stockAbierto}"></span>
-                                            <span th:text="${p.tipoUnidad}"></span>
-                                            <!-- Total en unidades base -->
-                                            <small class="text-muted d-block">
-                                                Total: <span th:text="${p.stockCerrado != null and p.contenidoPorEnvase != null ?
-                                                    #numbers.formatDecimal(p.stockCerrado * p.contenidoPorEnvase.doubleValue() + p.stockAbierto.doubleValue(), 1, 'COMMA', 2, 'POINT') : '0'}">
-                                                </span> <span th:text="${p.tipoUnidad}"></span>
-                                            </small>
+                                        <span th:if="${p.permiteFraccionamiento != null and p.permiteFraccionamiento}">
+                                            <span th:text="${p.stockCerrado}"></span> envases
+                                            <th:block th:if="${p.contenidoPorEnvase != null and p.contenidoPorEnvase.doubleValue() > 0}">
+                                                (<span th:text="${#numbers.formatDecimal(p.stockCerrado * p.contenidoPorEnvase.doubleValue(), 1, 0)}"></span>
+                                                <span th:text="${p.tipoUnidad}"></span> en total)
+                                            </th:block>
+                                            <br>
+                                            + <span class="text-primary fw-bold" th:text="${p.stockAbierto} + ' ' + ${p.tipoUnidad} + ' sueltas'"></span>
                                         </span>
                                         <!-- Si NO permite fraccionamiento (Stock Normal) -->
                                         <span th:unless="${p.permiteFraccionamiento}" th:text="${p.stockCerrado} + ' ' + ${p.tipoUnidad}"></span>
@@ -144,7 +142,7 @@
                                             <i class="bi bi-eye-slash-fill me-1"></i>Bloqueado
                                         </span>
 
-                                        <button type="button" class="btn btn-sm btn-warning"
+                                        <button type="button" class="btn btn-sm btn-outline-warning"
                                                 data-bs-toggle="modal"
                                                 th:data-bs-target="'#modalPrecio' + ${p.id}">
                                             <i class="bi bi-tag"></i>
@@ -170,15 +168,18 @@
                         <!-- Modales de precio -->
                         <div th:each="p : ${productos}">
                             <div th:id="'modalPrecio' + ${p.id}" class="modal fade">
-                                <div class="modal-dialog modal-sm">
-                                    <div class="modal-content">
-                                        <div class="modal-header"><h6 class="modal-title">Cambiar Precio — <span th:text="${p.nombre}"></span></h6></div>
-                                        <div class="modal-body">
+                                <div class="modal-dialog modal-dialog-centered modal-sm">
+                                    <div class="modal-content border-0 shadow">
+                                        <div class="modal-header bg-light border-0">
+                                            <h6 class="modal-title fw-bold text-dark">Cambiar Precio</h6>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body p-4">
+                                            <p class="small text-muted">Producto: <strong class="text-dark" th:text="${p.nombre}"></strong></p>
                                             <form th:action="@{/almacen/productos/precio/{id}(id=${p.id})}" method="POST">
-                                                <label class="form-label small">Nuevo precio público (S/.)</label>
-                                                <input type="number" name="nuevoPrecio" step="0.01" min="0.01"
-                                                       class="form-control" th:value="${p.precioVentaActual}" required>
-                                                <button type="submit" class="btn btn-warning w-100 mt-2">Actualizar</button>
+                                                <label class="form-label small fw-bold">Nuevo precio público (S/.)</label>
+                                                <input type="number" name="nuevoPrecio" step="0.01" min="0.01" class="form-control form-control-lg" th:value="${p.precioVentaActual}" required>
+                                                <button type="submit" class="btn btn-warning w-100 mt-3 fw-bold">Actualizar Precio</button>
                                             </form>
                                         </div>
                                     </div>

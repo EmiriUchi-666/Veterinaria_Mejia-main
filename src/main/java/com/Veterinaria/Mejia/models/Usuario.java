@@ -7,6 +7,8 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -49,12 +51,13 @@ public class Usuario implements UserDetails {
 
     @NotNull(message = "El rol es obligatorio")
     @ManyToOne(fetch = FetchType.LAZY)
+    @JsonIgnore
     @JoinColumn(name = "role_id", nullable = false)
     private Role role;
 
     @Column(nullable = false, columnDefinition = "TINYINT(1)")
     @Builder.Default
-    private Boolean estado = true; // Siempre activo al nacer
+    private boolean estado = true; // Siempre activo al nacer
 
     @NotBlank(message = "Debes elegir una pregunta de seguridad")
     @Size(max = 150)

@@ -46,7 +46,12 @@
                     <h5 class="card-title text-secondary mb-4 border-bottom pb-2">Detalles de la Prestación</h5>
                     
                     <form th:action="@{/mantenimiento/servicios/guardar}" th:object="${servicio}" method="POST" class="needs-validation" novalidate>
-                        
+
+                        <!-- FIX: sin este campo, el id siempre llega null al hacer POST,
+                             así que servicioService.guardarServicio() ejecuta un INSERT
+                             nuevo en lugar de un UPDATE cada vez que editas. -->
+                        <input type="hidden" th:field="*{id}" />
+
                         <div class="row g-4">
                             
                             <!-- Nombre del Servicio -->

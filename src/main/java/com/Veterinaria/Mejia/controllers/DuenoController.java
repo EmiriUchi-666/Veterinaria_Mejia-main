@@ -2,6 +2,7 @@ package com.Veterinaria.Mejia.controllers;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -14,6 +15,7 @@ import com.Veterinaria.Mejia.models.Cliente;
 import com.Veterinaria.Mejia.models.Dueno;
 import com.Veterinaria.Mejia.repository.DuenoRepository;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @Controller
@@ -36,12 +38,17 @@ public class DuenoController {
 
     @GetMapping("/nuevo")
     public String formNuevo(Model model) {
-        model.addAttribute("dueno", new Dueno());
+        model.addAttribute("dueno", new Dueno()); // This will now work with @NoArgsConstructor
         return "duenos/form-dueno";
     }
 
     @PostMapping("/guardar")
-    public String guardar(@ModelAttribute Dueno dueno, RedirectAttributes ra) {
+    public String guardar(@Valid @ModelAttribute Dueno dueno, BindingResult result, RedirectAttributes ra) {
+        if (result.hasErrors()) {
+            // Si hay errores de validación de la entidad, volvemos al formulario
+            return "duenos/form-dueno";
+        }
+
         try {
             // DNI único (si se ingresó)
             if (dueno.getDni() != null && !dueno.getDni().isBlank()) {
@@ -65,7 +72,7 @@ public class DuenoController {
             clienteAsociado.setDireccion(dueno.getDireccion());
             dueno.setCliente(clienteAsociado);
 
-            dueno.setEstado(true);
+            dueno.setEstado(dueno.isEstado()); // Mantiene el estado si se está editando
             duenoRepo.save(dueno);
             ra.addFlashAttribute("successMsg", "Dueño '" + dueno.getNombre() + "' registrado correctamente.");
         } catch (IllegalArgumentException e) {

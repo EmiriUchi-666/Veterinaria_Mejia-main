@@ -49,6 +49,16 @@ public class MovimientoCaja {
     @JoinColumn(name = "usuario_id")
     private Usuario usuario;
 
+    /** FASE 7: si este movimiento vino de una venta en efectivo del POS. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "venta_id")
+    private Venta venta;
+
+    /** FASE 7: si este movimiento vino de una compra a proveedor pagada al contado. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ingreso_stock_id")
+    private IngresoStock ingresoStock;
+
     @Column(name = "fecha_hora", nullable = false)
     @Builder.Default
     private LocalDateTime fechaHora = LocalDateTime.now();

@@ -34,9 +34,8 @@ public class SecurityConfig {
                 // Solo Administrador
                 .requestMatchers(
                     "/usuarios/**", "/almacen/proveedores/**", "/almacen/ingresos/**",
-                    "/reportes/**", "/crm/**", "/contingencia/**",
-                    "/medicamentos-controlados/**", "/recetas/**", "/tratamientos/**",
-                    "/mantenimiento/**", "/facturacion/**", "/caja/**", "/ia/**"
+                    "/reportes/**", "/contingencia/**", "/medicamentos-controlados/**", "/mantenimiento/**",
+                    "/facturacion/**", "/caja/**", "/almacen/productos/nuevo", "/almacen/productos/guardar", "/almacen/productos/desechar", "/almacen/productos/precio/**"
                 ).hasAuthority("ROLE_Administrador")
 
                 // Empleado: Acceso de solo lectura a ciertas áreas
@@ -46,7 +45,7 @@ public class SecurityConfig {
 
                 // Empleado: Acceso completo a módulos operativos
                 .requestMatchers(
-                    "/ventas/**", "/citas/**", "/dashboard"
+                    "/ventas/**", "/citas/**", "/", "/recetas/**", "/tratamientos/**"
                 ).hasAnyAuthority("ROLE_Administrador", "ROLE_Empleado")
 
                 // Administrador: Acceso completo a lo que el empleado tiene en solo lectura
@@ -55,7 +54,7 @@ public class SecurityConfig {
                 ).hasAuthority("ROLE_Administrador")
 
                 // API públicas para AJAX
-                .requestMatchers("/api/utilidades/**", "/api/validacion/**").permitAll()
+                .requestMatchers("/api/utilidades/**", "/api/validacion/**", "/api/clientes/**").permitAll()
 
                 .anyRequest().authenticated()
             )

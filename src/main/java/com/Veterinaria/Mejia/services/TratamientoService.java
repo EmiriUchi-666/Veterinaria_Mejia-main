@@ -1,6 +1,5 @@
 package com.Veterinaria.Mejia.services;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -79,31 +78,9 @@ public class TratamientoService {
 
         // 4. Procesar cada detalle: guardar + descontar stock
         for (DetalleTratamiento detalle : detalles) {
-            Producto producto = productoRepo.findById(detalle.getProducto().getId()).get();
-
-            // --- LÓGICA DE DESCUENTO DE STOCK CORREGIDA ---
-            if (Boolean.TRUE.equals(producto.getPermiteFraccionamiento())) {
-                BigDecimal cantidadRequerida = detalle.getCantidadUsada();
-                // Si no hay suficiente en el stock abierto, se abre un envase cerrado.
-                while (producto.getStockAbierto().compareTo(cantidadRequerida) < 0) {
-                    if (producto.getContenidoPorEnvase() == null || producto.getContenidoPorEnvase().compareTo(BigDecimal.ZERO) <= 0) {
-                        throw new IllegalStateException("Configuración de envase inválida para '" + producto.getNombre() + "'.");
-                    }
-                    if (producto.getStockCerrado() == null || producto.getStockCerrado() <= 0) {
-                        throw new RuntimeException("Stock insuficiente para fraccionar: " + producto.getNombre());
-                    }
-                    producto.setStockCerrado(producto.getStockCerrado() - 1);
-                    producto.setStockAbierto(producto.getStockAbierto().add(producto.getContenidoPorEnvase()));
-                }
-                producto.setStockAbierto(producto.getStockAbierto().subtract(cantidadRequerida));
-            } else {
-                // Para productos no fraccionables, se descuenta de las unidades enteras.
-                int cantidadEntera = detalle.getCantidadUsada().intValue();
-                if (producto.getStockCerrado() < cantidadEntera) {
-                    throw new RuntimeException("Stock insuficiente de unidades cerradas para: " + producto.getNombre());
-                }
-                producto.setStockCerrado(producto.getStockCerrado() - cantidadEntera);
-            }
+            Producto producto = productoRepo.findById(detalle.getProducto().getId())
+                    .orElseThrow(() -> new RuntimeException("Producto no encontrado: " + detalle.getProducto().getId()));
+            producto.descontarStock(detalle.getCantidadUsada()); // Delegar la lógica de descuento al producto
             productoRepo.save(producto);
 
             // Guardar detalle vinculado al tratamiento
@@ -132,27 +109,21 @@ public class TratamientoService {
                                                    String observaciones,
                                                    List<DetalleTratamiento> detalles) {
 
-        // 1. Validar stock de todos los productos ANTES de guardar nada
-        for (DetalleTratamiento detalle : detalles) {
-            Producto producto = productoRepo.findById(detalle.getProducto().getId())
-                    .orElseThrow(() -> new RuntimeException("Producto no encontrado: " + detalle.getProducto().getId()));
-
-            if (producto.getStockTotal() == null || producto.getStockTotal().compareTo(detalle.getCantidadUsada()) < 0) {
-                throw new IllegalArgumentException(
-                        "Stock insuficiente para '" + producto.getNombre() + "'. " +
-                        "Stock disponible: " + producto.getStockTotal() + " | Requerido: " + detalle.getCantidadUsada()
-                );
-            }
+        // 1. Validar y obtener el paciente.
+        if (pacienteId == null) {
+            throw new IllegalArgumentException("Se debe seleccionar un paciente para registrar un tratamiento.");
         }
+        Paciente paciente = pacienteRepo.findById(pacienteId)
+                .orElseThrow(() -> new RuntimeException("Paciente no encontrado con ID: " + pacienteId));
+        // A patient can have multiple histories. We get the list and pick the most recent one if it exists.
+        List<HistoriaClinica> historias = historiaClinicaRepo.findByPacienteIdOrderByFechaAtencionDesc(pacienteId);
+        HistoriaClinica historiaReciente = historias.isEmpty() ? null : historias.get(0);
 
-        // 2. Crear el tratamiento
+        // 2. Crear el tratamiento y asociarlo a la historia clínica si existe.
         Tratamiento tratamiento = new Tratamiento();
-        if (pacienteId != null) {
-            Paciente paciente = pacienteRepo.findById(pacienteId)
-                    .orElseThrow(() -> new RuntimeException("Paciente no encontrado con ID: " + pacienteId));
-            tratamiento.setPacienteTratado(paciente);
-        }
+        tratamiento.setHistoriaClinica(historiaReciente);
         tratamiento.setFechaInicio(LocalDate.now());
+        tratamiento.setPacienteTratado(paciente); // Associate treatment directly with the patient
         tratamiento.setDiagnostico(diagnostico);
         tratamiento.setObservaciones(observaciones);
         tratamiento.setEstado(Tratamiento.EstadoTratamiento.Activo);
@@ -160,22 +131,9 @@ public class TratamientoService {
 
         // 3. Procesar cada detalle: guardar + descontar stock
         for (DetalleTratamiento detalle : detalles) {
-            Producto producto = productoRepo.findById(detalle.getProducto().getId()).get();
-
-            if (Boolean.TRUE.equals(producto.getPermiteFraccionamiento())) {
-                BigDecimal cantidadRequerida = detalle.getCantidadUsada();
-                while (producto.getStockAbierto().compareTo(cantidadRequerida) < 0) {
-                    if (producto.getStockCerrado() == null || producto.getStockCerrado() <= 0) {
-                        throw new RuntimeException("Stock insuficiente para fraccionar: " + producto.getNombre());
-                    }
-                    producto.setStockCerrado(producto.getStockCerrado() - 1);
-                    producto.setStockAbierto(producto.getStockAbierto().add(producto.getContenidoPorEnvase()));
-                }
-                producto.setStockAbierto(producto.getStockAbierto().subtract(cantidadRequerida));
-            } else {
-                int cantidadEntera = detalle.getCantidadUsada().intValue();
-                producto.setStockCerrado(producto.getStockCerrado() - cantidadEntera);
-            }
+            Producto producto = productoRepo.findById(detalle.getProducto().getId())
+                    .orElseThrow(() -> new RuntimeException("Producto no encontrado: " + detalle.getProducto().getId()));
+            producto.descontarStock(detalle.getCantidadUsada()); // Delegar la lógica de descuento al producto
             productoRepo.save(producto);
 
             detalle.setTratamiento(tratamientoGuardado);
@@ -207,11 +165,6 @@ public class TratamientoService {
     /** Obtiene los detalles de un tratamiento. */
     public List<DetalleTratamiento> obtenerDetalles(Integer tratamientoId) {
         return detalleTratamientoRepo.findByTratamientoId(tratamientoId);
-    }
-
-    /** Cuenta los tratamientos activos para el dashboard IA. */
-    public long contarTratamientosActivos() {
-        return tratamientoRepo.contarTratamientosActivos();
     }
 
     public Tratamiento obtenerPorId(Integer id) {

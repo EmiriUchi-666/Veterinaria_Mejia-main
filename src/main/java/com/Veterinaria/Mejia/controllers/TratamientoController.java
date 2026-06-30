@@ -24,6 +24,7 @@ import com.Veterinaria.Mejia.models.HistoriaClinica;
 import com.Veterinaria.Mejia.models.Paciente;
 import com.Veterinaria.Mejia.models.Producto;
 import com.Veterinaria.Mejia.models.Tratamiento;
+import com.Veterinaria.Mejia.repository.DuenoRepository;
 import com.Veterinaria.Mejia.repository.HistoriaClinicaRepository;
 import com.Veterinaria.Mejia.repository.PacienteRepository;
 import com.Veterinaria.Mejia.repository.ProductoRepository;
@@ -46,15 +47,19 @@ public class TratamientoController {
     private final HistoriaClinicaRepository historiaClinicaRepo;
     private final PacienteRepository pacienteRepo;
     private final ProductoRepository productoRepo;
+    private final DuenoRepository duenoRepo;
     private final PdfService pdfService;
 
-    @GetMapping({"", "/"})
+    @GetMapping({"", "/"}) // This will now list ALL treatments
     public String listarTodosTratamientos(Model model) {
         // Listar todos los tratamientos ordenados por fecha descendente
-        List<Tratamiento> todos = tratamientoService.listarTodos(); // crear este método en el service si no existe
+        List<Tratamiento> todos = tratamientoService.listarTodos();
         model.addAttribute("tratamientos", todos);
+        // Add patients to the model for the filter dropdown
+        model.addAttribute("pacientes", pacienteRepo.findByEstadoTrue());
         return "tratamiento/lista-tratamientos";
     }
+
     /**
      * Lista los tratamientos de un paciente específico.
      */
@@ -74,7 +79,7 @@ public class TratamientoController {
      */
     @GetMapping("/nuevo")
     @PreAuthorize("hasAnyAuthority('ROLE_Veterinario', 'ROLE_Administrador')")
-    public String formNuevoTratamiento(@RequestParam(name = "historiaClinicaId", required = false) Integer historiaClinicaId, Model model) {
+    public String formNuevoTratamiento(@RequestParam(name = "historiaClinicaId", required = false) Integer historiaClinicaId, Model model, @RequestParam(name = "pacienteId", required = false) Integer pacienteId) {
         
         if (historiaClinicaId != null) {
             HistoriaClinica historia = historiaClinicaRepo.findById(historiaClinicaId)
@@ -82,11 +87,17 @@ public class TratamientoController {
             model.addAttribute("historia", historia);
         }
         
+        if (pacienteId != null) {
+            pacienteRepo.findById(pacienteId).ifPresent(p -> model.addAttribute("pacienteSeleccionado", p));
+        }
+
         model.addAttribute("pacientes", pacienteRepo.findByEstadoTrue());
+        model.addAttribute("duenos", duenoRepo.findByEstadoTrueOrderByNombreAsc());
 
         model.addAttribute("productos", productoRepo.findByEstadoTrueAndUsoClinicoTrue()
                 .stream()
                 .toList());
+
         return "tratamiento/form-tratamiento";
     }
 
@@ -134,15 +145,21 @@ public class TratamientoController {
                 tratamientoService.registrarTratamientoGeneral(pacienteId, diagnostico, observaciones, detalles);
                 redirectId = pacienteId;
             }
+            
             ra.addFlashAttribute("successMsg", "Tratamiento registrado con trazabilidad de medicamentos.");
-            return "redirect:/pacientes/" + redirectId + "/expediente";
+            if (redirectId != null) {
+                return "redirect:/pacientes/" + redirectId + "/expediente";
+            } else {
+                // Fallback if no patient ID is available (should ideally not happen with proper form validation)
+                return "redirect:/tratamientos";
+            }
 
         } catch (IllegalArgumentException e) {
             ra.addFlashAttribute("errorMsg", e.getMessage());
-            return "redirect:/tratamientos/nuevo" + (historiaClinicaId != null ? "?historiaClinicaId=" + historiaClinicaId : "");
+            return "redirect:/tratamientos/nuevo" + (historiaClinicaId != null ? "?historiaClinicaId=" + historiaClinicaId : (pacienteId != null ? "?pacienteId=" + pacienteId : ""));
         } catch (Exception e) {
             ra.addFlashAttribute("errorMsg", "Error al registrar: " + e.getMessage());
-            return "redirect:/tratamientos/nuevo" + (historiaClinicaId != null ? "?historiaClinicaId=" + historiaClinicaId : "");
+            return "redirect:/tratamientos/nuevo" + (historiaClinicaId != null ? "?historiaClinicaId=" + historiaClinicaId : (pacienteId != null ? "?pacienteId=" + pacienteId : ""));
         }
     }
 

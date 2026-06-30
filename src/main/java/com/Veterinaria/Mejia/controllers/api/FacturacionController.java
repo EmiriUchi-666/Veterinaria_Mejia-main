@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.Veterinaria.Mejia.dto.FacturacionEstadoDTO;
 import com.Veterinaria.Mejia.models.FacturacionEstado;
 import com.Veterinaria.Mejia.repository.FacturacionEstadoRepository;
 import com.Veterinaria.Mejia.services.FacturacionService;
@@ -43,7 +44,7 @@ public class FacturacionController {
     @PostMapping("/estados/{id}/reintentar")
     @Operation(summary = "Reintentar envío de un comprobante fallido",
                description = "Permite reenviar a Nubefact un comprobante que previamente resultó en ERROR o fue RECHAZADO.")
-    public ResponseEntity<FacturacionEstado> reintentarEnvio(@PathVariable Long id) {
+    public ResponseEntity<FacturacionEstadoDTO> reintentarEnvio(@PathVariable Long id) {
         FacturacionEstado estado = facturacionEstadoRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Estado de facturación no encontrado con ID: " + id));
 
@@ -52,7 +53,9 @@ public class FacturacionController {
             throw new IllegalArgumentException("Solo se pueden reintentar comprobantes con estado ERROR o RECHAZADO.");
         }
 
+        // 1. Reintentar el envío, lo que devuelve la entidad actualizada.
         FacturacionEstado estadoActualizado = facturacionService.reintentarEnvioNubefact(estado);
-        return ResponseEntity.ok(estadoActualizado);
+        // 2. Convertir la entidad a un DTO antes de devolverla en la respuesta.
+        return ResponseEntity.ok(FacturacionEstadoDTO.fromEntity(estadoActualizado));
     }
 }

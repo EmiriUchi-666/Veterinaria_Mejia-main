@@ -103,6 +103,13 @@ public class ProductoController {
                 producto.setStockFraccionado(BigDecimal.ZERO);
             }
 
+            // Forzar permiteFraccionamiento a false si la unidad es litros
+            if ("litros".equalsIgnoreCase(producto.getTipoUnidad())) {
+                producto.setPermiteFraccionamiento(false);
+            }
+
+            // Recalcular precio por fracción en el backend como fuente de verdad
+            productoService.recalcularPrecioFraccion(producto);
             productoService.guardarProductoNuevo(producto);
             redirectAttrs.addFlashAttribute("successMsg", "El producto se registró correctamente en el catálogo.");
             

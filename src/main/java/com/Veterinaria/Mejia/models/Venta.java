@@ -42,8 +42,7 @@ public class Venta {
     @JoinColumn(name = "usuario_id", nullable = false)
     private Usuario usuario;
 
-    // Se mantiene nullable para permitir las compras rápidas sin registrar cliente (Público General)
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinColumn(name = "cliente_id")
     private Cliente cliente;
 

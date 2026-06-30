@@ -95,9 +95,9 @@ public class UsuarioController {
             }
             
             // Invertimos el estado actual (Si era true, pasa a false)
-            usuarioService.modificarEstado(id, !usuario.getEstado());
+            usuarioService.modificarEstado(id, !usuario.isEstado());
             
-            String accion = usuario.getEstado() ? "desactivado" : "activado"; // Mensaje dinámico
+            String accion = !usuario.isEstado() ? "desactivado" : "activado"; // Mensaje dinámico
             redirectAttrs.addFlashAttribute("successMsg", "El usuario ha sido " + accion + " correctamente.");
             
         } catch (RuntimeException e) {

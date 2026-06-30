@@ -1,6 +1,7 @@
 package com.Veterinaria.Mejia.services;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -35,14 +36,11 @@ public class ProductoService {
     }
 
     /**
-     * Devuelve los productos habilitados para la venta en caja (que no son de uso clínico exclusivo).
+     * Devuelve todos los productos activos, sin distinción de uso clínico
+     * (ese concepto fue retirado del sistema).
      */
-    public List<Producto> findByEstadoTrueAndUsoClinicoFalse() {
-        return productoRepository.findByEstadoTrueAndUsoClinicoFalse();
-    }
-
-    public List<Producto> findByEstadoTrueAndUsoClinicoTrue() {
-        return productoRepository.findByEstadoTrueAndUsoClinicoTrue();
+    public List<Producto> findByEstadoTrue() {
+        return productoRepository.findByEstadoTrue();
     }
     @Transactional
     public Producto guardarProductoNuevo(Producto producto) {
@@ -50,6 +48,10 @@ public class ProductoService {
         if (producto.getStockTotal() != null && producto.getStockTotal().compareTo(new BigDecimal("99.00")) > 0) {
             throw new IllegalArgumentException("Regla de negocio: El stock inicial no puede exceder las 99 unidades/kg/litros.");
         }
+
+        // FASE 10: Recalcular el precio por fracción en el backend como fuente de verdad.
+        recalcularPrecioFraccion(producto);
+
         return productoRepository.save(producto);
     }
 
@@ -105,18 +107,15 @@ public class ProductoService {
         mermaRepository.save(nuevaMerma);
     }
 
-    // ==========================================
-    // MÉTODOS PARA EL DASHBOARD DE IA
-    // ==========================================
-
-    /** Cuenta los productos con stock por debajo del mínimo. */
-    public long contarStockBajo() {
-        return productoRepository.buscarProductosStockCriticoJPQL().size();
-    }
-
-    /** Retorna la lista de productos con stock por debajo del mínimo. */
-    public java.util.List<com.Veterinaria.Mejia.models.Producto> obtenerStockBajo() {
-        return productoRepository.buscarProductosStockCriticoJPQL();
+    public void recalcularPrecioFraccion(Producto producto) {
+        if (Boolean.TRUE.equals(producto.getPermiteFraccionamiento()) &&
+            producto.getPrecioVentaActual() != null &&
+            producto.getContenidoPorEnvase() != null &&
+            producto.getContenidoPorEnvase().compareTo(BigDecimal.ZERO) > 0) {
+            
+            BigDecimal precioFraccion = producto.getPrecioVentaActual().divide(producto.getContenidoPorEnvase(), 2, RoundingMode.HALF_UP);
+            producto.setPrecioPorFraccion(precioFraccion);
+        }
     }
 
     @Transactional

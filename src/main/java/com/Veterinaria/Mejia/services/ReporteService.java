@@ -2,7 +2,6 @@ package com.Veterinaria.Mejia.services;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -48,24 +47,22 @@ public class ReporteService {
         reporte.put("perdidas", perdidas);
         reporte.put("gananciaNeta", gananciaNeta);
 
-        // FASE 5: Usar query de agregación para el gráfico.
-        List<VentasDiaDTO> datosGrafico = ventaRepository.obtenerGraficoVentasPorFechaJPQL(fechaInicio, fechaFin);
+        // FASE 5 (corregido): la query JPQL "obtenerGraficoVentasPorFechaJPQL" siempre
+        // agrupa por DATE(), sin componente de hora. Cuando el rango es "hoy" se
+        // necesita agrupar por HORA, así que se usan las queries nativas específicas
+        // (que ya devuelven el label como String con el formato correcto), evitando
+        // intentar formatear un LocalDate con un patrón "HH:00" (lo que provocaba
+        // "Unsupported field: HourOfDay").
+        List<VentasDiaDTO> datosGrafico = rango.equals("hoy")
+                ? ventaRepository.obtenerVentasPorHora(fechaInicio)
+                : ventaRepository.obtenerVentasPorDia(fechaInicio);
+
         List<String> labels = new ArrayList<>();
         List<BigDecimal> data = new ArrayList<>();
-        DateTimeFormatter formatoEjeX = rango.equals("hoy") ?
-                DateTimeFormatter.ofPattern("HH:00") :
-                DateTimeFormatter.ofPattern("dd/MM");
 
         datosGrafico.forEach(dto -> {
-            // La query nativa devuelve un String, la JPQL un objeto Date/LocalDate
-            if (dto.getFecha() instanceof String) {
-                labels.add(dto.getFecha().toString());
-            } else if (dto.getFecha() instanceof java.sql.Date) {
-                labels.add(((java.sql.Date) dto.getFecha()).toLocalDate().format(formatoEjeX));
-            } else if (dto.getFecha() instanceof java.sql.Timestamp) {
-                labels.add(((java.sql.Timestamp) dto.getFecha()).toLocalDateTime().format(formatoEjeX));
-            }
-            data.add(dto.getTotalMonto());
+            labels.add(dto.getFecha() != null ? dto.getFecha().toString() : "");
+            data.add(dto.getTotalMonto() != null ? dto.getTotalMonto() : BigDecimal.ZERO);
         });
 
         reporte.put("graficoLabels", labels);

@@ -60,17 +60,29 @@ public class VentaFacade {
      * El controlador ahora solo pasa los parámetros del formulario.
      */
     public Venta procesarVentaDesdeFormulario(
-            Venta venta, String dni, String nombre,
+            Venta venta, String dni, String nombre, String telefono, String direccion,
             List<String> tipos, List<Integer> ids, List<String> cantidades,
-            List<String> precios, List<String> subtotales,
+            List<String> precios,
             Authentication authentication) {
+            
         if (tipos == null || tipos.isEmpty()) {
             throw new IllegalArgumentException("El carrito no puede estar vacío.");
         }
 
         VentaRequestDTO request = new VentaRequestDTO();
         request.setClienteNumDoc(dni);
+        
+        // --- DETECCIÓN AUTOMÁTICA DE DOCUMENTO ---
+        // Si tiene 11 dígitos exactos asumimos RUC, de lo contrario DNI.
+        if (dni != null && dni.trim().length() == 11) {
+            request.setClienteTipoDoc("RUC");
+        } else {
+            request.setClienteTipoDoc("DNI");
+        }
+        
         request.setClienteNombre(nombre);
+        request.setClienteTelefono(telefono);
+        request.setClienteDireccion(direccion);
         request.setTipoPago(venta.getTipoPago());
         request.setTotal(venta.getTotalVenta());
 
@@ -81,10 +93,12 @@ public class VentaFacade {
             item.setIdItem(ids.get(i));
             item.setCantidad(new BigDecimal(cantidades.get(i)));
             item.setPrecio(new BigDecimal(precios.get(i)));
-            item.setSubtotal(new BigDecimal(subtotales.get(i)));
+            // El subtotal se recalcula en el backend por seguridad
+            item.setSubtotal(item.getPrecio().multiply(item.getCantidad()));
             items.add(item);
         }
         request.setItems(items);
+        
         return this.procesarVentaTransaccional(request, authentication);
     }
 

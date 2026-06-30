@@ -111,11 +111,6 @@ public class Producto {
     @Builder.Default
     private boolean estado = true;
 
-    /** Si es true, solo se usa en tratamientos y no aparece en el punto de venta. */
-    @Column(name = "uso_clinico")
-    @Builder.Default
-    private boolean usoClinico = false;
-
     /** FASE 11: Indica si el producto es un alimento. */
     @Column(name = "es_alimento")
     private Boolean esAlimento = false;
@@ -147,8 +142,17 @@ public class Producto {
      */
     @Transient
     public BigDecimal getStockTotal() {
-        BigDecimal stockDeUnidadesCerradas = new BigDecimal(this.stockCerrado).multiply(new BigDecimal(this.unidadesPorCerrado));
-        return stockDeUnidadesCerradas.add(this.stockFraccionado);
+        // FIX: Add null checks to prevent NullPointerException on calculation
+        if (Boolean.TRUE.equals(this.permiteFraccionamiento)) {
+            // For fractionable products, total is stockCerrado * contenidoPorEnvase + stockAbierto
+            BigDecimal cerradas = (this.stockCerrado != null) ? new BigDecimal(this.stockCerrado) : BigDecimal.ZERO;
+            BigDecimal contenido = (this.contenidoPorEnvase != null) ? this.contenidoPorEnvase : BigDecimal.ZERO;
+            BigDecimal abierto = (this.stockAbierto != null) ? this.stockAbierto : BigDecimal.ZERO;
+            return cerradas.multiply(contenido).add(abierto);
+        } else {
+            // For non-fractionable, total is just stockCerrado (assuming 1 unit per cerrado)
+            return (this.stockCerrado != null) ? new BigDecimal(this.stockCerrado) : BigDecimal.ZERO;
+        }
     }
 
     /**
@@ -170,24 +174,47 @@ public class Producto {
             throw new IllegalStateException("Stock insuficiente para el producto: " + this.nombre);
         }
 
-        BigDecimal cantidadRestante = cantidad;
+        if (Boolean.TRUE.equals(this.permiteFraccionamiento)) {
+            BigDecimal cantidadRestante = cantidad;
+            // Descontar primero del stock abierto
+            if (this.stockAbierto.compareTo(cantidadRestante) >= 0) {
+                this.stockAbierto = this.stockAbierto.subtract(cantidadRestante);
+                return;
+            }
 
-        // Descontar primero del stock fraccionado
-        if (this.stockFraccionado.compareTo(cantidadRestante) >= 0) {
-            this.stockFraccionado = this.stockFraccionado.subtract(cantidadRestante);
-            return;
+            // Si el stock abierto no es suficiente, usarlo todo y abrir unidades cerradas
+            cantidadRestante = cantidadRestante.subtract(this.stockAbierto);
+            this.stockAbierto = BigDecimal.ZERO;
+
+            // Abrir paquetes cerrados hasta que la cantidad restante sea cubierta
+            while (cantidadRestante.compareTo(BigDecimal.ZERO) > 0) {
+                if (this.stockCerrado == null || this.stockCerrado <= 0) {
+                    throw new IllegalStateException("Stock insuficiente de unidades cerradas para fraccionar: " + this.nombre);
+                }
+                if (this.contenidoPorEnvase == null || this.contenidoPorEnvase.compareTo(BigDecimal.ZERO) <= 0) {
+                    throw new IllegalStateException("Configuración de contenido por envase inválida para '" + this.nombre + "'.");
+                }
+                this.stockCerrado -= 1;
+                this.stockAbierto = this.stockAbierto.add(this.contenidoPorEnvase);
+                
+                // Now try to deduct from the newly opened stock
+                if (this.stockAbierto.compareTo(cantidadRestante) >= 0) {
+                    this.stockAbierto = this.stockAbierto.subtract(cantidadRestante);
+                    cantidadRestante = BigDecimal.ZERO; // All deducted
+                } else {
+                    // Still not enough, deduct what's available and continue loop
+                    cantidadRestante = cantidadRestante.subtract(this.stockAbierto);
+                    this.stockAbierto = BigDecimal.ZERO;
+                }
+            }
+        } else {
+            // For non-fractionable products, deduct from stockCerrado
+            int cantidadEntera = cantidad.intValue(); // Assuming non-fractionable means integer quantities
+            if (this.stockCerrado == null || this.stockCerrado < cantidadEntera) {
+                throw new IllegalStateException("Stock insuficiente de unidades enteras para: " + this.nombre);
+            }
+            this.stockCerrado -= cantidadEntera;
         }
-
-        // Si el stock fraccionado no es suficiente, usarlo todo y abrir unidades cerradas
-        cantidadRestante = cantidadRestante.subtract(this.stockFraccionado);
-        this.stockFraccionado = BigDecimal.ZERO;
-
-        BigDecimal unidadesPorCerradoBD = new BigDecimal(this.unidadesPorCerrado);
-        int cajasAUsar = cantidadRestante.divide(unidadesPorCerradoBD, 0, BigDecimal.ROUND_UP).intValue();
-
-        this.stockCerrado -= cajasAUsar;
-        BigDecimal unidadesNuevas = new BigDecimal(cajasAUsar).multiply(unidadesPorCerradoBD);
-        this.stockFraccionado = unidadesNuevas.subtract(cantidadRestante);
     }
 
     /**

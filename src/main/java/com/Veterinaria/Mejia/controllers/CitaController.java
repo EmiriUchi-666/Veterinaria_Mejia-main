@@ -3,6 +3,7 @@ package com.Veterinaria.Mejia.controllers;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -46,8 +47,34 @@ public class CitaController {
 
     @GetMapping("/nuevo")
     public String formNuevaCita(Model model) {
-        model.addAttribute("cita", new Cita());
-        // Hacemos explícitos los tipos para usar los imports y mejorar la legibilidad
+        return prepararFormulario(new Cita(), model);
+    }
+
+    /**
+     * Abre el formulario de cita ya existente con todos sus datos precargados,
+     * para poder editarla (fecha, veterinario, servicio, tipo de visita, etc.).
+     */
+    @GetMapping("/editar/{id}")
+    public String editarCita(@PathVariable Integer id, Model model, RedirectAttributes ra) {
+        Optional<Cita> citaOpt = citaRepo.findByIdWithDetalles(id);
+        if (citaOpt.isEmpty()) {
+            ra.addFlashAttribute("errorMsg", "La cita que intentas editar no existe o ya fue eliminada.");
+            return "redirect:/citas";
+        }
+        Cita cita = citaOpt.get();
+        if (cita.getEstado() == Cita.EstadoCita.Cancelada) {
+            ra.addFlashAttribute("errorMsg", "No se puede editar una cita que ya fue cancelada.");
+            return "redirect:/citas";
+        }
+        if (cita.getEstado() == Cita.EstadoCita.Atendida) {
+            ra.addFlashAttribute("errorMsg", "No se puede editar una cita que ya fue atendida.");
+            return "redirect:/citas";
+        }
+        return prepararFormulario(cita, model);
+    }
+
+    private String prepararFormulario(Cita cita, Model model) {
+        model.addAttribute("cita", cita);
         List<Paciente> pacientes = pacienteRepo.findByEstadoTrue();
         List<Usuario> veterinarios = usuarioRepo.findAll();
         List<Servicio> servicios = servicioRepo.findAll();
@@ -60,8 +87,31 @@ public class CitaController {
 
     @PostMapping("/guardar")
     public String guardarCita(@ModelAttribute Cita cita, RedirectAttributes ra) {
+        boolean esEdicion = cita.getId() != null;
+
+        if (esEdicion) {
+            // Se verifica que la cita exista y no se intente editar una ya
+            // cancelada o atendida (por si se manipula el formulario a mano).
+            Cita citaExistente = citaRepo.findById(cita.getId()).orElse(null);
+            if (citaExistente == null) {
+                ra.addFlashAttribute("errorMsg", "La cita que intentas actualizar ya no existe.");
+                return "redirect:/citas";
+            }
+            if (citaExistente.getEstado() == Cita.EstadoCita.Cancelada
+                    || citaExistente.getEstado() == Cita.EstadoCita.Atendida) {
+                ra.addFlashAttribute("errorMsg", "No se puede editar una cita Cancelada o Atendida.");
+                return "redirect:/citas";
+            }
+            // Conserva el estado actual de la cita (no se toca desde este
+            // formulario; el estado se cambia con los botones dedicados).
+            cita.setEstado(citaExistente.getEstado());
+        }
+
         if (cita.getFechaHora() == null) {
             cita.setFechaHora(LocalDateTime.now());
+        } else if (!esEdicion && cita.getFechaHora().isBefore(LocalDateTime.now())) {
+            ra.addFlashAttribute("errorMsg", "No se puede programar una cita en una fecha/hora pasada.");
+            return "redirect:/citas/nuevo";
         }
         if (cita.getEstado() == null) {
             cita.setEstado(Cita.EstadoCita.Pendiente);
@@ -70,8 +120,18 @@ public class CitaController {
             cita.setEsVisitaExterna(false);
         }
 
+        // FIX: si la cita es atención en el local (no domicilio), la
+        // dirección se rellena automáticamente con "Local de la
+        // Veterinaria" en vez de quedar vacía o con basura de un toggle
+        // anterior. Esto se hace en el backend (no solo en JS) para que
+        // quede consistente sin importar cómo llegue el formulario.
+        if (!Boolean.TRUE.equals(cita.getEsVisitaExterna())) {
+            cita.setDireccionVisita("Local de la Veterinaria");
+            cita.setReferenciaUbicacion(null);
+        }
+
         citaRepo.save(cita);
-        ra.addFlashAttribute("successMsg", "Cita registrada correctamente.");
+        ra.addFlashAttribute("successMsg", esEdicion ? "Cita actualizada correctamente." : "Cita registrada correctamente.");
         return "redirect:/citas";
     }
 

@@ -189,14 +189,28 @@ public class FacturacionService {
                 estadoFacturacion.setRespuestaApi(response.getErrors());
                 log.warn("[NUBEFACT] Venta #{} RECHAZADA por SUNAT: {}", venta.getId(), response.getErrors());
             }
-
-        } catch (Exception e) {
-            estadoFacturacion.setEstado(FacturacionEstado.EstadoFacturacion.ERROR);
-            estadoFacturacion.setRespuestaApi("Error de conexión o procesamiento: " + e.getMessage());
-            log.error("[NUBEFACT] Error al generar o enviar el comprobante para la venta #{}: {}", venta.getId(), e.getMessage());
-        }
-
-        facturacionEstadoRepository.save(estadoFacturacion);
+            } catch (Exception e) {
+                estadoFacturacion.setEstado(FacturacionEstado.EstadoFacturacion.ERROR);
+                // Cambia esto:
+                estadoFacturacion.setRespuestaApi("Error técnico: " + e.getMessage()); 
+                // Por esto (si usas un cliente que lanza HttpClientErrorException):
+                if (e instanceof org.springframework.web.client.HttpStatusCodeException) {
+                    String responseBody = ((org.springframework.web.client.HttpStatusCodeException) e).getResponseBodyAsString();
+                    String mensaje = "Nubefact dice: " + responseBody;
+                    // FIX: error de configuración de cuenta, no de código. La serie
+                    // (B001/F001 o BBB1/FFF1) tiene que estar habilitada en el panel
+                    // de Nubefact para este RUC/entorno (sandbox vs producción).
+                    if (responseBody != null && responseBody.toLowerCase().contains("serie")) {
+                        mensaje += " — Verifica en tu panel de Nubefact que la serie "
+                                + "configurada en application.properties (nubefact.serie.boleta / "
+                                + "nubefact.serie.factura) esté habilitada para este RUC. En modo "
+                                + "sandbox (nubefact.modo.prueba=true) normalmente debes usar las "
+                                + "series de demostración que Nubefact te asignó, no series reales.";
+                    }
+                    estadoFacturacion.setRespuestaApi(mensaje);
+                }
+                log.error("[NUBEFACT] Error: ", e);
+            }
     }
 
     /**

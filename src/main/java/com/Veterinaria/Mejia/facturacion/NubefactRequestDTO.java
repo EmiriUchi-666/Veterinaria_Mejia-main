@@ -1,8 +1,10 @@
 package com.Veterinaria.Mejia.facturacion;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class NubefactRequestDTO {
     @JsonProperty("operacion")                       public String operacion = "generar_comprobante";
@@ -34,4 +36,8 @@ public class NubefactRequestDTO {
     @JsonProperty("enviar_automaticamente_al_cliente") public boolean enviarCliente = false;
     @JsonProperty("formato_de_pdf")                  public String formatoDePdf = "";
     @JsonProperty("items")                           public List<NubefactItemDTO> items;
+    public Map<String, Object>[] getItems() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getItems'");
+    }
 }

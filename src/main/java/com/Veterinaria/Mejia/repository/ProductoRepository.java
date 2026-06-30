@@ -19,7 +19,7 @@ public interface ProductoRepository extends JpaRepository<Producto, Integer> {
     List<Producto> findByCategoriaAndEspecieOptional(@Param("categoriaId") Integer categoriaId, @Param("especieId") Integer especieId);
 
     @Query("SELECT p FROM Producto p WHERE " +
-           "(:nombre IS NULL OR p.nombre LIKE %:nombre%) AND " +
+           "(:nombre IS NULL OR LOWER(p.nombre) LIKE LOWER(CONCAT('%', :nombre, '%'))) AND " +
            "(:categoriaId IS NULL OR p.categoria.id = :categoriaId) AND " +
            "(:especieId IS NULL OR p.especie.id = :especieId)")
     List<Producto> buscarYFiltrarInventarioJPQL(@Param("nombre") String nombre, @Param("categoriaId") Integer categoriaId, @Param("especieId") Integer especieId);
@@ -35,14 +35,16 @@ public interface ProductoRepository extends JpaRepository<Producto, Integer> {
     List<Producto> buscarProductosStockCriticoJPQL();
 
     /**
-     * Devuelve los productos habilitados para la venta en caja (que no son de uso clínico exclusivo).
+     * Devuelve todos los productos activos (estado = true), sin distinción
+     * de uso clínico, ya que ese concepto fue retirado del sistema.
      */
-    List<Producto> findByEstadoTrueAndUsoClinicoFalse();
-
+    List<Producto> findByEstadoTrue();
+    
     /**
-     * Devuelve los productos habilitados exclusivamente para curaciones/recetas (uso clínico).
+     * Devuelve todos los productos activos (estado = true) que NO son alimentos (esAlimento = false).
+     * Útil para listar productos que pueden ser usados en tratamientos clínicos.
      */
-    List<Producto> findByEstadoTrueAndUsoClinicoTrue();
+    List<Producto> findByEstadoTrueAndEsAlimentoFalse();
 
        // A6 – Optimistic/Pessimistic locking para evitar stock negativo en concurrencia
     @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)

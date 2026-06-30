@@ -81,7 +81,7 @@
                                         <label class="form-label fw-bold text-dark">¿Cómo se vende este producto? <span class="text-danger">*</span></label>
                                         <div class="d-flex gap-4">
                                             <div class="form-check">
-                                                <input class="form-check-input" type="radio" th:field="*{tipoUnidad}" value="unidad" id="um1" required>
+                                                <input class="form-check-input" type="radio" th:field="*{tipoUnidad}" value="unidades" id="um1" required>
                                             <label class="form-check-label" for="um1">Entero (Sacos, Cajas, Botellas)</label>
                                             </div>
                                             <div class="form-check">
@@ -89,8 +89,8 @@
                                             <label class="form-check-label" for="um2">A Granel (Kilos)</label>
                                         </div>
                                         <div class="form-check">
-                                            <input class="form-check-input" type="radio" th:field="*{tipoUnidad}" value="blister" id="um3">
-                                            <label class="form-check-label" for="um3">Medicinas (Blisters / Pastillas)</label>
+                                            <input class="form-check-input" type="radio" th:field="*{tipoUnidad}" value="litros" id="um3">
+                                            <label class="form-check-label" for="um3">Líquidos (Litros)</label>
                                             </div>
                                         </div>
                                     </div>
@@ -119,13 +119,13 @@
                                     <div class="col-md-6">
                                         <label class="form-label fw-bold text-dark">Stock Inicial <span class="text-muted fw-normal">(Opcional)</span></label>
                                         <div class="input-group">
-                                            <span class="input-group-text bg-light"><i class="bi bi-boxes text-muted"></i></span>
-                                            <input type="number" class="form-control" th:field="*{stockTotal}" 
-                                                   step="0.01" min="0" max="99.00" 
-                                                   placeholder="0">
+                                            <span class="input-group-text bg-light"><i class="bi bi-boxes text-muted"></i></span>                                           
+                                             <input type="number" class="form-control" th:field="*{stockCerrado}" 
+                                                   step="1" min="0" max="99" 
+                                                   placeholder="0" id="stockInicialCerrado">
                                         </div>
-                                        <div class="form-text">Máximo ingreso inicial: 99</div>
-                                    </div>
+                                        <div class="form-text">Máximo ingreso inicial: 99 unidades/sacos.</div>
+                                    </div>                                    
 
                                     <div class="col-md-12 mt-4">
                                         <div class="form-check form-switch mb-3">
@@ -137,11 +137,11 @@
 
                                         <div class="row g-3 p-4 bg-light rounded-3 border d-none" id="panelFraccionamiento">
                                             <div class="col-md-4">
-                                            <label class="form-label small fw-bold">Stock Cerrado Inicial (Cajas/Sacos)</label>
-                                                <input type="number" class="form-control form-control-sm" th:field="*{stockCerrado}" placeholder="Ej: 5">
+                                            <label class="form-label small fw-bold">Stock Abierto Inicial (Kg/Lt)</label>
+                                                <input type="number" step="0.01" class="form-control form-control-sm" th:field="*{stockFraccionado}" placeholder="Ej: 2.5">
                                             </div>
                                             <div class="col-md-4">
-                                            <label class="form-label small fw-bold">Contenido por Envase (Kg/Blisters)</label>
+                                            <label class="form-label small fw-bold">Contenido por Envase (Kg/Lt)</label>
                                                 <input type="number" step="0.01" class="form-control form-control-sm" th:field="*{contenidoPorEnvase}" placeholder="Ej: 15.00">
                                             </div>
                                             <div class="col-md-4">
@@ -154,14 +154,6 @@
                                         </div>
                                     </div>
 
-                                    <div class="col-md-12 mt-4">
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" th:field="*{usoClinico}" id="usoClinico">
-                                            <label class="form-check-label fw-bold" for="usoClinico">
-                                                Producto de uso clínico (solo para tratamientos, no aparece en caja de ventas)
-                                            </label>
-                                        </div>
-                                    </div>
                                 </div>
 
                                 <hr class="my-5 text-muted">
@@ -206,12 +198,21 @@
             const checkFraccionar = document.getElementById("checkFraccionar");
             const panelFraccionamiento = document.getElementById("panelFraccionamiento");
 
+            // Deshabilitar fraccionamiento si es por litros
+            document.querySelectorAll('input[name="tipoUnidad"]').forEach(radio => {
+                radio.addEventListener('change', function() {
+                    if (this.value === 'litros') {
+                        checkFraccionar.checked = false;
+                        checkFraccionar.disabled = true;
+                    } else {
+                        checkFraccionar.disabled = false;
+                    }
+                    togglePanel();
+                });
+            });
+
             function togglePanel() {
-                if (checkFraccionar.checked) {
-                    panelFraccionamiento.classList.remove("d-none");
-                } else {
-                    panelFraccionamiento.classList.add("d-none");
-                }
+                panelFraccionamiento.classList.toggle("d-none", !checkFraccionar.checked);
             }
 
             if(checkFraccionar) {
@@ -238,6 +239,31 @@
                 ?.addEventListener('input', recalcularPrecioFraccion);
             document.querySelector('input[name="contenidoPorEnvase"]')
                 ?.addEventListener('input', recalcularPrecioFraccion);
+            
+            // Ejecutar al cargar la página para el caso de edición
+            recalcularPrecioFraccion();
+        });
+
+        document.addEventListener("DOMContentLoaded", function() {
+            const checkFraccionar = document.getElementById("checkFraccionar");
+            
+            function handleTipoUnidadChange() {
+                const isLitros = document.querySelector('input[name="tipoUnidad"][value="litros"]').checked;
+                if (isLitros) {
+                    checkFraccionar.checked = false;
+                    checkFraccionar.disabled = true;
+                } else {
+                    checkFraccionar.disabled = false;
+                }
+                checkFraccionar.dispatchEvent(new Event('change')); // Trigger change to hide/show panel
+            }
+
+            document.querySelectorAll('input[name="tipoUnidad"]').forEach(radio => {
+                radio.addEventListener('change', handleTipoUnidadChange);
+            });
+
+            // Run on load
+            handleTipoUnidadChange();
         });
     </script>
 </body>

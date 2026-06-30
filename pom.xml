@@ -90,6 +90,12 @@
             <artifactId>commons-codec</artifactId>
             <version>1.16.1</version>
         </dependency>
+        
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-hibernate6</artifactId>
+            <!-- La versión es gestionada por el BOM de Spring Boot para asegurar compatibilidad -->
+        </dependency>
 
         <!-- Testing -->
         <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-test</artifactId><scope>test</scope></dependency>

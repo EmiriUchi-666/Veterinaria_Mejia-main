@@ -10,6 +10,8 @@ public class VentaRequestDTO {
     private String clienteNumDoc;
     private String clienteTipoDoc;
     private String clienteNombre;
+    private String clienteTelefono;
+    private String clienteDireccion;
     private String tipoComprobante; // "Boleta", "Factura"
     private String tipoPago; // "Efectivo", "Yape", etc.
     private BigDecimal total;

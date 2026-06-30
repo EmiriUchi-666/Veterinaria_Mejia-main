@@ -26,7 +26,6 @@
         </a>
     </div>
 
-    <!-- Tabla historial -->
     <div class="card border-0 shadow-sm" style="border-radius:16px;">
         <div class="card-header bg-white border-0 pt-4 px-4">
             <h6 class="fw-bold mb-0">Últimos Comprobantes Procesados</h6>
@@ -57,7 +56,10 @@
                     <td>
                         <strong th:text="${estado.venta.serie + '-' + estado.venta.correlativo}"></strong>
                     </td>
-                    <td th:text="${estado.venta.cliente.nombre}"></td>
+                    <td>
+                        <span th:if="${estado.venta.cliente != null}" th:text="${estado.venta.cliente.nombre}"></span>
+                        <span th:unless="${estado.venta.cliente != null}" class="text-muted">Público General</span>
+                    </td>
                     <td class="text-end fw-bold" th:text="'S/ ' + ${#numbers.formatDecimal(estado.venta.totalVenta,1,2)}"></td>
                     <td th:text="${#temporals.format(estado.fechaIntento,'dd/MM/yy HH:mm')}"></td>
                     <td class="text-center">
@@ -65,16 +67,14 @@
                               th:classappend="'estado-' + ${estado.estado?.name()}"
                               th:text="${estado.estado}"></span>
                     </td>
-                    <td class="small text-muted" style="max-width: 250px; white-space: normal;" th:text="${estado.respuestaApi}"></td>
+                    <td class="small text-muted cell-respuesta" style="max-width: 250px; white-space: normal; word-break: break-all;" th:text="${estado.respuestaApi}"></td>
                     <td class="text-center">
-                        <!-- Botón de Reintento -->
                         <button th:if="${estado.estado?.name() == 'ERROR' || estado.estado?.name() == 'RECHAZADO'}"
                                 th:data-id="${estado.id}"
                                 onclick="reintentar(this)"
                                 class="btn btn-sm btn-warning rounded-pill btn-reintentar" title="Reenviar a SUNAT">
                             <i class="bi bi-arrow-repeat"></i> Reintentar
                         </button>
-                        <!-- Enlace a PDF -->
                         <a th:if="${estado.urlPdf != null}" th:href="${estado.urlPdf}" target="_blank"
                            class="btn btn-sm btn-outline-danger rounded-pill" title="Ver PDF">
                             <i class="bi bi-file-pdf"></i>
@@ -84,18 +84,19 @@
                 </tbody>
             </table>
         </div>
-        <!-- Paginación (si aplica) -->
     </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
     async function reintentar(button) {
         const estadoId = button.getAttribute('data-id');
         const fila = document.getElementById('fila-estado-' + estadoId);
         const celdaEstado = fila.querySelector('.badge-estado');
-        const celdaRespuesta = fila.querySelector('.small.text-muted');
+        const celdaRespuesta = fila.querySelector('.cell-respuesta');
 
-        // Deshabilitar botón y mostrar estado de carga
+        // Deshabilitar botón y mostrar estado de carga temporal
         button.disabled = true;
         button.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Enviando...';
         celdaEstado.className = 'badge-estado estado-PENDIENTE';
@@ -105,27 +106,36 @@
         try {
             const response = await fetch(`/api/v1/facturacion/estados/${estadoId}/reintentar`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    // Añadir cabecera CSRF si está habilitado en Spring Security
-                }
+                headers: { 'Content-Type': 'application/json' }
             });
 
-            const data = await response.json();
+            // --- TRATAMIENTO SEGURO DE RESPUESTA ---
+            const textoCrudo = await response.text(); 
+            let data = {};
 
-            if (!response.ok) {
-                // Si la API devuelve un error (4xx, 5xx)
-                throw new Error(data.message || 'Error en el servidor');
+            try {
+                data = JSON.parse(textoCrudo);
+            } catch (e) {
+                // Si la respuesta no es un JSON válido, construimos un objeto controlado para la UI
+                data = {
+                    id: estadoId,
+                    estado: 'ERROR',
+                    respuestaApi: textoCrudo || 'El servidor devolvió una respuesta vacía o inválida.'
+                };
             }
 
-            // Actualizar la fila con la nueva información
+            if (!response.ok) {
+                throw new Error(data.respuestaApi || data.message || 'Error en el servidor');
+            }
+
+            // Actualizar la fila con la nueva información limpia
             actualizarFila(fila, data);
 
         } catch (error) {
-            console.error('Error en el reintento:', error);
+            console.error('Error controlado en el reintento:', error);
             celdaEstado.className = 'badge-estado estado-ERROR';
             celdaEstado.textContent = 'ERROR';
-            celdaRespuesta.textContent = 'Fallo en la comunicación con el servidor: ' + error.message;
+            celdaRespuesta.textContent = error.message;
             button.disabled = false;
             button.innerHTML = '<i class="bi bi-arrow-repeat"></i> Reintentar';
         }
@@ -133,13 +143,22 @@
 
     function actualizarFila(fila, data) {
         const celdaEstado = fila.querySelector('.badge-estado');
-        const celdaRespuesta = fila.querySelector('.small.text-muted');
+        const celdaRespuesta = fila.querySelector('.cell-respuesta');
         const celdaAcciones = fila.querySelector('.text-center:last-child');
 
-        // Actualizar estado y respuesta
+        // Intentar limpiar la respuesta si contiene un JSON de error anidado
+        let mensajeLegible = data.respuestaApi;
+        try {
+            const jsonInterno = JSON.parse(data.respuestaApi);
+            if (jsonInterno.errors) mensajeLegible = jsonInterno.errors;
+        } catch(e) {
+            // Se mantiene el string original si no era JSON
+        }
+
+        // Actualizar estado visual y texto de respuesta
         celdaEstado.className = `badge-estado estado-${data.estado}`;
         celdaEstado.textContent = data.estado;
-        celdaRespuesta.textContent = data.respuestaApi;
+        celdaRespuesta.textContent = mensajeLegible;
 
         // Limpiar acciones y reconstruir
         celdaAcciones.innerHTML = '';
@@ -165,7 +184,5 @@
         }
     }
 </script>
-
-<div th:replace="~{fragments/scripts :: scripts}"></div>
 </body>
 </html>

@@ -2,6 +2,7 @@ package com.Veterinaria.Mejia.models;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -45,6 +46,14 @@ public class AperturaCierreCaja {
     @Column(name = "monto_inicial", nullable = false, precision = 10, scale = 2)
     private BigDecimal montoInicial;
 
+    /**
+     * FASE 7: hora programada para que el sistema cierre esta caja
+     * automáticamente, sin necesidad de que alguien haga clic en "Cerrar Caja".
+     * Si es null, la caja solo se cierra manualmente.
+     */
+    @Column(name = "hora_cierre_programada")
+    private LocalTime horaCierreProgramada;
+
     @Column(name = "monto_final", precision = 10, scale = 2)
     private BigDecimal montoFinal;
 
@@ -56,10 +65,12 @@ public class AperturaCierreCaja {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 10)
-    private EstadoCaja estado;
+    private AperturaCierreCaja.EstadoCaja estado;
 
-    @Column(length = 255)
-    private String observaciones;
+    /** FASE 7: true si el cierre lo disparó el scheduler, no el cajero. */
+    @Column(name = "cierre_automatico", nullable = false)
+    @Builder.Default
+    private boolean cierreAutomatico = false;
 
     public enum EstadoCaja {
         Abierta, Cerrada
@@ -74,6 +85,11 @@ public class AperturaCierreCaja {
         return montoFinal.subtract(saldoCalculado);
     }
 
+    /**
+     * Saldo de efectivo disponible en este momento.
+     * Es la ÚNICA fuente de verdad para la barrera anti-negativos:
+     * ningún egreso en efectivo puede dejar este valor por debajo de cero.
+     */
     @Transient
     public BigDecimal getSaldoActual() {
         BigDecimal inicial = montoInicial != null ? montoInicial : BigDecimal.ZERO;

@@ -16,7 +16,7 @@
 <div th:replace="~{fragments/sidebar :: menuLateral}"></div>
 <div class="main-content">
   <div class="d-flex align-items-center gap-3 mb-4">
-    <a th:href="@{/tratamientos/paciente/{id}(id=${tratamiento?.historiaClinica?.paciente?.id})}"
+    <a th:href="@{/tratamientos/paciente/{id}(id=${tratamiento?.historiaClinica?.paciente?.id ?: tratamiento?.pacienteTratado?.id})}"
        class="btn btn-outline-secondary rounded-pill btn-sm"><i class="bi bi-arrow-left"></i> Volver
     </a>
     <h2 class="fw-bold mb-0 flex-grow-1"><i class="bi bi-prescription2 me-2 text-primary"></i>Detalle del Tratamiento</h2>
@@ -33,7 +33,7 @@
         <h6 class="text-muted fw-semibold mb-3">INFORMACIÓN GENERAL</h6>
         <div class="mb-2">
           <small class="text-muted d-block">Paciente</small>
-          <strong th:text="${tratamiento?.historiaClinica?.paciente?.nombre}"></strong>
+          <strong th:text="${tratamiento?.historiaClinica?.paciente?.nombre ?: (tratamiento?.pacienteTratado?.nombre ?: 'Consulta general (sin mascota asociada)')}"></strong>
         </div>
         <div class="mb-2">
           <small class="text-muted d-block">Estado</small>

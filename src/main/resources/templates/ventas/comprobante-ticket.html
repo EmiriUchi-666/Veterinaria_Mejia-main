@@ -115,7 +115,7 @@
                 <td>
                     <span th:text="${venta.cliente != null ? #strings.toUpperCase(venta.cliente.nombre) : 'PÚBLICO GENERAL'}"></span>
                     <th:block th:if="${venta.cliente != null}">
-                        <br><span style="font-size: 10px;" th:text="'DNI: ' + ${venta.cliente.dni}"></span>
+                        <br><span style="font-size: 10px;" th:text="'DNI: ' + ${venta.cliente.numeroDocumento}"></span>
                     </th:block>
                 </td>
             </tr>
